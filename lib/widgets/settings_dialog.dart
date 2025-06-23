@@ -300,12 +300,12 @@ class _SettingsDialogState extends State<SettingsDialog> {
           child: ValueListenableBuilder(
             valueListenable: widget.ntConnection.dsConnected,
             builder: (context, connected, child) {
-              int addressModeIndex =
+              int addressModeID =
                   widget.preferences.getInt(PrefKeys.ipAddressMode) ??
-                  Defaults.ipAddressMode.index;
+                  Defaults.ipAddressMode.id;
               bool canEditIP =
-                  addressModeIndex == IPAddressMode.custom.index ||
-                  (addressModeIndex == IPAddressMode.driverStation.index &&
+                  addressModeID == IPAddressMode.custom.id ||
+                  (addressModeID == IPAddressMode.driverStation.id &&
                       !connected);
               return DialogTextInput(
                 enabled: canEditIP,
@@ -340,7 +340,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
               setState(() {});
             },
             choices: IPAddressMode.values,
-            initialValue: IPAddressMode.fromIndex(
+            initialValue: IPAddressMode.fromID(
               widget.preferences.getInt(PrefKeys.ipAddressMode),
             ),
           ),

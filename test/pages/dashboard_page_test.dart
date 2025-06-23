@@ -1960,7 +1960,7 @@ void main() {
 
     testWidgets('IP Address shortcuts', (widgetTester) async {
       SharedPreferences.setMockInitialValues({
-        PrefKeys.ipAddressMode: IPAddressMode.custom.index,
+        PrefKeys.ipAddressMode: IPAddressMode.custom.id,
         PrefKeys.ipAddress: '127.0.0.1',
         PrefKeys.teamNumber: 353,
       });
@@ -1987,7 +1987,7 @@ void main() {
 
       expect(
         preferences.getInt(PrefKeys.ipAddressMode),
-        IPAddressMode.driverStation.index,
+        IPAddressMode.driverStation.id,
       );
       expect(preferences.getString(PrefKeys.ipAddress), '10.3.53.2');
 
@@ -2005,7 +2005,7 @@ void main() {
       // IP Address shouldn't change since it's already driver station
       expect(
         preferences.getInt(PrefKeys.ipAddressMode),
-        IPAddressMode.driverStation.index,
+        IPAddressMode.driverStation.id,
       );
       expect(preferences.getString(PrefKeys.ipAddress), '0.0.0.0');
 
@@ -2022,7 +2022,7 @@ void main() {
 
       expect(
         preferences.getInt(PrefKeys.ipAddressMode),
-        IPAddressMode.localhost.index,
+        IPAddressMode.localhost.id,
       );
       expect(preferences.getString(PrefKeys.ipAddress), 'localhost');
 
@@ -2042,7 +2042,7 @@ void main() {
       // IP address shouldn't change since mode is set to localhost
       expect(
         preferences.getInt(PrefKeys.ipAddressMode),
-        IPAddressMode.localhost.index,
+        IPAddressMode.localhost.id,
       );
       expect(preferences.getString(PrefKeys.ipAddress), '0.0.0.0');
     });
