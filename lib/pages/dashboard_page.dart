@@ -429,6 +429,8 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
 
   Future<void> changeIPAddressMode(IPAddressMode mode) async {}
 
+  Future<void> changeNTTargetServer(NTServerTarget mode) async {}
+
   Future<void> updateIPAddress(String newIPAddress) async {}
 
   Future<void> onDriverStationDocked() async {}
