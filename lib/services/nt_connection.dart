@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:elastic_dashboard/services/ds_interop.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
+import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 
 typedef SubscriptionIdentification = ({
@@ -10,11 +11,29 @@ typedef SubscriptionIdentification = ({
   NT4SubscriptionOptions options,
 });
 
+enum NTServerTarget {
+  robotCode('Robot Code', 5810),
+  systemCore('SystemCore Internal', 6810);
+
+  const NTServerTarget(this.name, this.port);
+
+  final String name;
+  final int port;
+
+  static NTServerTarget? fromIndex(int? index) {
+    if (index == null || index < 0 || index >= values.length) {
+      return null;
+    }
+    return values.firstWhere((e) => e.index == index);
+  }
+}
+
 class NTConnection {
   late NT4Client _ntClient;
   late DSInteropClient _dsClient;
   final SchemaManager schemaManager = SchemaManager();
 
+  NTServerTarget serverMode;
   List<VoidCallback> onConnectedListeners = [];
   List<VoidCallback> onDisconnectedListeners = [];
 
@@ -39,13 +58,14 @@ class NTConnection {
   Map<int, NT4Subscription> subscriptionMap = {};
   Map<NT4Subscription, int> subscriptionUseCount = {};
 
-  NTConnection(String ipAddress) {
+  NTConnection(String ipAddress, [this.serverMode = Defaults.targetServer]) {
     nt4Connect(ipAddress);
   }
 
   void nt4Connect(String ipAddress) {
     _ntClient = NT4Client(
       serverBaseAddress: ipAddress,
+      serverPort: serverMode.port,
       schemaManager: schemaManager,
       onConnect: () {
         _ntConnected.value = true;
@@ -167,6 +187,14 @@ class NTConnection {
     }
 
     _ntClient.setServerBaseAddreess(ipAddress);
+  }
+
+  void changeServerMode(NTServerTarget mode) {
+    if (serverMode == mode) {
+      return;
+    }
+    serverMode = mode;
+    _ntClient.setServerPort(mode.port);
   }
 
   NT4Subscription subscribe(String topic, [double period = 0.1]) =>
