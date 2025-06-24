@@ -307,7 +307,9 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
         description: const Text('A new update is available!'),
         action: TextButton(
           onPressed: () async {
-            Uri url = Uri.parse(Settings.releasesLink);
+            Uri url = Uri.parse(
+              '${Settings.repositoryLink}/releases/tag/v${updateResponse.latestVersion!}',
+            );
 
             if (await canLaunchUrl(url)) {
               await launchUrl(url);
