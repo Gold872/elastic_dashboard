@@ -81,7 +81,11 @@ void main() async {
   String ipAddress =
       preferences.getString(PrefKeys.ipAddress) ?? Defaults.ipAddress;
 
-  NTConnection ntConnection = NTConnection(ipAddress);
+  NTServerTarget serverMode =
+      NTServerTarget.fromIndex(preferences.getInt(PrefKeys.ntTargetServer)) ??
+      Defaults.targetServer;
+
+  NTConnection ntConnection = NTConnection(ipAddress, serverMode);
 
   LicenseRegistry.addLicense(() async* {
     final robotoLicense = await rootBundle.loadString(
