@@ -121,6 +121,16 @@ class DSInteropClient {
       logger.warning('[DS INTEROP] Ignoring text message, not a Json Object');
       return;
     }
+    
+    var dockedHeight = jsonData['dockedHeight'];
+    if (dockedHeight != null) {
+      logger.debug('[DS INTEROP] Received docked height: $dockedHeight');
+      bool docked = dockedHeight > 0;
+      if (docked != _driverStationDocked) {
+        _driverStationDocked = docked;
+        onDriverStationDockChanged?.call(docked);
+      }
+    }
 
     var rawIP = jsonData['robotIP'];
 
