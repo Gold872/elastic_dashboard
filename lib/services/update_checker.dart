@@ -7,6 +7,8 @@ extension on Release {
   Version? getVersion() {
     if (tagName == null) return null;
 
+    if (!tagName!.startsWith('v')) return null;
+
     String versionName = tagName!.substring(1);
     try {
       return Version.parse(versionName);
@@ -63,7 +65,7 @@ class UpdateChecker {
       }
       Version? latest = latestRelease.getVersion();
 
-      if (!tagName.startsWith('v') || latest == null) {
+      if (latest == null) {
         logger.error('Invalid version name: $tagName');
         return UpdateCheckerResponse(
           updateAvailable: false,
