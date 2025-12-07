@@ -272,13 +272,13 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Elastic-SystemCore
-          path: .github/ipk_build/elastic-dashboard_*.ipk
+          path: .github/ipk_build/elastic_dashboard_*.ipk
           if-no-files-found: error
 
   github-pages:
     name: "Upload to GitHub Pages"
     runs-on: ubuntu-22.04
-    if: ${{ github.repository == 'Gold872/elastic-dashboard' && github.ref == 'refs/heads/main' }}
+    if: ${{ github.repository == 'Gold872/elastic_dashboard' && github.ref == 'refs/heads/main' }}
     needs: [build-web]
     steps:
       - name: Download Web Build
@@ -318,7 +318,7 @@ jobs:
         run: |
           ls -al
           mv Elastic-Windows.zip Elastic-Windows_portable.zip
-          mv elastic-dashboard_*.ipk Elastic-SystemCore.ipk
+          mv elastic_dashboard_*.ipk Elastic-SystemCore.ipk
 
       - name: Get Draft Release Info
         id: release_info

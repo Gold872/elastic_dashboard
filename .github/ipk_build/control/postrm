@@ -1,5 +1,5 @@
 #!/bin/sh
-PACKAGE_NAME="elastic-dashboard"
+PACKAGE_NAME="elastic_dashboard"
 
 systemctl daemon-reload
 systemctl reset-failed $PACKAGE_NAME.service 2>/dev/null || true
