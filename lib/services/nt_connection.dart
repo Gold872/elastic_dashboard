@@ -42,10 +42,11 @@ class NTConnection {
 
   bool get isNT4Connected => _ntConnected.value;
 
-  final ValueNotifier<bool> _dsConnected = ValueNotifier(false);
-  bool get isDSConnected => _dsConnected.value;
-  ValueNotifier<bool> get dsConnected => _dsConnected;
-  DSInteropClient get dsClient => _dsClient;
+  bool get isDSConnected => _dsClient.connectionStatus.value;
+
+  ValueNotifier<bool> get dsConnected => _dsClient.connectionStatus;
+  ValueNotifier<int?> get dsHeight => _dsClient.dsHeightNotifier;
+  ValueNotifier<String?> get dsIpAddress => _dsClient.ipNotifier;
 
   int get serverTime => _ntClient.getServerTimeUS();
 
@@ -96,16 +97,8 @@ class NTConnection {
     );
   }
 
-  void dsClientConnect({
-    Function(String ip)? onIPAnnounced,
-    Function(bool isDocked)? onDriverStationDockChanged,
-  }) {
-    _dsClient = DSInteropClient(
-      onNewIPAnnounced: onIPAnnounced,
-      onDriverStationDockChanged: onDriverStationDockChanged,
-      onConnect: () => _dsConnected.value = true,
-      onDisconnect: () => _dsConnected.value = false,
-    );
+  void dsClientConnect() {
+    _dsClient = DSInteropClient();
   }
 
   void addConnectedListener(VoidCallback callback) {

@@ -6,7 +6,6 @@ import 'package:http/http.dart';
 import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-import 'package:elastic_dashboard/services/ds_interop.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
@@ -18,7 +17,6 @@ import 'test_util.mocks.dart';
   MockSpec<NTConnection>(),
   MockSpec<NT4Client>(),
   MockSpec<NT4Subscription>(),
-  MockSpec<DSInteropClient>(),
 ])
 MockNTConnection createMockOfflineNT4() {
   HttpOverrides.global = null;
@@ -45,6 +43,8 @@ MockNTConnection createMockOfflineNT4() {
 
   when(mockNT4Connection.dsConnected).thenReturn(ValueNotifier(false));
   when(mockNT4Connection.isDSConnected).thenReturn(false);
+  when(mockNT4Connection.dsHeight).thenReturn(ValueNotifier(null));
+  when(mockNT4Connection.dsIpAddress).thenReturn(ValueNotifier(null));
 
   when(mockNT4Connection.latencyStream()).thenAnswer((_) => Stream.value(0));
 
@@ -128,6 +128,8 @@ MockNTConnection createMockOnlineNT4({
 
   when(mockNT4Connection.dsConnected).thenReturn(ValueNotifier(true));
   when(mockNT4Connection.isDSConnected).thenReturn(true);
+  when(mockNT4Connection.dsHeight).thenReturn(ValueNotifier(null));
+  when(mockNT4Connection.dsIpAddress).thenReturn(ValueNotifier(null));
 
   when(mockNT4Connection.latencyStream()).thenAnswer((_) => Stream.value(0));
 

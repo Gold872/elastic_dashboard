@@ -29,13 +29,13 @@ mixin DashboardPageWindow on DashboardPageViewModel {
   }
 
   @override
-  Future<void> onDriverStationDocked() async {
+  Future<void> onDriverStationDocked(int dsHeight) async {
     Display primaryDisplay = await screenRetriever.getPrimaryDisplay();
     Size screenSize = primaryDisplay.visibleSize ?? primaryDisplay.size;
 
     await windowManager.unmaximize();
 
-    Size newScreenSize = Size(screenSize.width, screenSize.height - 200);
+    Size newScreenSize = Size(screenSize.width, screenSize.height - dsHeight);
 
     await windowManager.setSize(newScreenSize);
 
