@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
-import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/pages/dashboard/dashboard_page_settings.dart';
@@ -75,7 +74,6 @@ void main() {
         await preferences.setString(PrefKeys.ipAddress, '10.3.53.2');
 
         MockNTConnection mockConnection = createMockOfflineNT4();
-        when(mockConnection.dsClient).thenReturn(MockDSInteropClient());
 
         dashboardModel = SettingsDashboardViewModel(
           ntConnection: mockConnection,

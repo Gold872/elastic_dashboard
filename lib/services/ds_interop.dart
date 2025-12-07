@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
+
+import 'package:dot_cast/dot_cast.dart';
+
 import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/log.dart';
 
@@ -8,26 +12,13 @@ class DSInteropClient {
   final String serverBaseAddress = '127.0.0.1';
   bool _serverConnectionActive = false;
 
-  Function()? onConnect;
-  Function()? onDisconnect;
-
-  Function(String ip)? onNewIPAnnounced;
-  Function(bool isDocked)? onDriverStationDockChanged;
+  ValueNotifier<bool> connectionStatus = ValueNotifier(false);
+  ValueNotifier<String?> ipNotifier = ValueNotifier(null);
+  ValueNotifier<int?> dsHeightNotifier = ValueNotifier(null);
 
   Socket? _socket;
 
-  String? _lastAnnouncedIP;
-  bool _driverStationDocked = false;
-
-  String? get lastAnnouncedIP => _lastAnnouncedIP;
-  bool get driverStationDocked => _driverStationDocked;
-
-  DSInteropClient({
-    this.onNewIPAnnounced,
-    this.onDriverStationDockChanged,
-    this.onConnect,
-    this.onDisconnect,
-  }) {
+  DSInteropClient() {
     _connect();
   }
 
@@ -57,7 +48,7 @@ class DSInteropClient {
         if (!_serverConnectionActive) {
           logger.info('Driver Station connected on TCP port 1742');
           _serverConnectionActive = true;
-          onConnect?.call();
+          connectionStatus.value = true;
         }
         _tcpSocketOnMessage(utf8.decode(data));
       },
@@ -77,18 +68,13 @@ class DSInteropClient {
       return;
     }
 
-    var dockedHeight = jsonData['dockedHeight'];
+    int? dockedHeight = tryCast(jsonData['dockedHeight']);
     if (dockedHeight != null) {
       logger.debug('[DS INTEROP] Received docked height: $dockedHeight');
-      bool docked = dockedHeight > 0;
-      if (docked != _driverStationDocked) {
-        _driverStationDocked = docked;
-        onDriverStationDockChanged?.call(docked);
-      }
+      dsHeightNotifier.value = dockedHeight > 0 ? dockedHeight : null;
     }
 
-    var rawIP = jsonData['robotIP'];
-
+    int? rawIP = tryCast(jsonData['robotIP']);
     if (rawIP == null) {
       logger.warning(
         '[DS INTEROP] Ignoring Json message, robot IP is not valid',
@@ -104,10 +90,7 @@ class DSInteropClient {
 
     logger.info('Received IP Address from Driver Station: $ipAddress');
 
-    if (_lastAnnouncedIP != ipAddress) {
-      onNewIPAnnounced?.call(ipAddress);
-    }
-    _lastAnnouncedIP = ipAddress;
+    ipNotifier.value = ipAddress;
   }
 
   void _socketClose() {
@@ -120,9 +103,8 @@ class DSInteropClient {
 
     _serverConnectionActive = false;
 
-    _driverStationDocked = false;
-    onDriverStationDockChanged?.call(false);
-    onDisconnect?.call();
+    dsHeightNotifier.value = null;
+    connectionStatus.value = false;
 
     logger.info(
       'Driver Station connection on TCP port 1742 closed, attempting to reconnect in 5 seconds.',

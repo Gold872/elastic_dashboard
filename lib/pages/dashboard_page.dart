@@ -190,31 +190,38 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
     );
     robotNotificationListener.listen();
 
-    ntConnection.dsClientConnect(
-      onIPAnnounced: (ip) async {
-        if (preferences.getInt(PrefKeys.ipAddressMode) !=
-            IPAddressMode.driverStation.id) {
-          return;
-        }
+    ntConnection.dsClientConnect();
 
-        if (preferences.getString(PrefKeys.ipAddress) != ip) {
-          await preferences.setString(PrefKeys.ipAddress, ip);
-        } else {
-          return;
-        }
+    ntConnection.dsIpAddress.addListener(() async {
+      String? ip = ntConnection.dsIpAddress.value;
 
-        ntConnection.changeIPAddress(ip);
-      },
-      onDriverStationDockChanged: (docked) {
-        if ((preferences.getBool(PrefKeys.autoResizeToDS) ??
-                Defaults.autoResizeToDS) &&
-            docked) {
-          onDriverStationDocked();
-        } else {
-          onDriverStationUndocked();
-        }
-      },
-    );
+      if (ip == null) return;
+
+      if (preferences.getInt(PrefKeys.ipAddressMode) !=
+          IPAddressMode.driverStation.id) {
+        return;
+      }
+
+      if (preferences.getString(PrefKeys.ipAddress) != ip) {
+        await preferences.setString(PrefKeys.ipAddress, ip);
+      } else {
+        return;
+      }
+
+      ntConnection.changeIPAddress(ip);
+    });
+
+    ntConnection.dsHeight.addListener(() {
+      int? height = ntConnection.dsHeight.value;
+
+      if ((preferences.getBool(PrefKeys.autoResizeToDS) ??
+              Defaults.autoResizeToDS) &&
+          height != null) {
+        onDriverStationDocked(height);
+      } else {
+        onDriverStationUndocked();
+      }
+    });
 
     ntConnection.addConnectedListener(() {
       for (TabGridModel grid in tabData.map((e) => e.tabGrid)) {
@@ -435,7 +442,7 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
 
   Future<void> updateIPAddress(String newIPAddress) async {}
 
-  Future<void> onDriverStationDocked() async {}
+  Future<void> onDriverStationDocked(int dsHeight) async {}
 
   Future<void> onDriverStationUndocked() async {}
 
