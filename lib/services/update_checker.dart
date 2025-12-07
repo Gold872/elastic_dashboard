@@ -3,6 +3,19 @@ import 'package:version/version.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
 
+extension on Release {
+  Version? getVersion() {
+    if (tagName == null) return null;
+
+    String versionName = tagName!.substring(1);
+    try {
+      return Version.parse(versionName);
+    } catch (_) {
+      return null;
+    }
+  }
+}
+
 class UpdateChecker {
   final GitHub _github;
   final String currentVersion;
@@ -13,9 +26,30 @@ class UpdateChecker {
     logger.info('Checking for updates');
 
     try {
-      Release latestRelease = await _github.repositories.getLatestRelease(
-        RepositorySlug('Gold872', 'elastic_dashboard'),
-      );
+      Version current = Version.parse(currentVersion);
+
+      final List<Release> releases = await _github.repositories
+          .listReleases(
+            RepositorySlug('Gold872', 'elastic-dashboard'),
+          )
+          .toList();
+
+      final Iterable<Release> yearReleases = releases.where((release) {
+        Version? latest = release.getVersion();
+
+        if (latest == null) return false;
+        if (latest.major != current.major) return false;
+
+        return true;
+      });
+
+      Release? latestRelease = yearReleases.firstOrNull;
+      if (latestRelease == null) {
+        return UpdateCheckerResponse(
+          updateAvailable: false,
+          error: false,
+        );
+      }
 
       String? tagName = latestRelease.tagName;
 
@@ -27,7 +61,9 @@ class UpdateChecker {
           errorMessage: 'Release tag not found',
         );
       }
-      if (!tagName.startsWith('v')) {
+      Version? latest = latestRelease.getVersion();
+
+      if (!tagName.startsWith('v') || latest == null) {
         logger.error('Invalid version name: $tagName');
         return UpdateCheckerResponse(
           updateAvailable: false,
@@ -35,11 +71,6 @@ class UpdateChecker {
           errorMessage: 'Invalid version name: \'$tagName\'',
         );
       }
-
-      String versionName = tagName.substring(1);
-
-      Version current = Version.parse(currentVersion);
-      Version latest = Version.parse(versionName);
 
       bool updateAvailable = current < latest;
 
