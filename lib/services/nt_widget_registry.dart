@@ -21,6 +21,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.da
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/motor_controller.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/multi_topic_graph.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/network_alerts.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/pid_controller.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/power_distribution.dart';
@@ -286,6 +287,18 @@ class NTWidgetRegistry {
       widget: MotorController.new,
       fromJson: MotorControllerModel.fromJson,
       minHeight: _normalSize * 0.92,
+    );
+
+    registerMultiTopic(
+      name: MultiTopicGraphWidget.widgetType,
+      aliases: {'Multi Graph'},
+      model: MultiTopicGraphModel.new,
+      widget: MultiTopicGraphWidget.new,
+      fromJson: MultiTopicGraphModel.fromJson,
+      minWidth: _normalSize * 2,
+      minHeight: _normalSize * 2,
+      defaultWidth: 3,
+      defaultHeight: 2,
     );
 
     registerMultiTopic(
