@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'dart:typed_data';
-import 'dart:ui';
 
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -617,7 +616,6 @@ class FieldWidget extends NTWidget {
         Offset fittedCenter = fittedSizes.destination.toOffset / 2;
         Offset fieldCenter = model.field.center;
         return Stack(
-
           children: [
             //line going towards robot when off-screen
             IgnorePointer(
@@ -644,7 +642,7 @@ class FieldWidget extends NTWidget {
                               scaleReduction: scaleReduction,
                             ),
                             strokeWidth:
-                            model.trajectoryPointSize *
+                                model.trajectoryPointSize *
                                 model.field.pixelsPerMeterHorizontal *
                                 scaleReduction,
                           ),
@@ -957,7 +955,6 @@ class FieldWidget extends NTWidget {
                 ),
               ),
             ),
-
           ],
         );
       },
@@ -1054,7 +1051,7 @@ class RobotLinePainter extends CustomPainter {
     required this.color,
     required this.fittedCenter,
     required this.size,
-    required this.transform
+    required this.transform,
   });
 
   @override
@@ -1069,10 +1066,7 @@ class RobotLinePainter extends CustomPainter {
       robotPosition.dx + (size.width / 2),
       robotPosition.dy + (size.height / 2),
     );
-    Offset start = Offset(
-      size.width / 2,
-      size.height / 2
-    );
+    Offset start = Offset(size.width / 2, size.height / 2);
 
     drawDashedLine(
       canvas: canvas,
