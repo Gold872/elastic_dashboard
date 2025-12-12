@@ -21,7 +21,7 @@ extension LogLevelUtil on Level {
 
 class Settings {
   static const String repositoryLink =
-      'https://github.com/Gold872/elastic-dashboard';
+      'https://github.com/Gold872/elastic_dashboard';
   static const String releasesLink = '$repositoryLink/releases/latest';
 
   // window_manager doesn't support drag disable/maximize

@@ -1,4 +1,4 @@
-Package: elastic-dashboard
+Package: elastic_dashboard
 Version: 1.0.0
 Description: A simple and modern dashboard for FRC.
 Section: development
@@ -10,4 +10,4 @@ X-Port: 5806
 X-Display-Name: Elastic
 X-Has-UI: true
 X-Auto-Start: true
-X-Icon-Path: /usr/share/elastic-dashboard.png
+X-Icon-Path: /usr/share/elastic_dashboard.png

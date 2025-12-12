@@ -1,12 +1,12 @@
 # ![Elastic Logo](assets/logos/logo_full.png)
 
-[![Elastic](https://github.com/Gold872/elastic-dashboard/actions/workflows/elastic-ci.yml/badge.svg)](https://github.com/Gold872/elastic-dashboard/actions/workflows/elastic-ci.yml) [![codecov](https://codecov.io/gh/Gold872/elastic-dashboard/graph/badge.svg?token=4MQYW8SMQI)](https://codecov.io/gh/Gold872/elastic-dashboard)
+[![Elastic](https://github.com/Gold872/elastic_dashboard/actions/workflows/elastic-ci.yml/badge.svg)](https://github.com/Gold872/elastic_dashboard/actions/workflows/elastic-ci.yml) [![codecov](https://codecov.io/gh/Gold872/elastic_dashboard/graph/badge.svg?token=4MQYW8SMQI)](https://codecov.io/gh/Gold872/elastic_dashboard)
 
 A simple and modern dashboard for FRC.
 
-Download files can be found [here](https://github.com/Gold872/elastic-dashboard/releases/latest), the supported platforms are Windows, MacOS, Linux, and Web.
+Download files can be found [here](https://github.com/Gold872/elastic_dashboard/releases/latest), the supported platforms are Windows, MacOS, Linux, and Web.
 
-Try it in your browser! https://gold872.github.io/elastic-dashboard/
+Try it in your browser! https://gold872.github.io/elastic_dashboard/
 
 ## About
 
@@ -33,6 +33,6 @@ This dashboard wouldn't have been made without the help and inspiration from the
 
 ## Contributors
 
-<a href="https://github.com/Gold872/elastic-dashboard/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Gold872/elastic-dashboard" />
+<a href="https://github.com/Gold872/elastic_dashboard/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Gold872/elastic_dashboard" />
 </a>

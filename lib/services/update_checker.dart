@@ -14,7 +14,7 @@ class UpdateChecker {
 
     try {
       Release latestRelease = await _github.repositories.getLatestRelease(
-        RepositorySlug('Gold872', 'elastic-dashboard'),
+        RepositorySlug('Gold872', 'elastic_dashboard'),
       );
 
       String? tagName = latestRelease.tagName;
