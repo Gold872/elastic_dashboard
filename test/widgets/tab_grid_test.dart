@@ -19,7 +19,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.d
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/pid_controller.dart';
