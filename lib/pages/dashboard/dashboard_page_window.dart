@@ -29,13 +29,28 @@ mixin DashboardPageWindow on DashboardPageViewModel {
   }
 
   @override
-  Future<void> onDriverStationDocked() async {
+  Future<void> onDriverStationDocked(int dsHeight) async {
     Display primaryDisplay = await screenRetriever.getPrimaryDisplay();
     Size screenSize = primaryDisplay.visibleSize ?? primaryDisplay.size;
 
     await windowManager.unmaximize();
 
-    Size newScreenSize = Size(screenSize.width, screenSize.height - 200);
+    double? windowScale = primaryDisplay.scaleFactor?.toDouble();
+    if (state != null) {
+      // Has to be accessed as a local variable to prevent warnings
+      BuildContext context = state!.context;
+      if (context.mounted) {
+        windowScale ??= MediaQuery.of(context).devicePixelRatio;
+      }
+    }
+    windowScale ??= 1;
+
+    double dsScaledHeight = dsHeight / windowScale;
+
+    Size newScreenSize = Size(
+      screenSize.width,
+      screenSize.height - dsScaledHeight,
+    );
 
     await windowManager.setSize(newScreenSize);
 

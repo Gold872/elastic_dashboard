@@ -188,8 +188,8 @@ mixin DashboardPageSettings on DashboardPageViewModel {
   }
 
   Future<void> changeResizeToDS(bool value) async {
-    if (value && ntConnection.dsClient.driverStationDocked) {
-      onDriverStationDocked();
+    if (value && ntConnection.dsHeight.value != null) {
+      onDriverStationDocked(ntConnection.dsHeight.value!);
     } else {
       onDriverStationUndocked();
     }
@@ -286,7 +286,7 @@ mixin DashboardPageSettings on DashboardPageViewModel {
     await preferences.setInt(PrefKeys.ipAddressMode, mode.id);
     switch (mode) {
       case IPAddressMode.driverStation:
-        String? lastAnnouncedIP = ntConnection.dsClient.lastAnnouncedIP;
+        String? lastAnnouncedIP = ntConnection.dsIpAddress.value;
 
         if (lastAnnouncedIP == null) {
           break;
