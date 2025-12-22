@@ -213,6 +213,7 @@ class GamePieceTopics {
     try {
       return raw
           .map((e) => e.split(' '))
+          // In the format: x: 0.0, y: 0.0
           .map((e) => Offset(double.parse(e[1]), double.parse(e[3])))
           .toList();
     } catch (_) {

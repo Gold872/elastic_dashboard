@@ -6,7 +6,7 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/struct_schemas/pose2d_struct.dart';
 import 'package:elastic_dashboard/util/test_utils.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_mode.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_painters.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:flutter/material.dart';

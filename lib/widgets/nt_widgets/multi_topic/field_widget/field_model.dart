@@ -662,7 +662,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
               onColorPicked: (color) {
                 robotColor = color;
               },
-              label: 'Robot Color',
+              label: 'Robot',
               initialColor: robotColor,
               defaultColor: Colors.red,
             ),
@@ -675,7 +675,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
               onColorPicked: (color) {
                 trajectoryColor = color;
               },
-              label: 'Trajectory Color',
+              label: 'Trajectory',
               initialColor: trajectoryColor,
               defaultColor: Colors.white,
             ),
@@ -690,12 +690,12 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
       children: [
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 1.0),
             child: DialogColorPicker(
               onColorPicked: (color) {
                 visionTargetColor = color;
               },
-              label: 'Vision Target Color',
+              label: 'Vision',
               initialColor: _visionTargetColor,
               defaultColor: Colors.green,
             ),
@@ -703,12 +703,12 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 1.0),
             child: DialogColorPicker(
               onColorPicked: (color) {
                 gamePieceColor = color;
               },
-              label: 'Game Piece Color',
+              label: 'Gamepiece',
               initialColor: _gamePieceColor,
               defaultColor: Colors.yellow,
             ),
@@ -716,12 +716,12 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+            padding: const EdgeInsets.symmetric(horizontal: 1.0),
             child: DialogColorPicker(
               onColorPicked: (color) {
                 bestGamePieceColor = color;
               },
-              label: 'Best Game Piece Color',
+              label: 'Best Gamepiece',
               initialColor: _bestGamePieceColor,
               defaultColor: Colors.orange,
             ),

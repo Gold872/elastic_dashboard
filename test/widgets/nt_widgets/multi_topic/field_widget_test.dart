@@ -1,4 +1,4 @@
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_mode.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_painters.dart';
 import 'package:flutter/material.dart';
 

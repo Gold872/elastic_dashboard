@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
-import '../../test_util.dart';
 
 class MockColorCallback extends Mock {
   void onColorChanged(Color? color);
@@ -14,8 +12,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   testWidgets('Color picker select', (widgetTester) async {
-    FlutterError.onError = ignoreOverflowErrors;
-
     MockColorCallback mockCallback = MockColorCallback();
 
     Color? calledBackColor;
@@ -66,8 +62,6 @@ void main() {
   });
 
   testWidgets('Color picker cancel', (widgetTester) async {
-    FlutterError.onError = ignoreOverflowErrors;
-
     MockColorCallback mockCallback = MockColorCallback();
 
     Color? calledBackColor;
@@ -118,8 +112,6 @@ void main() {
   });
 
   testWidgets('Color picker restore default', (widgetTester) async {
-    FlutterError.onError = ignoreOverflowErrors;
-
     MockColorCallback mockCallback = MockColorCallback();
 
     Color? calledBackColor;
