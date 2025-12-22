@@ -690,7 +690,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
       children: [
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: DialogColorPicker(
               onColorPicked: (color) {
                 visionTargetColor = color;
@@ -703,7 +703,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1.0),
+            padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: DialogColorPicker(
               onColorPicked: (color) {
                 gamePieceColor = color;
@@ -714,19 +714,21 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
             ),
           ),
         ),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 1.0),
-            child: DialogColorPicker(
-              onColorPicked: (color) {
-                bestGamePieceColor = color;
-              },
-              label: 'Best Gamepiece',
-              initialColor: _bestGamePieceColor,
-              defaultColor: Colors.orange,
-            ),
-          ),
+      ],
+    ),
+    const SizedBox(height: 10),
+    Row(
+      children: [
+        const Spacer(),
+        DialogColorPicker(
+          onColorPicked: (color) {
+            bestGamePieceColor = color;
+          },
+          label: 'Best Gamepiece',
+          initialColor: _bestGamePieceColor,
+          defaultColor: Colors.orange,
         ),
+        const Spacer(),
       ],
     ),
   ];

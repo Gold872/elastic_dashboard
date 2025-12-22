@@ -38,12 +38,12 @@ class _DialogColorPickerState extends State<DialogColorPicker> {
 
   @override
   Widget build(BuildContext context) => Row(
-    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    mainAxisAlignment: MainAxisAlignment.center,
     crossAxisAlignment: CrossAxisAlignment.center,
     mainAxisSize: widget.rowSize,
     children: [
       Text(widget.label),
-      const SizedBox(width: 5),
+      const SizedBox(width: 10),
       ElevatedButton(
         onPressed: () {
           showDialog(
