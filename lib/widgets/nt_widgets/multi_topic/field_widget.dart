@@ -69,6 +69,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   Size? widgetSize;
 
+  double robotX = 0;
+  double robotY = 0;
+
   double get robotWidthMeters => _robotWidthMeters;
 
   set robotWidthMeters(double value) {
@@ -481,8 +484,6 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 class FieldWidget extends NTWidget {
   static const String widgetType = 'Field';
   final TransformationController controller = TransformationController();
-  double _robotX = 0;
-  double _robotY = 0;
 
   FieldWidget({super.key});
 
@@ -615,7 +616,7 @@ class FieldWidget extends NTWidget {
 
         Offset fittedCenter = fittedSizes.destination.toOffset / 2;
         Offset fieldCenter = model.field.center;
-        return Stack (
+        return Stack(
           children: [
             //line going towards robot when off-screen
             IgnorePointer(
@@ -636,8 +637,8 @@ class FieldWidget extends NTWidget {
                             transform: controller.value,
                             robotPosition: _getTrajectoryPointOffset(
                               model,
-                              x: _robotX,
-                              y: _robotY,
+                              x: model.robotX,
+                              y: model.robotY,
                               fieldCenter: fieldCenter,
                               scaleReduction: scaleReduction,
                             ),
@@ -723,8 +724,8 @@ class FieldWidget extends NTWidget {
                         robotTheta = radians(robotPosition[2]);
                       }
                     }
-                    _robotX = robotX;
-                    _robotY = robotY;
+                    model.robotX = robotX;
+                    model.robotY = robotY;
                     model.widgetSize = size;
 
                     if (!model.rendered &&
