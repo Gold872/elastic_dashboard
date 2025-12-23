@@ -615,7 +615,7 @@ class FieldWidget extends NTWidget {
 
         Offset fittedCenter = fittedSizes.destination.toOffset / 2;
         Offset fieldCenter = model.field.center;
-        return Stack(
+        return Stack (
           children: [
             //line going towards robot when off-screen
             IgnorePointer(

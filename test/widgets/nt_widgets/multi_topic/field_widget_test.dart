@@ -167,7 +167,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(find.byType(CustomPaint), findsNWidgets(3));
+      expect(find.byType(CustomPaint), findsNWidgets(4));
       expect(trajectoryWidget, findsNothing);
       expect(fieldObject, findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
@@ -213,7 +213,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(find.byType(CustomPaint), findsNWidgets(3));
+      expect(find.byType(CustomPaint), findsNWidgets(4));
       expect(trajectoryWidget, findsNothing);
       expect(fieldObject, findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
@@ -273,7 +273,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(find.byType(CustomPaint), findsNWidgets(4));
+      expect(find.byType(CustomPaint), findsNWidgets(5));
       expect(trajectoryWidget, findsOneWidget);
       expect(fieldObject, findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
@@ -331,7 +331,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(find.byType(CustomPaint), findsNWidgets(4));
+      expect(find.byType(CustomPaint), findsNWidgets(5));
       expect(trajectoryWidget, findsOneWidget);
       expect(fieldObject, findsNWidgets(2));
       expect(find.byType(Image), findsOneWidget);
