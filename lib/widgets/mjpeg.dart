@@ -23,6 +23,7 @@ class Mjpeg extends StatefulWidget {
   final int quarterTurns;
   final double? width;
   final double? height;
+
   final WidgetBuilder? loading;
   final Widget Function(BuildContext contet, dynamic error, dynamic stack)?
   error;
