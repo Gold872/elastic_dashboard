@@ -398,13 +398,32 @@ class NTWidgetRegistry {
       defaultHeight: 2,
     );
 
-    _widgetNameBuildMap.addAll({
-      LargeTextDisplay.widgetType: LargeTextDisplay.new,
-      ToggleButton.widgetType: ToggleButton.new,
-      ToggleSwitch.widgetType: ToggleSwitch.new,
-      SingleColorView.widgetType: SingleColorView.new,
-      MultiColorView.widgetType: MultiColorView.new,
-    });
+    registerWithoutModel(
+      name: LargeTextDisplay.widgetType,
+      widget: LargeTextDisplay.new,
+      minHeight: _normalSize * 0.8,
+    );
+
+    registerWithoutModel(
+      name: ToggleButton.widgetType,
+      widget: ToggleButton.new,
+      minHeight: _normalSize * 0.8,
+    );
+
+    registerWithoutModel(
+      name: ToggleSwitch.widgetType,
+      widget: ToggleSwitch.new,
+    );
+
+    registerWithoutModel(
+      name: SingleColorView.widgetType,
+      widget: SingleColorView.new,
+    );
+
+    registerWithoutModel(
+      name: MultiColorView.widgetType,
+      widget: MultiColorView.new,
+    );
 
     _initialized = true;
   }
@@ -610,6 +629,48 @@ class NTWidgetRegistry {
         ),
     widget: widget,
     fromJson: fromJson,
+    minWidth: minWidth,
+    minHeight: minHeight,
+    defaultWidth: defaultWidth,
+    defaultHeight: defaultHeight,
+  );
+
+  static void registerWithoutModel<WidgetType extends NTWidget>({
+    required String name,
+    Set<String>? aliases,
+    required NTWidgetProvider<WidgetType> widget,
+    double? minWidth,
+    double? minHeight,
+    double? defaultWidth,
+    double? defaultHeight,
+  }) => registerWithAlias(
+    names: {name, ...?aliases},
+    model:
+        ({
+          required NTConnection ntConnection,
+          required SharedPreferences preferences,
+          required String topic,
+          double? period,
+          NT4Type? dataType,
+          NT4StructMeta? ntStructMeta,
+        }) => SingleTopicNTWidgetModel.createDefault(
+          ntConnection: ntConnection,
+          preferences: preferences,
+          topic: topic,
+          period: period,
+          type: name,
+          dataType: dataType,
+          ntStructMeta: ntStructMeta,
+        ),
+    widget: widget,
+    fromJson:
+        ({required jsonData, required ntConnection, required preferences}) =>
+            SingleTopicNTWidgetModel.createDefaultFromJson(
+              ntConnection: ntConnection,
+              preferences: preferences,
+              jsonData: jsonData,
+              type: name,
+            ),
     minWidth: minWidth,
     minHeight: minHeight,
     defaultWidth: defaultWidth,
