@@ -11,8 +11,6 @@ import 'package:elastic_dashboard/util/test_utils.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_widget_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-export 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_widget_model.dart';
-
 extension _SizeUtils on Size {
   Offset get toOffset => Offset(width, height);
 
