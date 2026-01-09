@@ -1051,7 +1051,7 @@ class FieldWidget extends NTWidget {
                   );
 
                   return Transform.scale(
-                    scale: scaleReduction / rotatedScaleReduction,
+                    scale: rotatedScaleReduction / scaleReduction,
                     child: Transform.rotate(
                       angle: radians(model.fieldRotation),
                       child: Stack(
