@@ -831,7 +831,7 @@ class FieldWidget extends NTWidget {
     return otherObjects;
   }
 
-  Widget buildRobotOverlay({
+  Widget _buildRobotOverlay({
     required FieldWidgetModel model,
     required Size size,
     required double scaleReduction,
@@ -1070,7 +1070,7 @@ class FieldWidget extends NTWidget {
                     ...listeners,
                     transformController,
                   ]),
-                  builder: (context, child) => buildRobotOverlay(
+                  builder: (context, child) => _buildRobotOverlay(
                     model: model,
                     size: size,
                     scaleReduction: scaleReduction,
