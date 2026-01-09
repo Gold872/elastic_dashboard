@@ -427,7 +427,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(fieldObject, findsNWidgets(3));
+      expect(fieldObject, findsNWidgets(4));
       expect(trajectoryWidget, findsNothing);
     });
 
@@ -521,7 +521,7 @@ void main() {
 
       await widgetTester.pumpAndSettle();
 
-      expect(fieldObject, findsNWidgets(3));
+      expect(fieldObject, findsNWidgets(4));
       expect(trajectoryWidget, findsNothing);
     });
   });
