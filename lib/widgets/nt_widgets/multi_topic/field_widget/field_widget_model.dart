@@ -295,37 +295,6 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     return objects;
   }
 
-  (double, double, double) getRobotPose() {
-    List<Object?> robotPositionRaw =
-        robotSubscription.value?.tryCast<List<Object?>>() ?? [];
-
-    double robotX = 0;
-    double robotY = 0;
-    double robotTheta = 0;
-
-    if (isPoseStruct(robotTopicName)) {
-      List<int> poseBytes = robotPositionRaw.whereType<int>().toList();
-      Pose2dStruct poseStruct = Pose2dStruct.valueFromBytes(
-        Uint8List.fromList(poseBytes),
-      );
-
-      robotX = poseStruct.x;
-      robotY = poseStruct.y;
-      robotTheta = poseStruct.angle;
-    } else {
-      List<double> robotPosition = robotPositionRaw
-          .whereType<double>()
-          .toList();
-
-      if (robotPosition.length >= 3) {
-        robotX = robotPosition[0];
-        robotY = robotPosition[1];
-        robotTheta = radians(robotPosition[2]);
-      }
-    }
-    return (robotX, robotY, robotTheta);
-  }
-
   bool isPoseStruct(String topic) =>
       ntConnection.getTopicFromName(topic)?.type.serialize() == 'struct:Pose2d';
 
