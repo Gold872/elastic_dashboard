@@ -34,6 +34,7 @@ void main() {
     'field_rotation': 90.0,
     'robot_color': Colors.red.toARGB32(),
     'trajectory_color': Colors.white.toARGB32(),
+    'show_robot_outside_widget': true,
   };
 
   late SharedPreferences preferences;
@@ -92,6 +93,7 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
+    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field from alias json', () {
@@ -119,6 +121,7 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
+    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field to json', () {
@@ -135,6 +138,7 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
+      showRobotOutsideWidget: true,
     );
 
     expect(fieldWidgetModel.toJson(), fieldWidgetJson);

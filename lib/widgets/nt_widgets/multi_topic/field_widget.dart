@@ -64,13 +64,12 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   Color _robotColor = Colors.red;
   Color _trajectoryColor = Colors.white;
 
+  bool _showRobotOutsideWidget = true;
+
   final double _otherObjectSize = 0.55;
   final double _trajectoryPointSize = 0.08;
 
   Size? widgetSize;
-
-  double robotX = 0;
-  double robotY = 0;
 
   double get robotWidthMeters => _robotWidthMeters;
 
@@ -120,6 +119,13 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     _trajectoryColor = value;
     refresh();
   }
+
+  set showRobotOutsideWidget(bool value) {
+    _showRobotOutsideWidget = value;
+    refresh();
+  }
+
+  bool get showRobotOutsideWidget => _showRobotOutsideWidget;
 
   double get otherObjectSize => _otherObjectSize;
 
@@ -177,6 +183,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     double fieldRotation = 0.0,
     Color robotColor = Colors.red,
     Color trajectoryColor = Colors.white,
+    bool showRobotOutsideWidget = true,
     super.period,
   }) : _showTrajectories = showTrajectories,
        _showOtherObjects = showOtherObjects,
@@ -185,6 +192,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
        _fieldRotation = fieldRotation,
        _robotColor = robotColor,
        _trajectoryColor = trajectoryColor,
+       _showRobotOutsideWidget = showRobotOutsideWidget,
        super() {
     _fieldGame = fieldGame ?? _fieldGame;
 
@@ -219,6 +227,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     _trajectoryColor = Color(
       tryCast(jsonData['trajectory_color']) ?? Colors.white.toARGB32(),
     );
+
+    _showRobotOutsideWidget =
+        tryCast(jsonData['show_robot_outside_widget']) ?? true;
 
     if (!FieldImages.hasField(_fieldGame)) {
       _fieldGame = _defaultGame;
@@ -289,6 +300,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     'field_rotation': _fieldRotation,
     'robot_color': robotColor.toARGB32(),
     'trajectory_color': trajectoryColor.toARGB32(),
+    'show_robot_outside_widget': showRobotOutsideWidget,
   };
 
   @override
@@ -509,12 +521,20 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
       ],
     ),
+    const SizedBox(height: 5),
+    DialogToggleSwitch(
+      onToggle: (value) => showRobotOutsideWidget = value,
+      initialValue: showRobotOutsideWidget,
+      label: 'Show Robot Outside Widget',
+    ),
   ];
 }
 
 class FieldWidget extends NTWidget {
   static const String widgetType = 'Field';
-  final TransformationController controller = TransformationController();
+
+  final TransformationController transformController =
+      TransformationController();
 
   FieldWidget({super.key});
 
@@ -644,8 +664,6 @@ class FieldWidget extends NTWidget {
         robotTheta = radians(robotPosition[2]);
       }
     }
-    model.robotX = robotX;
-    model.robotY = robotY;
     model.widgetSize = size;
 
     if (!model.rendered &&
@@ -854,7 +872,6 @@ class FieldWidget extends NTWidget {
     );
 
     Widget? indicator;
-
     if (robotInViewport.dx < 0 ||
         robotInViewport.dx > size.width ||
         robotInViewport.dy < 0 ||
@@ -869,13 +886,13 @@ class FieldWidget extends NTWidget {
         snappedViewport,
       );
 
-      Offset indicatorPos = snappedInStack - size.center(Offset.zero);
+      Offset indicatorPosition = snappedInStack - size.center(Offset.zero);
 
       indicator = Transform.translate(
-        offset: indicatorPos,
+        offset: indicatorPosition,
         child: Container(
-          width: 20,
-          height: 20,
+          width: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
+          height: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
           decoration: BoxDecoration(
             color: model.robotColor,
             shape: BoxShape.circle,
@@ -908,7 +925,10 @@ class FieldWidget extends NTWidget {
                       scaleReduction,
                 ),
               ),
-            indicator ?? robot,
+            if (indicator != null || model.showRobotOutsideWidget)
+              robot
+            else if (indicator != null)
+              indicator,
             ...otherObjects,
           ],
         ),
@@ -961,7 +981,7 @@ class FieldWidget extends NTWidget {
           children: [
             // Pannable field widget
             InteractiveViewer(
-              transformationController: controller,
+              transformationController: transformController,
               constrained: true,
               maxScale: 2,
               minScale: 1,
@@ -992,10 +1012,13 @@ class FieldWidget extends NTWidget {
             IgnorePointer(
               ignoring: true,
               child: InteractiveViewer(
-                transformationController: controller,
+                transformationController: transformController,
                 clipBehavior: Clip.none,
                 child: ListenableBuilder(
-                  listenable: Listenable.merge([...listeners, controller]),
+                  listenable: Listenable.merge([
+                    ...listeners,
+                    transformController,
+                  ]),
                   builder: (context, child) => buildRobotOverlay(
                     model: model,
                     size: size,
@@ -1005,7 +1028,7 @@ class FieldWidget extends NTWidget {
                     constraints: constraints,
                     fittedSizes: fittedSizes,
                     fittedCenter: fittedCenter,
-                    controller: controller,
+                    controller: transformController,
                   ),
                 ),
               ),
