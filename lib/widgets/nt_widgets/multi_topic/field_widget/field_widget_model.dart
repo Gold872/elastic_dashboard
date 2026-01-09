@@ -592,6 +592,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
                   newRotation += 360;
                 }
                 fieldRotation = newRotation;
+                transformController.value = Matrix4.identity();
               },
             ),
           ),
@@ -613,6 +614,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
                   newRotation -= 360;
                 }
                 fieldRotation = newRotation;
+                transformController.value = Matrix4.identity();
               },
             ),
           ),
