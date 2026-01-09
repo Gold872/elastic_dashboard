@@ -599,6 +599,10 @@ void main() {
       DialogColorPicker,
       'Trajectory Color',
     );
+    final showRobotOutsideWidget = find.widgetWithText(
+      DialogToggleSwitch,
+      'Show Robot Outside Widget',
+    );
 
     expect(game, findsOneWidget);
     expect(width, findsOneWidget);
@@ -609,6 +613,7 @@ void main() {
     expect(rotateRight, findsOneWidget);
     expect(robotColor, findsOneWidget);
     expect(trajectoryColor, findsOneWidget);
+    expect(showRobotOutsideWidget, findsOneWidget);
 
     await widgetTester.ensureVisible(game);
     await widgetTester.tap(game);
@@ -661,5 +666,15 @@ void main() {
     await widgetTester.tap(rotateLeft);
     await widgetTester.pumpAndSettle();
     expect(fieldWidgetModel.fieldRotation, 90.0);
+
+    await widgetTester.ensureVisible(showRobotOutsideWidget);
+    await widgetTester.tap(
+      find.descendant(
+        of: showRobotOutsideWidget,
+        matching: find.byType(Switch),
+      ),
+    );
+    await widgetTester.pumpAndSettle();
+    expect(fieldWidgetModel.showRobotOutsideWidget, false);
   });
 }
