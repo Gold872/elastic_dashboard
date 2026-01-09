@@ -542,6 +542,7 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
+      showRobotOutsideWidget: false,
     );
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
@@ -675,6 +676,6 @@ void main() {
       ),
     );
     await widgetTester.pumpAndSettle();
-    expect(fieldWidgetModel.showRobotOutsideWidget, false);
+    expect(fieldWidgetModel.showRobotOutsideWidget, true);
   });
 }
