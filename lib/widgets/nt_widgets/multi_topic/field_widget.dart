@@ -925,9 +925,9 @@ class FieldWidget extends NTWidget {
                       scaleReduction,
                 ),
               ),
-            if (indicator != null || model.showRobotOutsideWidget)
+            if (indicator == null || model.showRobotOutsideWidget)
               robot
-            else if (indicator != null)
+            else
               indicator,
             ...otherObjects,
           ],
