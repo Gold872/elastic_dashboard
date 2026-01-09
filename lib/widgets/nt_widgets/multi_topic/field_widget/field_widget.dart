@@ -242,11 +242,20 @@ class FieldWidget extends NTWidget {
       indicator = Transform.translate(
         offset: indicatorPosition,
         child: Container(
-          width: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
-          height: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
+          width:
+              model.robotWidthMeters *
+              model.field.pixelsPerMeterHorizontal *
+              scaleReduction /
+              totalTransform.getMaxScaleOnAxis(),
+          height:
+              model.robotLengthMeters *
+              model.field.pixelsPerMeterVertical *
+              scaleReduction /
+              totalTransform.getMaxScaleOnAxis(),
           decoration: BoxDecoration(
             color: model.robotColor,
-            shape: BoxShape.circle,
+            shape: BoxShape.rectangle,
+            borderRadius: BorderRadius.circular(2.5),
           ),
         ),
       );
