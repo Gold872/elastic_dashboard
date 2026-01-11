@@ -49,7 +49,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   late Function(NT4Topic topic) topicAnnounceListener;
 
-  static const String _defaultGame = 'Reefscape';
+  static const String _defaultGame = 'Rebuilt';
   String _fieldGame = _defaultGame;
   late Field _field;
 

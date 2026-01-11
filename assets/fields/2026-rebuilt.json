@@ -1,0 +1,19 @@
+{
+  "game": "Rebuilt",
+  "source-url": "https://www.chiefdelphi.com/t/2026-rebuilt-high-resolution-field-image/510611",
+  "field-image": "assets/fields/2026-field.png",
+  "field-corners": {
+    "top-left": [
+      524,
+      95
+    ],
+    "bottom-right": [
+      3378,
+      1489
+    ]
+  },
+  "field-size": [
+    16.535,
+    8.069
+  ]
+}

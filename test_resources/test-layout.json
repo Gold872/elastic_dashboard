@@ -88,7 +88,7 @@
             "properties": {
               "topic": "/SmartDashboard/Field",
               "period": 0.033,
-              "field_game": "Reefscape",
+              "field_game": "Rebuilt",
               "robot_width": 0.82,
               "robot_length": 1.0,
               "show_other_objects": true,
