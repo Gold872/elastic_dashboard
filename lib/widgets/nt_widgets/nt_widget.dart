@@ -121,6 +121,23 @@ class SingleTopicNTWidgetModel extends NTWidgetModel {
     init();
   }
 
+  SingleTopicNTWidgetModel.createDefaultFromJson({
+    required super.ntConnection,
+    required super.preferences,
+    required Map<String, dynamic> jsonData,
+    required String type,
+  }) : _typeOverride = type,
+       super.fromJson(jsonData: jsonData) {
+    dataType = NT4Type.parseNullable(tryCast(jsonData['data_type']));
+
+    Map<String, dynamic>? structMetaJson = jsonData['struct_meta'];
+    if (structMetaJson != null) {
+      ntStructMeta = NT4StructMeta.fromJson(structMetaJson);
+    }
+
+    init();
+  }
+
   SingleTopicNTWidgetModel.fromJson({
     required super.ntConnection,
     required super.preferences,

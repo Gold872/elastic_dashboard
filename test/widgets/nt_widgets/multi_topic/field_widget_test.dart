@@ -26,7 +26,7 @@ void main() {
   final Map<String, dynamic> fieldWidgetJson = {
     'topic': 'Test/Field',
     'period': 0.100,
-    'field_game': 'Reefscape',
+    'field_game': 'Rebuilt',
     'robot_width': 1.0,
     'robot_length': 1.0,
     'show_other_objects': true,
@@ -34,6 +34,7 @@ void main() {
     'field_rotation': 90.0,
     'robot_color': Colors.red.toARGB32(),
     'trajectory_color': Colors.white.toARGB32(),
+    'show_robot_outside_widget': true,
   };
 
   late SharedPreferences preferences;
@@ -92,6 +93,7 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
+    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field from alias json', () {
@@ -119,6 +121,7 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
+    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field to json', () {
@@ -127,7 +130,7 @@ void main() {
       preferences: preferences,
       period: 0.100,
       topic: 'Test/Field',
-      fieldGame: 'Reefscape',
+      fieldGame: 'Rebuilt',
       showOtherObjects: true,
       showTrajectories: true,
       robotWidthMeters: 1.0,
@@ -135,6 +138,7 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
+      showRobotOutsideWidget: true,
     );
 
     expect(fieldWidgetModel.toJson(), fieldWidgetJson);
@@ -159,7 +163,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -205,7 +209,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -265,7 +269,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -323,7 +327,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -369,7 +373,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -415,7 +419,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -459,7 +463,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -509,7 +513,7 @@ void main() {
           home: Scaffold(
             body: ChangeNotifierProvider<NTWidgetModel>.value(
               value: fieldWidgetModel,
-              child: const FieldWidget(),
+              child: FieldWidget(),
             ),
           ),
         ),
@@ -530,7 +534,7 @@ void main() {
       preferences: preferences,
       period: 0.100,
       topic: 'Test/Field',
-      fieldGame: 'Reefscape',
+      fieldGame: 'Rebuilt',
       showOtherObjects: true,
       showTrajectories: true,
       robotWidthMeters: 1.0,
@@ -538,6 +542,7 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
+      showRobotOutsideWidget: false,
     );
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
@@ -595,6 +600,10 @@ void main() {
       DialogColorPicker,
       'Trajectory Color',
     );
+    final showRobotOutsideWidget = find.widgetWithText(
+      DialogToggleSwitch,
+      'Show Robot Outside Widget',
+    );
 
     expect(game, findsOneWidget);
     expect(width, findsOneWidget);
@@ -605,6 +614,7 @@ void main() {
     expect(rotateRight, findsOneWidget);
     expect(robotColor, findsOneWidget);
     expect(trajectoryColor, findsOneWidget);
+    expect(showRobotOutsideWidget, findsOneWidget);
 
     await widgetTester.ensureVisible(game);
     await widgetTester.tap(game);
@@ -657,5 +667,15 @@ void main() {
     await widgetTester.tap(rotateLeft);
     await widgetTester.pumpAndSettle();
     expect(fieldWidgetModel.fieldRotation, 90.0);
+
+    await widgetTester.ensureVisible(showRobotOutsideWidget);
+    await widgetTester.tap(
+      find.descendant(
+        of: showRobotOutsideWidget,
+        matching: find.byType(Switch),
+      ),
+    );
+    await widgetTester.pumpAndSettle();
+    expect(fieldWidgetModel.showRobotOutsideWidget, true);
   });
 }

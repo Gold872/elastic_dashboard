@@ -49,7 +49,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   late Function(NT4Topic topic) topicAnnounceListener;
 
-  static const String _defaultGame = 'Reefscape';
+  static const String _defaultGame = 'Rebuilt';
   String _fieldGame = _defaultGame;
   late Field _field;
 
@@ -63,6 +63,8 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   Color _robotColor = Colors.red;
   Color _trajectoryColor = Colors.white;
+
+  bool _showRobotOutsideWidget = true;
 
   final double _otherObjectSize = 0.55;
   final double _trajectoryPointSize = 0.08;
@@ -118,11 +120,49 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
+  set showRobotOutsideWidget(bool value) {
+    _showRobotOutsideWidget = value;
+    refresh();
+  }
+
+  bool get showRobotOutsideWidget => _showRobotOutsideWidget;
+
   double get otherObjectSize => _otherObjectSize;
 
   double get trajectoryPointSize => _trajectoryPointSize;
 
   Field get field => _field;
+
+  (double, double, double) getRobotPose() {
+    List<Object?> robotPositionRaw =
+        robotSubscription.value?.tryCast<List<Object?>>() ?? [];
+
+    double robotX = 0;
+    double robotY = 0;
+    double robotTheta = 0;
+
+    if (isPoseStruct(robotTopicName)) {
+      List<int> poseBytes = robotPositionRaw.whereType<int>().toList();
+      Pose2dStruct poseStruct = Pose2dStruct.valueFromBytes(
+        Uint8List.fromList(poseBytes),
+      );
+
+      robotX = poseStruct.x;
+      robotY = poseStruct.y;
+      robotTheta = poseStruct.angle;
+    } else {
+      List<double> robotPosition = robotPositionRaw
+          .whereType<double>()
+          .toList();
+
+      if (robotPosition.length >= 3) {
+        robotX = robotPosition[0];
+        robotY = robotPosition[1];
+        robotTheta = radians(robotPosition[2]);
+      }
+    }
+    return (robotX, robotY, robotTheta);
+  }
 
   bool isPoseStruct(String topic) =>
       ntConnection.getTopicFromName(topic)?.type.serialize() == 'struct:Pose2d';
@@ -143,6 +183,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     double fieldRotation = 0.0,
     Color robotColor = Colors.red,
     Color trajectoryColor = Colors.white,
+    bool showRobotOutsideWidget = true,
     super.period,
   }) : _showTrajectories = showTrajectories,
        _showOtherObjects = showOtherObjects,
@@ -151,6 +192,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
        _fieldRotation = fieldRotation,
        _robotColor = robotColor,
        _trajectoryColor = trajectoryColor,
+       _showRobotOutsideWidget = showRobotOutsideWidget,
        super() {
     _fieldGame = fieldGame ?? _fieldGame;
 
@@ -185,6 +227,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     _trajectoryColor = Color(
       tryCast(jsonData['trajectory_color']) ?? Colors.white.toARGB32(),
     );
+
+    _showRobotOutsideWidget =
+        tryCast(jsonData['show_robot_outside_widget']) ?? true;
 
     if (!FieldImages.hasField(_fieldGame)) {
       _fieldGame = _defaultGame;
@@ -255,6 +300,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     'field_rotation': _fieldRotation,
     'robot_color': robotColor.toARGB32(),
     'trajectory_color': trajectoryColor.toARGB32(),
+    'show_robot_outside_widget': showRobotOutsideWidget,
   };
 
   @override
@@ -475,13 +521,35 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
       ],
     ),
+    const SizedBox(height: 5),
+    Row(
+      children: [
+        Tooltip(
+          waitDuration: const Duration(milliseconds: 100),
+          message:
+              'If turned on, the robot will be able to drive off the field and remain visible.\nIf turned off, a circular indicator will be visible when the robot goes off the field.',
+          child: Icon(Icons.help),
+        ),
+        const SizedBox(width: 5),
+        Expanded(
+          child: DialogToggleSwitch(
+            onToggle: (value) => showRobotOutsideWidget = value,
+            initialValue: showRobotOutsideWidget,
+            label: 'Show Robot Outside Widget',
+          ),
+        ),
+      ],
+    ),
   ];
 }
 
 class FieldWidget extends NTWidget {
   static const String widgetType = 'Field';
 
-  const FieldWidget({super.key});
+  final TransformationController transformController =
+      TransformationController();
+
+  FieldWidget({super.key});
 
   Widget _getTransformedFieldObject(
     FieldWidgetModel model, {
@@ -571,6 +639,304 @@ class FieldWidget extends NTWidget {
     return Offset(xFromCenter, yFromCenter);
   }
 
+  List<List<Offset>> _getTrajectoryPoints({
+    required FieldWidgetModel model,
+    required Offset fieldCenter,
+    required double scaleReduction,
+  }) {
+    List<List<Offset>> trajectoryPoints = [];
+
+    if (model.showTrajectories) {
+      for (NT4Subscription objectSubscription
+          in model._otherObjectSubscriptions) {
+        List<Object?>? objectPositionRaw = objectSubscription.value
+            ?.tryCast<List<Object?>>();
+
+        if (objectPositionRaw == null) {
+          continue;
+        }
+
+        bool isTrajectory = objectSubscription.topic.toLowerCase().endsWith(
+          'trajectory',
+        );
+
+        bool isStructArray = model.isPoseArrayStruct(
+          objectSubscription.topic,
+        );
+
+        bool isStructObject =
+            model.isPoseStruct(objectSubscription.topic) || isStructArray;
+
+        if (isStructObject) {
+          isTrajectory =
+              isTrajectory ||
+              (isStructArray &&
+                  objectPositionRaw.length ~/ Pose2dStruct.length > 8);
+        } else {
+          isTrajectory = isTrajectory || objectPositionRaw.length > 24;
+        }
+
+        if (!isTrajectory) {
+          continue;
+        }
+
+        List<Offset> objectTrajectory = [];
+
+        if (isStructObject) {
+          List<int> structArrayBytes = objectPositionRaw
+              .whereType<int>()
+              .toList();
+
+          List<Pose2dStruct> poseArray = Pose2dStruct.listFromBytes(
+            Uint8List.fromList(structArrayBytes),
+          );
+
+          for (Pose2dStruct pose in poseArray) {
+            objectTrajectory.add(
+              _getTrajectoryPointOffset(
+                model,
+                x: pose.x,
+                y: pose.y,
+                fieldCenter: fieldCenter,
+                scaleReduction: scaleReduction,
+              ),
+            );
+          }
+        } else {
+          List<double> objectPosition = objectPositionRaw
+              .whereType<double>()
+              .toList();
+
+          for (int i = 0; i < objectPosition.length - 2; i += 3) {
+            objectTrajectory.add(
+              _getTrajectoryPointOffset(
+                model,
+                x: objectPosition[i],
+                y: objectPosition[i + 1],
+                fieldCenter: fieldCenter,
+                scaleReduction: scaleReduction,
+              ),
+            );
+          }
+        }
+
+        if (objectTrajectory.isNotEmpty) {
+          trajectoryPoints.add(objectTrajectory);
+        }
+      }
+    }
+    return trajectoryPoints;
+  }
+
+  List<Widget> _getOtherObjectWidgets({
+    required FieldWidgetModel model,
+    required Offset fieldCenter,
+    required double scaleReduction,
+  }) {
+    List<Widget> otherObjects = [];
+
+    if (model.showOtherObjects) {
+      for (NT4Subscription objectSubscription
+          in model._otherObjectSubscriptions) {
+        List<Object?>? objectPositionRaw = objectSubscription.value
+            ?.tryCast<List<Object?>>();
+
+        if (objectPositionRaw == null) {
+          continue;
+        }
+
+        bool isTrajectory = objectSubscription.topic.toLowerCase().endsWith(
+          'trajectory',
+        );
+
+        bool isStructArray = model.isPoseArrayStruct(
+          objectSubscription.topic,
+        );
+
+        bool isStructObject =
+            model.isPoseStruct(objectSubscription.topic) || isStructArray;
+
+        if (isStructObject) {
+          isTrajectory =
+              isTrajectory ||
+              (isStructArray &&
+                  objectPositionRaw.length ~/ Pose2dStruct.length > 8);
+        } else {
+          isTrajectory = isTrajectory || objectPositionRaw.length > 24;
+        }
+
+        if (isTrajectory) {
+          continue;
+        }
+
+        if (isStructObject) {
+          List<int> structBytes = objectPositionRaw.whereType<int>().toList();
+          if (isStructArray) {
+            List<Pose2dStruct> poses = Pose2dStruct.listFromBytes(
+              Uint8List.fromList(structBytes),
+            );
+
+            for (Pose2dStruct pose in poses) {
+              otherObjects.add(
+                _getTransformedFieldObject(
+                  model,
+                  x: pose.x,
+                  y: pose.y,
+                  angleRadians: pose.angle,
+                  fieldCenter: fieldCenter,
+                  scaleReduction: scaleReduction,
+                ),
+              );
+            }
+          } else {
+            Pose2dStruct pose = Pose2dStruct.valueFromBytes(
+              Uint8List.fromList(structBytes),
+            );
+
+            otherObjects.add(
+              _getTransformedFieldObject(
+                model,
+                x: pose.x,
+                y: pose.y,
+                angleRadians: pose.angle,
+                fieldCenter: fieldCenter,
+                scaleReduction: scaleReduction,
+              ),
+            );
+          }
+        } else {
+          List<double> objectPosition = objectPositionRaw
+              .whereType<double>()
+              .toList();
+
+          for (int i = 0; i < objectPosition.length - 2; i += 3) {
+            List<double> positionArray = objectPosition.sublist(
+              i,
+              i + 3,
+            );
+            otherObjects.add(
+              _getTransformedFieldObject(
+                model,
+                x: positionArray[0],
+                y: positionArray[1],
+                angleRadians: radians(positionArray[2]),
+                fieldCenter: fieldCenter,
+                scaleReduction: scaleReduction,
+              ),
+            );
+          }
+        }
+      }
+    }
+    return otherObjects;
+  }
+
+  Widget _buildRobotOverlay({
+    required FieldWidgetModel model,
+    required Size size,
+    required double scaleReduction,
+    required Offset fieldCenter,
+    required double rotatedScaleReduction,
+    required BoxConstraints constraints,
+    required FittedSizes fittedSizes,
+    required Offset fittedCenter,
+    required TransformationController controller,
+  }) {
+    final (robotX, robotY, robotTheta) = model.getRobotPose();
+
+    Widget robot = _getTransformedFieldObject(
+      model,
+      x: robotX,
+      y: robotY,
+      angleRadians: robotTheta,
+      fieldCenter: fieldCenter,
+      scaleReduction: scaleReduction,
+      objectSize: Size(
+        model.robotWidthMeters,
+        model.robotLengthMeters,
+      ),
+    );
+
+    Matrix4 innerTransform = Matrix4.identity()
+      ..translateByDouble(size.width / 2, size.height / 2, 0, 1)
+      ..scaleByDouble(
+        rotatedScaleReduction / scaleReduction,
+        rotatedScaleReduction / scaleReduction,
+        rotatedScaleReduction / scaleReduction,
+        1,
+      )
+      ..rotateZ(radians(model.fieldRotation))
+      ..translateByDouble(-size.width / 2, -size.height / 2, 0, 1);
+
+    final Matrix4 totalTransform = controller.value * innerTransform;
+
+    double xFromCenter =
+        (robotX * model.field.pixelsPerMeterHorizontal - fieldCenter.dx) *
+        scaleReduction;
+
+    double yFromCenter =
+        (fieldCenter.dy - (robotY * model.field.pixelsPerMeterVertical)) *
+        scaleReduction;
+
+    Offset robotInStack =
+        size.center(Offset.zero) + Offset(xFromCenter, yFromCenter);
+
+    Offset robotInViewport = MatrixUtils.transformPoint(
+      totalTransform,
+      robotInStack,
+    );
+
+    Widget? indicator;
+    if (robotInViewport.dx < 0 ||
+        robotInViewport.dx > size.width ||
+        robotInViewport.dy < 0 ||
+        robotInViewport.dy > size.height) {
+      Offset snappedViewport = Offset(
+        robotInViewport.dx.clamp(0, size.width),
+        robotInViewport.dy.clamp(0, size.height),
+      );
+
+      Offset snappedInStack = MatrixUtils.transformPoint(
+        Matrix4.inverted(totalTransform),
+        snappedViewport,
+      );
+
+      Offset indicatorPosition = snappedInStack - size.center(Offset.zero);
+
+      indicator = Transform.translate(
+        offset: indicatorPosition,
+        child: Container(
+          width: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
+          height: 200 * scaleReduction / totalTransform.getMaxScaleOnAxis(),
+          decoration: BoxDecoration(
+            color: model.robotColor,
+            shape: BoxShape.circle,
+          ),
+        ),
+      );
+    }
+
+    return Transform.scale(
+      scale: rotatedScaleReduction / scaleReduction,
+      child: Transform.rotate(
+        angle: radians(model.fieldRotation),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox(
+              height: constraints.maxHeight,
+              width: constraints.maxWidth,
+            ),
+            if (indicator == null || model.showRobotOutsideWidget)
+              robot
+            else
+              indicator,
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     FieldWidgetModel model = cast(context.watch<NTWidgetModel>());
@@ -582,279 +948,145 @@ class FieldWidget extends NTWidget {
     }
 
     return LayoutBuilder(
-      builder: (context, constraints) => ListenableBuilder(
-        listenable: Listenable.merge(listeners),
-        child: model.field.fieldImage,
-        builder: (context, child) {
-          List<Object?> robotPositionRaw =
-              model.robotSubscription.value?.tryCast<List<Object?>>() ?? [];
+      builder: (context, constraints) {
+        Size size = Size(constraints.maxWidth, constraints.maxHeight);
+        FittedSizes fittedSizes = applyBoxFit(
+          BoxFit.contain,
+          model.field.fieldImageSize ?? const Size(0, 0),
+          size,
+        );
+        FittedSizes rotatedFittedSizes = applyBoxFit(
+          BoxFit.contain,
+          model.field.fieldImageSize?.rotateBy(
+                -radians(model.fieldRotation),
+              ) ??
+              const Size(0, 0),
+          size,
+        );
+        double scaleReduction =
+            (fittedSizes.destination.width / fittedSizes.source.width);
+        double rotatedScaleReduction =
+            (rotatedFittedSizes.destination.width /
+            rotatedFittedSizes.source.width);
 
-          double robotX = 0;
-          double robotY = 0;
-          double robotTheta = 0;
+        if (scaleReduction.isNaN) {
+          scaleReduction = 0;
+        }
+        if (rotatedScaleReduction.isNaN) {
+          rotatedScaleReduction = 0;
+        }
 
-          if (model.isPoseStruct(model.robotTopicName)) {
-            List<int> poseBytes = robotPositionRaw.whereType<int>().toList();
-            Pose2dStruct poseStruct = Pose2dStruct.valueFromBytes(
-              Uint8List.fromList(poseBytes),
-            );
+        Offset fittedCenter = fittedSizes.destination.toOffset / 2;
+        Offset fieldCenter = model.field.center;
 
-            robotX = poseStruct.x;
-            robotY = poseStruct.y;
-            robotTheta = poseStruct.angle;
-          } else {
-            List<double> robotPosition = robotPositionRaw
-                .whereType<double>()
-                .toList();
+        model.widgetSize = size;
 
-            if (robotPosition.length >= 3) {
-              robotX = robotPosition[0];
-              robotY = robotPosition[1];
-              robotTheta = radians(robotPosition[2]);
-            }
-          }
+        if (!model.rendered &&
+            model.widgetSize != null &&
+            size != const Size(0, 0) &&
+            size.width > 100.0 &&
+            scaleReduction != 0.0 &&
+            fieldCenter != const Offset(0.0, 0.0) &&
+            model.field.fieldImageLoaded) {
+          model.rendered = true;
+        }
 
-          Size size = Size(constraints.maxWidth, constraints.maxHeight);
-
-          model.widgetSize = size;
-
-          FittedSizes fittedSizes = applyBoxFit(
-            BoxFit.contain,
-            model.field.fieldImageSize ?? const Size(0, 0),
-            size,
+        // Try rebuilding again if the image isn't fully rendered
+        // Can't do it if it's in a unit test cause it causes issues with timers running
+        if (!model.rendered && !isUnitTest) {
+          Future.delayed(
+            const Duration(milliseconds: 100),
+            model.refresh,
           );
+        }
 
-          FittedSizes rotatedFittedSizes = applyBoxFit(
-            BoxFit.contain,
-            model.field.fieldImageSize?.rotateBy(
-                  -radians(model.fieldRotation),
-                ) ??
-                const Size(0, 0),
-            size,
-          );
-
-          Offset fittedCenter = fittedSizes.destination.toOffset / 2;
-          Offset fieldCenter = model.field.center;
-
-          double scaleReduction =
-              (fittedSizes.destination.width / fittedSizes.source.width);
-          double rotatedScaleReduction =
-              (rotatedFittedSizes.destination.width /
-              rotatedFittedSizes.source.width);
-
-          if (scaleReduction.isNaN) {
-            scaleReduction = 0;
-          }
-          if (rotatedScaleReduction.isNaN) {
-            rotatedScaleReduction = 0;
-          }
-
-          if (!model.rendered &&
-              model.widgetSize != null &&
-              size != const Size(0, 0) &&
-              size.width > 100.0 &&
-              scaleReduction != 0.0 &&
-              fieldCenter != const Offset(0.0, 0.0) &&
-              model.field.fieldImageLoaded) {
-            model.rendered = true;
-          }
-
-          // Try rebuilding again if the image isn't fully rendered
-          // Can't do it if it's in a unit test cause it causes issues with timers running
-          if (!model.rendered && !isUnitTest) {
-            Future.delayed(const Duration(milliseconds: 100), model.refresh);
-          }
-
-          Widget robot = _getTransformedFieldObject(
-            model,
-            x: robotX,
-            y: robotY,
-            angleRadians: robotTheta,
-            fieldCenter: fieldCenter,
-            scaleReduction: scaleReduction,
-            objectSize: Size(model.robotWidthMeters, model.robotLengthMeters),
-          );
-
-          List<Widget> otherObjects = [];
-          List<List<Offset>> trajectoryPoints = [];
-
-          if (model.showOtherObjects || model.showTrajectories) {
-            for (NT4Subscription objectSubscription
-                in model._otherObjectSubscriptions) {
-              List<Object?>? objectPositionRaw = objectSubscription.value
-                  ?.tryCast<List<Object?>>();
-
-              if (objectPositionRaw == null) {
-                continue;
-              }
-
-              bool isTrajectory = objectSubscription.topic
-                  .toLowerCase()
-                  .endsWith('trajectory');
-
-              bool isStructArray = model.isPoseArrayStruct(
-                objectSubscription.topic,
-              );
-
-              bool isStructObject =
-                  model.isPoseStruct(objectSubscription.topic) || isStructArray;
-
-              if (isStructObject) {
-                isTrajectory =
-                    isTrajectory ||
-                    (isStructArray &&
-                        objectPositionRaw.length ~/ Pose2dStruct.length > 8);
-              } else {
-                isTrajectory = isTrajectory || objectPositionRaw.length > 24;
-              }
-
-              if (isTrajectory && !model.showTrajectories) {
-                continue;
-              } else if (!model.showOtherObjects && !isTrajectory) {
-                continue;
-              }
-
-              if (isTrajectory) {
-                List<Offset> objectTrajectory = [];
-
-                if (isStructObject) {
-                  List<int> structArrayBytes = objectPositionRaw
-                      .whereType<int>()
-                      .toList();
-
-                  List<Pose2dStruct> poseArray = Pose2dStruct.listFromBytes(
-                    Uint8List.fromList(structArrayBytes),
+        return Stack(
+          children: [
+            // Pannable field widget
+            InteractiveViewer(
+              transformationController: transformController,
+              constrained: true,
+              maxScale: 2,
+              minScale: 1,
+              panAxis: PanAxis.free,
+              clipBehavior: Clip.hardEdge,
+              trackpadScrollCausesScale: true,
+              child: ListenableBuilder(
+                listenable: Listenable.merge(listeners),
+                builder: (context, child) {
+                  List<List<Offset>> trajectoryPoints = _getTrajectoryPoints(
+                    model: model,
+                    fieldCenter: fieldCenter,
+                    scaleReduction: scaleReduction,
                   );
 
-                  for (Pose2dStruct pose in poseArray) {
-                    objectTrajectory.add(
-                      _getTrajectoryPointOffset(
-                        model,
-                        x: pose.x,
-                        y: pose.y,
-                        fieldCenter: fieldCenter,
-                        scaleReduction: scaleReduction,
-                      ),
-                    );
-                  }
-                } else {
-                  List<double> objectPosition = objectPositionRaw
-                      .whereType<double>()
-                      .toList();
+                  List<Widget> otherObjects = _getOtherObjectWidgets(
+                    model: model,
+                    fieldCenter: fieldCenter,
+                    scaleReduction: scaleReduction,
+                  );
 
-                  for (int i = 0; i < objectPosition.length - 2; i += 3) {
-                    objectTrajectory.add(
-                      _getTrajectoryPointOffset(
-                        model,
-                        x: objectPosition[i],
-                        y: objectPosition[i + 1],
-                        fieldCenter: fieldCenter,
-                        scaleReduction: scaleReduction,
-                      ),
-                    );
-                  }
-                }
-
-                if (objectTrajectory.isNotEmpty) {
-                  trajectoryPoints.add(objectTrajectory);
-                }
-              } else {
-                if (isStructObject) {
-                  List<int> structBytes = objectPositionRaw
-                      .whereType<int>()
-                      .toList();
-                  if (isStructArray) {
-                    List<Pose2dStruct> poses = Pose2dStruct.listFromBytes(
-                      Uint8List.fromList(structBytes),
-                    );
-
-                    for (Pose2dStruct pose in poses) {
-                      otherObjects.add(
-                        _getTransformedFieldObject(
-                          model,
-                          x: pose.x,
-                          y: pose.y,
-                          angleRadians: pose.angle,
-                          fieldCenter: fieldCenter,
-                          scaleReduction: scaleReduction,
-                        ),
-                      );
-                    }
-                  } else {
-                    Pose2dStruct pose = Pose2dStruct.valueFromBytes(
-                      Uint8List.fromList(structBytes),
-                    );
-
-                    otherObjects.add(
-                      _getTransformedFieldObject(
-                        model,
-                        x: pose.x,
-                        y: pose.y,
-                        angleRadians: pose.angle,
-                        fieldCenter: fieldCenter,
-                        scaleReduction: scaleReduction,
-                      ),
-                    );
-                  }
-                } else {
-                  List<double> objectPosition = objectPositionRaw
-                      .whereType<double>()
-                      .toList();
-
-                  for (int i = 0; i < objectPosition.length - 2; i += 3) {
-                    List<double> positionArray = objectPosition.sublist(
-                      i,
-                      i + 3,
-                    );
-                    otherObjects.add(
-                      _getTransformedFieldObject(
-                        model,
-                        x: positionArray[0],
-                        y: positionArray[1],
-                        angleRadians: radians(positionArray[2]),
-                        fieldCenter: fieldCenter,
-                        scaleReduction: scaleReduction,
-                      ),
-                    );
-                  }
-                }
-              }
-            }
-          }
-
-          return Transform.scale(
-            scale: rotatedScaleReduction / scaleReduction,
-            child: Transform.rotate(
-              angle: radians(model.fieldRotation),
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: fittedSizes.destination.width,
-                    height: fittedSizes.destination.height,
-                    child: child!,
-                  ),
-                  for (List<Offset> points in trajectoryPoints)
-                    CustomPaint(
-                      size: fittedSizes.destination,
-                      painter: TrajectoryPainter(
-                        center: fittedCenter,
-                        color: model.trajectoryColor,
-                        points: points,
-                        strokeWidth:
-                            model.trajectoryPointSize *
-                            model.field.pixelsPerMeterHorizontal *
-                            scaleReduction,
+                  return Transform.scale(
+                    scale: rotatedScaleReduction / scaleReduction,
+                    child: Transform.rotate(
+                      angle: radians(model.fieldRotation),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          SizedBox(
+                            height: constraints.maxHeight,
+                            width: constraints.maxWidth,
+                            child: model.field.fieldImage,
+                          ),
+                          for (List<Offset> points in trajectoryPoints)
+                            CustomPaint(
+                              size: fittedSizes.destination,
+                              painter: TrajectoryPainter(
+                                center: fittedCenter,
+                                color: model.trajectoryColor,
+                                points: points,
+                                strokeWidth:
+                                    model.trajectoryPointSize *
+                                    model.field.pixelsPerMeterHorizontal *
+                                    scaleReduction,
+                              ),
+                            ),
+                          ...otherObjects,
+                        ],
                       ),
                     ),
-                  robot,
-                  ...otherObjects,
-                ],
+                  );
+                },
               ),
             ),
-          );
-        },
-      ),
+            // Robot, trajectories overlay
+            IgnorePointer(
+              ignoring: true,
+              child: InteractiveViewer(
+                transformationController: transformController,
+                clipBehavior: Clip.none,
+                child: ListenableBuilder(
+                  listenable: Listenable.merge([
+                    ...listeners,
+                    transformController,
+                  ]),
+                  builder: (context, child) => _buildRobotOverlay(
+                    model: model,
+                    size: size,
+                    scaleReduction: scaleReduction,
+                    fieldCenter: fieldCenter,
+                    rotatedScaleReduction: rotatedScaleReduction,
+                    constraints: constraints,
+                    fittedSizes: fittedSizes,
+                    fittedCenter: fittedCenter,
+                    controller: transformController,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
