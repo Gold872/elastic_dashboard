@@ -95,7 +95,6 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
-    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field from alias json', () {
@@ -123,7 +122,6 @@ void main() {
       fieldWidgetModel.trajectoryColor.toARGB32(),
       Colors.white.toARGB32(),
     );
-    expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
   });
 
   test('Field to json', () {
@@ -140,7 +138,6 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
-      showRobotOutsideWidget: true,
     );
 
     expect(fieldWidgetModel.toJson(), fieldWidgetJson);
@@ -544,7 +541,6 @@ void main() {
       fieldRotation: 90.0,
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
-      showRobotOutsideWidget: false,
     );
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
@@ -678,6 +674,5 @@ void main() {
       ),
     );
     await widgetTester.pumpAndSettle();
-    expect(fieldWidgetModel.showRobotOutsideWidget, true);
   });
 }
