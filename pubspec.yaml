@@ -88,7 +88,6 @@ flutter_launcher_icons:
   image_path: "assets/logos/logo.png"
   windows:
     generate: true
-    icon_size: 256
   macos:
     generate: true
   linux:
