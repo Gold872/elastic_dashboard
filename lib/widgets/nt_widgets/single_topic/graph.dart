@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' show log, pow, min, max;
 
 import 'package:flutter/material.dart';
 
@@ -264,8 +265,7 @@ class _GraphWidgetGraph extends StatefulWidget {
   State<_GraphWidgetGraph> createState() => _GraphWidgetGraphState();
 }
 
-class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
-    with WidgetsBindingObserver {
+class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
   late List<FlSpot> _graphData;
   StreamSubscription<Object?>? _subscriptionListener;
 
@@ -293,8 +293,6 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-
     _subscriptionListener?.cancel();
 
     super.dispose();
@@ -371,44 +369,176 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
         });
   }
 
+  (double?, double?) _calculateAxisBounds() {
+    double? minY = widget.minValue;
+    double? maxY = widget.maxValue;
+
+    if (minY != null && maxY != null) {
+      return (minY, maxY);
+    }
+
+    if (_graphData.isEmpty) {
+      return (minY ?? 0.0, maxY ?? 1.0);
+    }
+
+    double minData = _graphData.first.y;
+    double maxData = _graphData.first.y;
+
+    for (final spot in _graphData.skip(1)) {
+      minData = min(minData, spot.y);
+      maxData = max(maxData, spot.y);
+    }
+
+    double calculatedMin;
+    double calculatedMax;
+
+    if (minData == maxData) {
+      // Snap either min or max to 0
+      if (minData >= 0) {
+        calculatedMin = 0.0;
+        calculatedMax = (minData == 0) ? 1.0 : minData + minData.abs() * 0.05;
+      } else {
+        calculatedMax = 0.0;
+        calculatedMin = minData - minData.abs() * 0.05;
+      }
+    } else {
+      final double range = maxData - minData;
+
+      calculatedMax = maxData + range * 0.05;
+
+      const double zeroMarginFraction = 0.05;
+      final bool isMinCloseToZero =
+          minData >= 0 && maxData > 0 && minData < maxData * zeroMarginFraction;
+
+      if (isMinCloseToZero) {
+        calculatedMin = 0.0;
+      } else {
+        calculatedMin = minData - range * 0.05;
+      }
+    }
+
+    minY ??= calculatedMin;
+    maxY ??= calculatedMax;
+
+    if (minY >= maxY) {
+      if (widget.minValue != null && widget.maxValue == null) {
+        maxY = minY + 1;
+      } else if (widget.minValue == null && widget.maxValue != null) {
+        minY = maxY - 1;
+      } else {
+        minY = minData - 1;
+        maxY = maxData + 1;
+      }
+    }
+
+    if (minY >= maxY) {
+      maxY = minY + 1;
+    }
+    final niceBounds = _calculateNiceBounds(minY, maxY);
+    minY = niceBounds.min;
+    maxY = niceBounds.max;
+
+    return (minY, maxY);
+  }
+
+  ({double min, double max}) _calculateNiceBounds(double min, double max) {
+    if (min == max) {
+      return (min: min - 1, max: max + 1);
+    }
+
+    const int desiredTickCount = 5;
+    final double range = max - min;
+
+    if (range == 0) {
+      return (min: min, max: max);
+    }
+
+    double spacingSize = range / (desiredTickCount - 1);
+
+    if (spacingSize == 0) {
+      return (min: min, max: max);
+    }
+
+    // Math taken from https://wiki.tcl-lang.org/page/Chart+generation+support
+    final double exponent = pow(
+      10,
+      -log(spacingSize.abs()).floor(),
+    ).toDouble();
+    final double niceSpacingSize = (spacingSize * exponent).roundToDouble();
+
+    double niceSpacing;
+    if (niceSpacingSize < 1.5) {
+      niceSpacing = 1.0;
+    } else if (niceSpacingSize < 3.0) {
+      niceSpacing = 2.0;
+    } else if (niceSpacingSize < 7.0) {
+      niceSpacing = 5.0;
+    } else {
+      niceSpacing = 10.0;
+    }
+    niceSpacing /= exponent;
+
+    double niceMin = (min / niceSpacing).floor() * niceSpacing;
+    double niceMax = (max / niceSpacing).ceil() * niceSpacing;
+
+    // Round to 2 decimal places
+    niceMin = (niceMin * 100).floorToDouble() / 100;
+    niceMax = (niceMax * 100).ceilToDouble() / 100;
+
+    return (min: niceMin, max: niceMax);
+  }
+
   @override
-  Widget build(BuildContext context) => LineChart(
-    LineChartData(
-      minY: widget.minValue,
-      maxY: widget.maxValue,
-      lineTouchData: LineTouchData(enabled: false),
-      clipData: const FlClipData.all(),
-      gridData: const FlGridData(show: true),
-      borderData: FlBorderData(
-        show: true,
-        border: Border.all(color: Colors.grey.shade400),
-      ),
-      titlesData: FlTitlesData(
-        leftTitles: AxisTitles(
-          sideTitles: SideTitles(
-            showTitles: true,
-            reservedSize: 40,
-            getTitlesWidget: (value, meta) => Text(
-              double.parse(value.toStringAsFixed(2)).toString(),
-              overflow: TextOverflow.ellipsis,
-              maxLines: 1,
-            ),
+  Widget build(BuildContext context) {
+    final (minY, maxY) = _calculateAxisBounds();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: LineChart(
+        LineChartData(
+          minY: minY,
+          maxY: maxY,
+          lineTouchData: LineTouchData(enabled: false),
+          clipData: const FlClipData.all(),
+          gridData: const FlGridData(show: true),
+          borderData: FlBorderData(
+            show: true,
+            border: Border.all(color: Colors.blueGrey, width: 0.4),
           ),
+          titlesData: FlTitlesData(
+            leftTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                reservedSize: 40,
+                getTitlesWidget: (value, meta) => Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Text(
+                    // Display with at most 2 decimals
+                    value % 1.0 == 0
+                        ? value.toInt().toString()
+                        : ((value * 100).toInt() / 100.0).toString(),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                    textAlign: TextAlign.right,
+                  ),
+                ),
+              ),
+            ),
+            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: _graphData,
+              isCurved: false,
+              color: widget.mainColor,
+              barWidth: widget.lineWidth,
+              dotData: const FlDotData(show: false),
+            ),
+          ],
         ),
-        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        duration: Duration.zero,
       ),
-      lineBarsData: [
-        LineChartBarData(
-          spots: _graphData,
-          isCurved: false,
-          color: widget.mainColor,
-          barWidth: widget.lineWidth,
-          dotData: const FlDotData(show: false),
-        ),
-      ],
-    ),
-    duration: Duration.zero,
-  );
+    );
+  }
 }
