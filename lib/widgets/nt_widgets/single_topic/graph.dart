@@ -273,8 +273,6 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
   void initState() {
     super.initState();
 
-    WidgetsBinding.instance.addObserver(this);
-
     _graphData = List.of(widget.initialData);
 
     if (_graphData.length < 2) {
