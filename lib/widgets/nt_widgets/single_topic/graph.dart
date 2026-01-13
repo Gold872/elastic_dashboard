@@ -379,7 +379,10 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
       lineTouchData: LineTouchData(enabled: false),
       clipData: const FlClipData.all(),
       gridData: const FlGridData(show: true),
-      borderData: FlBorderData(show: true),
+      borderData: FlBorderData(
+        show: true,
+        border: Border.all(color: Colors.grey.shade400),
+      ),
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
           sideTitles: SideTitles(
