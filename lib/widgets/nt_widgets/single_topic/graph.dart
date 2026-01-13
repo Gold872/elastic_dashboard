@@ -388,8 +388,11 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
           sideTitles: SideTitles(
             showTitles: true,
             reservedSize: 40,
-            getTitlesWidget: (value, meta) =>
-                Text(double.parse(value.toStringAsFixed(2)).toString()),
+            getTitlesWidget: (value, meta) => Text(
+              double.parse(value.toStringAsFixed(2)).toString(),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 1,
+            ),
           ),
         ),
         rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
