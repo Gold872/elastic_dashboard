@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
@@ -122,7 +122,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(SfCartesianChart), findsOneWidget);
+    expect(find.byType(LineChart), findsOneWidget);
   });
 
   testWidgets('Graph edit properties', (widgetTester) async {

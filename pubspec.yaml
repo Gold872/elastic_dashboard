@@ -44,7 +44,7 @@ dependencies:
   screen_retriever: ^0.2.0
   searchable_listview: ^2.19.3
   shared_preferences: ^2.5.3
-  syncfusion_flutter_charts: ^31.2.12
+  fl_chart: ^1.1.1
   titlebar_buttons: ^1.0.0
   transitioned_indexed_stack: ^1.0.2
   url_launcher: ^6.3.2

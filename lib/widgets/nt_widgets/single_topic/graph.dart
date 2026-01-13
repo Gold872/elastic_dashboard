@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:dot_cast/dot_cast.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
-import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
@@ -58,7 +57,7 @@ class GraphModel extends SingleTopicNTWidgetModel {
     refresh();
   }
 
-  List<_GraphPoint> _graphData = [];
+  List<FlSpot> _graphData = [];
   _GraphWidgetGraph? _graphWidget;
 
   GraphModel({
@@ -215,7 +214,7 @@ class GraphWidget extends NTWidget {
   Widget build(BuildContext context) {
     GraphModel model = cast(context.watch<NTWidgetModel>());
 
-    List<_GraphPoint>? currentGraphData = model._graphWidget?.getCurrentData();
+    List<FlSpot>? currentGraphData = model._graphWidget?.getCurrentData();
 
     if (currentGraphData != null) {
       model._graphData = currentGraphData;
@@ -241,11 +240,11 @@ class _GraphWidgetGraph extends StatefulWidget {
   final double timeDisplayed;
   final double lineWidth;
 
-  final List<_GraphPoint> initialData;
+  final List<FlSpot> initialData;
 
-  final List<_GraphPoint> _currentData;
+  final List<FlSpot> _currentData;
 
-  set currentData(List<_GraphPoint> data) => _currentData
+  set currentData(List<FlSpot> data) => _currentData
     ..clear()
     ..addAll(data);
 
@@ -259,7 +258,7 @@ class _GraphWidgetGraph extends StatefulWidget {
     this.maxValue,
   }) : _currentData = initialData;
 
-  List<_GraphPoint> getCurrentData() => _currentData;
+  List<FlSpot> getCurrentData() => _currentData;
 
   @override
   State<_GraphWidgetGraph> createState() => _GraphWidgetGraphState();
@@ -267,8 +266,7 @@ class _GraphWidgetGraph extends StatefulWidget {
 
 class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
     with WidgetsBindingObserver {
-  ChartSeriesController? _seriesController;
-  late List<_GraphPoint> _graphData;
+  late List<FlSpot> _graphData;
   StreamSubscription<Object?>? _subscriptionListener;
 
   @override
@@ -285,8 +283,8 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
           tryCast(widget.subscription?.value) ?? widget.minValue ?? 0.0;
 
       _graphData = [
-        _GraphPoint(x: x - widget.timeDisplayed * 1e6, y: y),
-        _GraphPoint(x: x, y: y),
+        FlSpot(x - widget.timeDisplayed * 1e6, y),
+        FlSpot(x, y),
       ];
     }
 
@@ -315,19 +313,6 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
     super.didUpdateWidget(oldWidget);
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (widget.subscription?.value == null) {
-      return;
-    }
-    if (state == AppLifecycleState.resumed) {
-      logger.debug(
-        'State resumed, refreshing graph for ${widget.subscription?.topic}',
-      );
-      setState(() {});
-    }
-  }
-
   void _resetGraphData() {
     final double x = DateTime.now().microsecondsSinceEpoch.toDouble();
     final double y =
@@ -339,8 +324,8 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
       _graphData
         ..clear()
         ..addAll([
-          _GraphPoint(x: x - widget.timeDisplayed * 1e6, y: y),
-          _GraphPoint(x: x, y: y),
+          FlSpot(x - widget.timeDisplayed * 1e6, y),
+          FlSpot(x, y),
         ]);
 
       widget.currentData = _graphData;
@@ -349,106 +334,77 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
 
   void _initializeListener() {
     _subscriptionListener?.cancel();
-    _subscriptionListener = widget.subscription?.periodicStream(yieldAll: true).listen((
-      data,
-    ) {
-      if (_seriesController == null) {
-        return;
-      }
-      if (data != null) {
-        final double time = DateTime.now().microsecondsSinceEpoch.toDouble();
-        final double windowStart = time - widget.timeDisplayed * 1e6;
-        final double y =
-            tryCast<num>(data)?.toDouble() ?? widget.minValue ?? 0.0;
-
-        final List<_GraphPoint> newPoints = [];
-        final List<int> removedIndexes = [];
-
-        // Remove points older than the display time
-        for (int i = 0; i < _graphData.length;) {
-          if (_graphData[i].x < windowStart) {
-            _graphData.removeAt(i);
-            removedIndexes.add(i);
-          } else {
-            // Only shift list when nothing has changed
-            i++;
+    _subscriptionListener = widget.subscription
+        ?.periodicStream(yieldAll: true)
+        .listen((
+          data,
+        ) {
+          if (!mounted) {
+            return;
           }
-        }
+          if (data != null) {
+            final double time = DateTime.now().microsecondsSinceEpoch
+                .toDouble();
+            final double windowStart = time - widget.timeDisplayed * 1e6;
+            final double y =
+                tryCast<num>(data)?.toDouble() ?? widget.minValue ?? 0.0;
 
-        if (_graphData.isEmpty || _graphData.first.x > windowStart) {
-          _GraphPoint padding = _GraphPoint(
-            x: windowStart,
-            y: _graphData.isEmpty ? y : _graphData.first.y,
-          );
-          _graphData.insert(0, padding);
-          newPoints.add(padding);
-        }
+            // Remove points older than the display time
+            _graphData.removeWhere((element) => element.x < windowStart);
 
-        final _GraphPoint newPoint = _GraphPoint(x: time, y: y);
-        _graphData.add(newPoint);
-        newPoints.add(newPoint);
+            if (_graphData.isEmpty || _graphData.first.x > windowStart) {
+              FlSpot padding = FlSpot(
+                windowStart,
+                _graphData.isEmpty ? y : _graphData.first.y,
+              );
+              _graphData.insert(0, padding);
+            }
 
-        List<int> addedIndexes = newPoints
-            .map((point) => _graphData.indexOf(point))
-            .toList();
+            final FlSpot newPoint = FlSpot(time, y);
+            _graphData.add(newPoint);
 
-        try {
-          _seriesController?.updateDataSource(
-            addedDataIndexes: addedIndexes,
-            removedDataIndexes: removedIndexes.isEmpty ? null : removedIndexes,
-          );
-        } catch (_) {
-          // The update data source can get very finicky, so if there's an error,
-          // just refresh everything
-          setState(() {
-            logger.debug(
-              'Error in graph for topic ${widget.subscription?.topic}, resetting',
-            );
-          });
-        }
-      } else if (_graphData.length > 2) {
-        // Only reset if there's more than 2 points to prevent infinite resetting
-        _resetGraphData();
-      }
+            setState(() {});
+          } else if (_graphData.length > 2) {
+            // Only reset if there's more than 2 points to prevent infinite resetting
+            _resetGraphData();
+          }
 
-      widget.currentData = _graphData;
-    });
+          widget.currentData = _graphData;
+        });
   }
 
-  List<FastLineSeries<_GraphPoint, num>> _getChartData() =>
-      <FastLineSeries<_GraphPoint, num>>[
-        FastLineSeries<_GraphPoint, num>(
-          animationDuration: 0.0,
-          animationDelay: 0.0,
-          sortingOrder: SortingOrder.ascending,
-          onRendererCreated: (controller) => _seriesController = controller,
-          color: widget.mainColor,
-          width: widget.lineWidth,
-          dataSource: _graphData,
-          xValueMapper: (value, index) => value.x,
-          yValueMapper: (value, index) => value.y,
-          sortFieldValueMapper: (datum, index) => datum.x,
-        ),
-      ];
-
   @override
-  Widget build(BuildContext context) => SfCartesianChart(
-    series: _getChartData(),
-    margin: const EdgeInsets.only(top: 8.0),
-    primaryXAxis: NumericAxis(
-      labelStyle: const TextStyle(color: Colors.transparent),
-      desiredIntervals: 5,
+  Widget build(BuildContext context) => LineChart(
+    LineChartData(
+      minY: widget.minValue,
+      maxY: widget.maxValue,
+      lineTouchData: LineTouchData(enabled: false),
+      clipData: const FlClipData.all(),
+      gridData: const FlGridData(show: true),
+      borderData: FlBorderData(show: true),
+      titlesData: FlTitlesData(
+        leftTitles: AxisTitles(
+          sideTitles: SideTitles(
+            showTitles: true,
+            reservedSize: 40,
+            getTitlesWidget: (value, meta) =>
+                Text(double.parse(value.toStringAsFixed(2)).toString()),
+          ),
+        ),
+        rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+      ),
+      lineBarsData: [
+        LineChartBarData(
+          spots: _graphData,
+          isCurved: false,
+          color: widget.mainColor,
+          barWidth: widget.lineWidth,
+          dotData: const FlDotData(show: false),
+        ),
+      ],
     ),
-    primaryYAxis: NumericAxis(
-      minimum: widget.minValue,
-      maximum: widget.maxValue,
-    ),
+    duration: Duration.zero,
   );
-}
-
-class _GraphPoint {
-  final double x;
-  final double y;
-
-  const _GraphPoint({required this.x, required this.y});
 }
