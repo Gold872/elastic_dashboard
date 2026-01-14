@@ -317,8 +317,9 @@ Built from the WPILib Field2d ([Java](https://github.wpilib.org/allwpilib/docs/r
 
 #### Properties
 
-* `field_game` - The game's field to show (defaults to "Reefscape")
+* `field_game` - The game's field to show (defaults to "Rebuilt")
   * Must be one of the following (case sensitive)
+    * Rebuilt
     * Reefscape
     * Crescendo
     * Charged Up
@@ -340,6 +341,8 @@ Built from the WPILib Field2d ([Java](https://github.wpilib.org/allwpilib/docs/r
   * 32 bit int (format: 0xAARRGGBB)
 * `trajectory_color` - The color of the trajectory (defaults to white)
   * 32 bit int (format: 0xAARRGGBB)
+* `show_robot_outside_widget` - Whether or not to display the robot outside the widget (defaults to true)
+  * `true` or `false`
 
 **32 Bit int Information**
 
