@@ -13,6 +13,13 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dar
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
+extension on double {
+  String toGraphValueString() {
+    double rounded = double.parse(toStringAsFixed(2));
+    return rounded % 1 == 0 ? rounded.toInt().toString() : rounded.toString();
+  }
+}
+
 class GraphModel extends SingleTopicNTWidgetModel {
   @override
   String type = GraphWidget.widgetType;
@@ -385,16 +392,33 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
     return (minData, maxData);
   }
 
-  (double?, double?) _calculateAxisBounds() {
+  ({double min, double max, double interval}) _calculateAxisBounds(
+    BuildContext context,
+    double graphHeight,
+  ) {
+    final style = DefaultTextStyle.of(context).style;
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: '0', style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final double roughLabelHeight = textPainter.height * 1.5;
+    final int desiredTickCount = max(
+      2,
+      (graphHeight / roughLabelHeight).floor(),
+    );
+
     double? minY = widget.minValue;
     double? maxY = widget.maxValue;
 
     if (minY != null && maxY != null) {
-      return (minY, maxY);
-    }
-
-    if (_graphData.isEmpty) {
-      return (minY ?? 0.0, maxY ?? 1.0);
+      final niceBounds = _calculateNiceBounds(minY, maxY, desiredTickCount);
+      return (
+        min: niceBounds.min,
+        max: niceBounds.max,
+        interval: niceBounds.interval,
+      );
     }
 
     final (minData, maxData) = getValueRange();
@@ -431,180 +455,167 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
     maxY ??= calculatedMax;
 
     if (minY >= maxY) {
-      if (widget.minValue != null && widget.maxValue == null) {
-        maxY = minY + 1;
-      } else if (widget.minValue == null && widget.maxValue != null) {
-        minY = maxY - 1;
-      } else {
-        minY = minData - 1;
-        maxY = maxData + 1;
+      maxY = minY + 1;
+    }
+
+    final niceBounds = _calculateNiceBounds(minY, maxY, desiredTickCount);
+    return (
+      min: niceBounds.min,
+      max: niceBounds.max,
+      interval: niceBounds.interval,
+    );
+  }
+
+  ({double min, double max, double interval}) _calculateNiceBounds(
+    double min,
+    double max,
+    int tickCount,
+  ) {
+    if (tickCount < 2) {
+      return (min: min, max: max, interval: max - min);
+    }
+
+    if (min == max) {
+      return (min: min - 1, max: max + 1, interval: 0.5);
+    }
+
+    final double range = max - min;
+    double interval = range / (tickCount - 1);
+
+    if (interval == 0) {
+      return (min: min, max: max, interval: 0.5);
+    }
+
+    final double exponent = pow(
+      10,
+      -(log(interval.abs()) / ln10).floor(),
+    ).toDouble();
+    final double niceIntervalSize = (interval * exponent).roundToDouble();
+
+    double niceInterval;
+    if (niceIntervalSize < 1.5) {
+      niceInterval = 1.0;
+    } else if (niceIntervalSize < 3.0) {
+      niceInterval = 2.0;
+    } else if (niceIntervalSize < 7.0) {
+      niceInterval = 5.0;
+    } else {
+      niceInterval = 10.0;
+    }
+    niceInterval /= exponent;
+
+    double niceMin = (min / niceInterval).floor() * niceInterval;
+    double niceMax = (max / niceInterval).ceil() * niceInterval;
+
+    return (min: niceMin, max: niceMax, interval: niceInterval);
+  }
+
+  double _calculateReservedSize(
+    BuildContext context,
+    double min,
+    double max,
+    double interval,
+  ) {
+    final style = DefaultTextStyle.of(context).style;
+    if (interval <= 0) {
+      return style.fontSize ?? 14;
+    }
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+
+    double maxWidth = 0;
+
+    final int stepCount = ((max - min) / interval).round();
+
+    for (int i = 0; i <= stepCount; i++) {
+      final double value = min + i * interval;
+
+      final String label = value.toGraphValueString();
+
+      textPainter.text = TextSpan(text: label, style: style);
+      textPainter.layout();
+
+      if (textPainter.width > maxWidth) {
+        maxWidth = textPainter.width;
       }
     }
 
-    if (minY >= maxY) {
-      maxY = minY + 1;
-    }
-    final niceBounds = _calculateNiceBounds(minY, maxY);
-    minY = niceBounds.min;
-    maxY = niceBounds.max;
-
-    return (minY, maxY);
-  }
-
-  ({double min, double max}) _calculateNiceBounds(double min, double max) {
-    if (min == max) {
-      return (min: min - 1, max: max + 1);
-    }
-
-    const int desiredTickCount = 5;
-    final double range = max - min;
-
-    if (range == 0) {
-      return (min: min, max: max);
-    }
-
-    double spacingSize = range / (desiredTickCount - 1);
-
-    if (spacingSize == 0) {
-      return (min: min, max: max);
-    }
-
-    // Math taken from https://wiki.tcl-lang.org/page/Chart+generation+support
-    final double exponent = pow(
-      10,
-      -(log(spacingSize.abs()) / ln10).floor(),
-    ).toDouble();
-    final double niceSpacingSize = (spacingSize * exponent).roundToDouble();
-
-    double niceSpacing;
-    if (niceSpacingSize < 1.5) {
-      niceSpacing = 1.0;
-    } else if (niceSpacingSize < 3.0) {
-      niceSpacing = 2.0;
-    } else if (niceSpacingSize < 7.0) {
-      niceSpacing = 5.0;
-    } else {
-      niceSpacing = 10.0;
-    }
-    niceSpacing /= exponent;
-
-    double niceMin = (min / niceSpacing).floor() * niceSpacing;
-    double niceMax = (max / niceSpacing).ceil() * niceSpacing;
-
-    // Round to 2 decimal places
-    niceMin = (niceMin * 100).floorToDouble() / 100;
-    niceMax = (niceMax * 100).ceilToDouble() / 100;
-
-    return (min: niceMin, max: niceMax);
-  }
-
-  Size measureText(String text, TextStyle style) {
-    final TextPainter textPainter = TextPainter(
-      textDirection: TextDirection.ltr,
-      text: TextSpan(text: text, style: style),
-      textAlign: TextAlign.right,
-      maxLines: 1,
-    );
-    textPainter.layout();
-    return textPainter.size;
+    return maxWidth;
   }
 
   @override
-  Widget build(BuildContext context) {
-    final (minY, maxY) = _calculateAxisBounds();
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (BuildContext context, BoxConstraints constraints) {
+      final double chartHeight = constraints.maxHeight;
 
-    String graphValueToString(double value) {
-      double rounded = double.parse(value.toStringAsFixed(2));
-      return rounded % 1 == 0 ? rounded.toInt().toString() : rounded.toString();
-    }
-
-    double longestLength = 0;
-
-    if (minY == null || maxY == null) {
-      for (final spot in _graphData) {
-        longestLength = max(
-          longestLength,
-          measureText(
-            graphValueToString(spot.y),
-            DefaultTextStyle.of(context).style,
-          ).width,
-        );
-      }
-    } else if (minY % 1 != 0 || maxY % 1 != 0 || (maxY - minY <= 3)) {
-      for (double tick = minY; tick < maxY; tick += (maxY - minY) / 5) {
-        longestLength = max(
-          longestLength,
-          measureText(
-            graphValueToString(tick),
-            DefaultTextStyle.of(context).style,
-          ).width,
-        );
-      }
-    } else {
-      longestLength = max(
-        longestLength,
-        measureText(
-          graphValueToString(minY),
-          DefaultTextStyle.of(context).style,
-        ).width,
+      final (:min, :max, :interval) = _calculateAxisBounds(
+        context,
+        chartHeight,
       );
-      longestLength = max(
-        longestLength,
-        measureText(
-          graphValueToString(maxY),
-          DefaultTextStyle.of(context).style,
-        ).width,
+
+      final double reservedSize = _calculateReservedSize(
+        context,
+        min,
+        max,
+        interval,
       );
-    }
 
-    double reservedSize = 4 + longestLength;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: LineChart(
-        LineChartData(
-          minY: minY,
-          maxY: maxY,
-          lineTouchData: LineTouchData(enabled: false),
-          clipData: const FlClipData.all(),
-          gridData: const FlGridData(show: true),
-          borderData: FlBorderData(
-            show: true,
-            border: Border.all(color: Colors.blueGrey, width: 0.4),
-          ),
-          titlesData: FlTitlesData(
-            leftTitles: AxisTitles(
-              sideTitles: SideTitles(
-                showTitles: true,
-                reservedSize: reservedSize,
-                getTitlesWidget: (value, meta) => Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Text(
-                    graphValueToString(value),
-                    overflow: TextOverflow.visible,
-                    maxLines: 1,
-                    textAlign: TextAlign.right,
-                    style: DefaultTextStyle.of(context).style,
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: LineChart(
+          LineChartData(
+            minY: min,
+            maxY: max,
+            lineTouchData: LineTouchData(enabled: false),
+            clipData: const FlClipData.all(),
+            gridData: const FlGridData(show: true),
+            borderData: FlBorderData(
+              show: true,
+              border: Border.all(color: Colors.blueGrey, width: 0.4),
+            ),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: reservedSize + 4,
+                  interval: interval,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      value.toGraphValueString(),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      textAlign: TextAlign.right,
+                      style: DefaultTextStyle.of(context).style,
+                    ),
                   ),
                 ),
               ),
+              rightTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
             ),
-            rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-            bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            lineBarsData: [
+              LineChartBarData(
+                spots: _graphData,
+                isCurved: false,
+                color: widget.mainColor,
+                barWidth: widget.lineWidth,
+                dotData: const FlDotData(show: false),
+              ),
+            ],
           ),
-          lineBarsData: [
-            LineChartBarData(
-              spots: _graphData,
-              isCurved: false,
-              color: widget.mainColor,
-              barWidth: widget.lineWidth,
-              dotData: const FlDotData(show: false),
-            ),
-          ],
+          duration: Duration.zero,
         ),
-        duration: Duration.zero,
-      ),
-    );
-  }
+      );
+    },
+  );
 }
