@@ -287,10 +287,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
       final double y =
           tryCast(widget.subscription?.value) ?? widget.minValue ?? 0.0;
 
-      _graphData = [
-        FlSpot(x - widget.timeDisplayed * 1e6, y),
-        FlSpot(x, y),
-      ];
+      _graphData = [FlSpot(x - widget.timeDisplayed * 1e6, y), FlSpot(x, y)];
     }
 
     widget.currentData = _graphData;
@@ -339,9 +336,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
     _subscriptionListener?.cancel();
     _subscriptionListener = widget.subscription
         ?.periodicStream(yieldAll: true)
-        .listen((
-          data,
-        ) {
+        .listen((data) {
           if (!mounted) {
             return;
           }
@@ -546,25 +541,25 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
-    builder: (BuildContext context, BoxConstraints constraints) {
-      final double chartHeight = constraints.maxHeight;
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double chartHeight = constraints.maxHeight;
 
-      final (:min, :max, :interval) = _calculateAxisBounds(
-        context,
-        chartHeight,
-      );
+        final (:min, :max, :interval) = _calculateAxisBounds(
+          context,
+          chartHeight,
+        );
 
-      final double reservedSize = _calculateReservedSize(
-        context,
-        min,
-        max,
-        interval,
-      );
+        final double reservedSize = _calculateReservedSize(
+          context,
+          min,
+          max,
+          interval,
+        );
 
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: LineChart(
+        return LineChart(
           LineChartData(
             minY: min,
             maxY: max,
@@ -596,9 +591,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
               rightTitles: AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
               ),
-              topTitles: AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
               ),
@@ -614,8 +607,8 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
             ],
           ),
           duration: Duration.zero,
-        ),
-      );
-    },
+        );
+      },
+    ),
   );
 }
