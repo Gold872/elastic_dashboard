@@ -70,8 +70,6 @@ mixin DashboardPageWindow on DashboardPageViewModel {
       return;
     }
     showDialog(
-      // left true, see issue #328
-      barrierDismissible: true,
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Unsaved Changes'),

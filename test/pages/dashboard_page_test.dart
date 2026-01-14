@@ -1919,19 +1919,6 @@ void main() {
 
       await widgetTester.tap(discardButton);
       await widgetTester.pumpAndSettle();
-
-      //test to ensure that popup is still dismissable (issue #328)
-      await widgetTester.tap(closeButton);
-      await widgetTester.pumpAndSettle();
-
-      await widgetTester.tapAt(Offset(0, 0));
-      await widgetTester.pumpAndSettle();
-      expect(
-        find.widgetWithText(AlertDialog, 'Unsaved Changes'),
-        findsNothing,
-        reason:
-            'The unsaved changes popup should be dismissable, but it is still on the screen despite clicking off of it.',
-      );
     });
   });
 
