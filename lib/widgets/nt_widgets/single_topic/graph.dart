@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:math' show log, pow, min, max;
+import 'dart:math' show ln10, log, max, min, pow;
 
 import 'package:flutter/material.dart';
 
@@ -369,6 +369,22 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
         });
   }
 
+  (double, double) getValueRange() {
+    if (_graphData.isEmpty) {
+      return (widget.minValue ?? 0.0, widget.maxValue ?? 1.0);
+    }
+
+    double minData = _graphData.first.y;
+    double maxData = _graphData.first.y;
+
+    for (final spot in _graphData.skip(1)) {
+      minData = min(minData, spot.y);
+      maxData = max(maxData, spot.y);
+    }
+
+    return (minData, maxData);
+  }
+
   (double?, double?) _calculateAxisBounds() {
     double? minY = widget.minValue;
     double? maxY = widget.maxValue;
@@ -381,13 +397,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
       return (minY ?? 0.0, maxY ?? 1.0);
     }
 
-    double minData = _graphData.first.y;
-    double maxData = _graphData.first.y;
-
-    for (final spot in _graphData.skip(1)) {
-      minData = min(minData, spot.y);
-      maxData = max(maxData, spot.y);
-    }
+    final (minData, maxData) = getValueRange();
 
     double calculatedMin;
     double calculatedMax;
@@ -462,7 +472,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
     // Math taken from https://wiki.tcl-lang.org/page/Chart+generation+support
     final double exponent = pow(
       10,
-      -log(spacingSize.abs()).floor(),
+      -(log(spacingSize.abs()) / ln10).floor(),
     ).toDouble();
     final double niceSpacingSize = (spacingSize * exponent).roundToDouble();
 
@@ -488,9 +498,67 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
     return (min: niceMin, max: niceMax);
   }
 
+  Size measureText(String text, TextStyle style) {
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+      text: TextSpan(text: text, style: style),
+      textAlign: TextAlign.right,
+      maxLines: 1,
+    );
+    textPainter.layout();
+    return textPainter.size;
+  }
+
   @override
   Widget build(BuildContext context) {
     final (minY, maxY) = _calculateAxisBounds();
+
+    String graphValueToString(double value) {
+      double rounded = double.parse(value.toStringAsFixed(2));
+      return rounded % 1 == 0 ? rounded.toInt().toString() : rounded.toString();
+    }
+
+    double longestLength = 0;
+
+    if (minY == null || maxY == null) {
+      for (final spot in _graphData) {
+        longestLength = max(
+          longestLength,
+          measureText(
+            graphValueToString(spot.y),
+            DefaultTextStyle.of(context).style,
+          ).width,
+        );
+      }
+    } else if (minY % 1 != 0 || maxY % 1 != 0 || (maxY - minY <= 3)) {
+      for (double tick = minY; tick < maxY; tick += (maxY - minY) / 5) {
+        longestLength = max(
+          longestLength,
+          measureText(
+            graphValueToString(tick),
+            DefaultTextStyle.of(context).style,
+          ).width,
+        );
+      }
+    } else {
+      longestLength = max(
+        longestLength,
+        measureText(
+          graphValueToString(minY),
+          DefaultTextStyle.of(context).style,
+        ).width,
+      );
+      longestLength = max(
+        longestLength,
+        measureText(
+          graphValueToString(maxY),
+          DefaultTextStyle.of(context).style,
+        ).width,
+      );
+    }
+
+    double reservedSize = 4 + longestLength;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: LineChart(
@@ -508,17 +576,15 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
             leftTitles: AxisTitles(
               sideTitles: SideTitles(
                 showTitles: true,
-                reservedSize: 40,
+                reservedSize: reservedSize,
                 getTitlesWidget: (value, meta) => Padding(
                   padding: const EdgeInsets.only(right: 4),
                   child: Text(
-                    // Display with at most 2 decimals
-                    value % 1.0 == 0
-                        ? value.toInt().toString()
-                        : ((value * 100).toInt() / 100.0).toString(),
-                    overflow: TextOverflow.ellipsis,
+                    graphValueToString(value),
+                    overflow: TextOverflow.visible,
                     maxLines: 1,
                     textAlign: TextAlign.right,
+                    style: DefaultTextStyle.of(context).style,
                   ),
                 ),
               ),
