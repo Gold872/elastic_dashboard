@@ -1,17 +1,24 @@
 import 'dart:async';
+import 'dart:math' show ln10, log, max, min, pow;
 
 import 'package:flutter/material.dart';
 
 import 'package:dot_cast/dot_cast.dart';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
-import 'package:syncfusion_flutter_charts/charts.dart';
 
-import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
+
+extension on double {
+  String toGraphValueString() {
+    double rounded = double.parse(toStringAsFixed(2));
+    return rounded % 1 == 0 ? rounded.toInt().toString() : rounded.toString();
+  }
+}
 
 class GraphModel extends SingleTopicNTWidgetModel {
   @override
@@ -58,7 +65,7 @@ class GraphModel extends SingleTopicNTWidgetModel {
     refresh();
   }
 
-  List<_GraphPoint> _graphData = [];
+  List<FlSpot> _graphData = [];
   _GraphWidgetGraph? _graphWidget;
 
   GraphModel({
@@ -215,7 +222,7 @@ class GraphWidget extends NTWidget {
   Widget build(BuildContext context) {
     GraphModel model = cast(context.watch<NTWidgetModel>());
 
-    List<_GraphPoint>? currentGraphData = model._graphWidget?.getCurrentData();
+    List<FlSpot>? currentGraphData = model._graphWidget?.getCurrentData();
 
     if (currentGraphData != null) {
       model._graphData = currentGraphData;
@@ -241,11 +248,11 @@ class _GraphWidgetGraph extends StatefulWidget {
   final double timeDisplayed;
   final double lineWidth;
 
-  final List<_GraphPoint> initialData;
+  final List<FlSpot> initialData;
 
-  final List<_GraphPoint> _currentData;
+  final List<FlSpot> _currentData;
 
-  set currentData(List<_GraphPoint> data) => _currentData
+  set currentData(List<FlSpot> data) => _currentData
     ..clear()
     ..addAll(data);
 
@@ -259,23 +266,19 @@ class _GraphWidgetGraph extends StatefulWidget {
     this.maxValue,
   }) : _currentData = initialData;
 
-  List<_GraphPoint> getCurrentData() => _currentData;
+  List<FlSpot> getCurrentData() => _currentData;
 
   @override
   State<_GraphWidgetGraph> createState() => _GraphWidgetGraphState();
 }
 
-class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
-    with WidgetsBindingObserver {
-  ChartSeriesController? _seriesController;
-  late List<_GraphPoint> _graphData;
+class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
+  late List<FlSpot> _graphData;
   StreamSubscription<Object?>? _subscriptionListener;
 
   @override
   void initState() {
     super.initState();
-
-    WidgetsBinding.instance.addObserver(this);
 
     _graphData = List.of(widget.initialData);
 
@@ -284,10 +287,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
       final double y =
           tryCast(widget.subscription?.value) ?? widget.minValue ?? 0.0;
 
-      _graphData = [
-        _GraphPoint(x: x - widget.timeDisplayed * 1e6, y: y),
-        _GraphPoint(x: x, y: y),
-      ];
+      _graphData = [FlSpot(x - widget.timeDisplayed * 1e6, y), FlSpot(x, y)];
     }
 
     widget.currentData = _graphData;
@@ -297,8 +297,6 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-
     _subscriptionListener?.cancel();
 
     super.dispose();
@@ -315,19 +313,6 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
     super.didUpdateWidget(oldWidget);
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (widget.subscription?.value == null) {
-      return;
-    }
-    if (state == AppLifecycleState.resumed) {
-      logger.debug(
-        'State resumed, refreshing graph for ${widget.subscription?.topic}',
-      );
-      setState(() {});
-    }
-  }
-
   void _resetGraphData() {
     final double x = DateTime.now().microsecondsSinceEpoch.toDouble();
     final double y =
@@ -339,8 +324,8 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
       _graphData
         ..clear()
         ..addAll([
-          _GraphPoint(x: x - widget.timeDisplayed * 1e6, y: y),
-          _GraphPoint(x: x, y: y),
+          FlSpot(x - widget.timeDisplayed * 1e6, y),
+          FlSpot(x, y),
         ]);
 
       widget.currentData = _graphData;
@@ -349,106 +334,282 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph>
 
   void _initializeListener() {
     _subscriptionListener?.cancel();
-    _subscriptionListener = widget.subscription?.periodicStream(yieldAll: true).listen((
-      data,
-    ) {
-      if (_seriesController == null) {
-        return;
-      }
-      if (data != null) {
-        final double time = DateTime.now().microsecondsSinceEpoch.toDouble();
-        final double windowStart = time - widget.timeDisplayed * 1e6;
-        final double y =
-            tryCast<num>(data)?.toDouble() ?? widget.minValue ?? 0.0;
-
-        final List<_GraphPoint> newPoints = [];
-        final List<int> removedIndexes = [];
-
-        // Remove points older than the display time
-        for (int i = 0; i < _graphData.length;) {
-          if (_graphData[i].x < windowStart) {
-            _graphData.removeAt(i);
-            removedIndexes.add(i);
-          } else {
-            // Only shift list when nothing has changed
-            i++;
+    _subscriptionListener = widget.subscription
+        ?.periodicStream(yieldAll: true)
+        .listen((data) {
+          if (!mounted) {
+            return;
           }
-        }
+          if (data != null) {
+            final double time = DateTime.now().microsecondsSinceEpoch
+                .toDouble();
+            final double windowStart = time - widget.timeDisplayed * 1e6;
+            final double y =
+                tryCast<num>(data)?.toDouble() ?? widget.minValue ?? 0.0;
 
-        if (_graphData.isEmpty || _graphData.first.x > windowStart) {
-          _GraphPoint padding = _GraphPoint(
-            x: windowStart,
-            y: _graphData.isEmpty ? y : _graphData.first.y,
-          );
-          _graphData.insert(0, padding);
-          newPoints.add(padding);
-        }
+            // Remove points older than the display time
+            _graphData.removeWhere((element) => element.x < windowStart);
 
-        final _GraphPoint newPoint = _GraphPoint(x: time, y: y);
-        _graphData.add(newPoint);
-        newPoints.add(newPoint);
+            if (_graphData.isEmpty || _graphData.first.x > windowStart) {
+              FlSpot padding = FlSpot(
+                windowStart,
+                _graphData.isEmpty ? y : _graphData.first.y,
+              );
+              _graphData.insert(0, padding);
+            }
 
-        List<int> addedIndexes = newPoints
-            .map((point) => _graphData.indexOf(point))
-            .toList();
+            final FlSpot newPoint = FlSpot(time, y);
+            _graphData.add(newPoint);
 
-        try {
-          _seriesController?.updateDataSource(
-            addedDataIndexes: addedIndexes,
-            removedDataIndexes: removedIndexes.isEmpty ? null : removedIndexes,
-          );
-        } catch (_) {
-          // The update data source can get very finicky, so if there's an error,
-          // just refresh everything
-          setState(() {
-            logger.debug(
-              'Error in graph for topic ${widget.subscription?.topic}, resetting',
-            );
-          });
-        }
-      } else if (_graphData.length > 2) {
-        // Only reset if there's more than 2 points to prevent infinite resetting
-        _resetGraphData();
-      }
+            setState(() {});
+          } else if (_graphData.length > 2) {
+            // Only reset if there's more than 2 points to prevent infinite resetting
+            _resetGraphData();
+          }
 
-      widget.currentData = _graphData;
-    });
+          widget.currentData = _graphData;
+        });
   }
 
-  List<FastLineSeries<_GraphPoint, num>> _getChartData() =>
-      <FastLineSeries<_GraphPoint, num>>[
-        FastLineSeries<_GraphPoint, num>(
-          animationDuration: 0.0,
-          animationDelay: 0.0,
-          sortingOrder: SortingOrder.ascending,
-          onRendererCreated: (controller) => _seriesController = controller,
-          color: widget.mainColor,
-          width: widget.lineWidth,
-          dataSource: _graphData,
-          xValueMapper: (value, index) => value.x,
-          yValueMapper: (value, index) => value.y,
-          sortFieldValueMapper: (datum, index) => datum.x,
-        ),
-      ];
+  (double, double) getValueRange() {
+    if (_graphData.isEmpty) {
+      return (widget.minValue ?? 0.0, widget.maxValue ?? 1.0);
+    }
+
+    double minData = _graphData.first.y;
+    double maxData = _graphData.first.y;
+
+    for (final spot in _graphData.skip(1)) {
+      minData = min(minData, spot.y);
+      maxData = max(maxData, spot.y);
+    }
+
+    return (minData, maxData);
+  }
+
+  ({double min, double max, double interval}) _calculateAxisBounds(
+    BuildContext context,
+    double graphHeight,
+  ) {
+    final style = DefaultTextStyle.of(context).style;
+
+    final textPainter = TextPainter(
+      text: TextSpan(text: '0', style: style),
+      textDirection: TextDirection.ltr,
+    )..layout();
+
+    final double roughLabelHeight = textPainter.height * 1.5;
+    final int desiredTickCount = max(
+      2,
+      (graphHeight / roughLabelHeight).floor(),
+    );
+
+    double? minY = widget.minValue;
+    double? maxY = widget.maxValue;
+
+    if (minY != null && maxY != null) {
+      final niceBounds = _calculateNiceBounds(minY, maxY, desiredTickCount);
+      return (
+        min: niceBounds.min,
+        max: niceBounds.max,
+        interval: niceBounds.interval,
+      );
+    }
+
+    final (minData, maxData) = getValueRange();
+
+    double calculatedMin;
+    double calculatedMax;
+
+    if (minData == maxData) {
+      // Snap either min or max to 0
+      if (minData >= 0) {
+        calculatedMin = 0.0;
+        calculatedMax = (minData == 0) ? 1.0 : minData + minData.abs() * 0.05;
+      } else {
+        calculatedMax = 0.0;
+        calculatedMin = minData - minData.abs() * 0.05;
+      }
+    } else {
+      final double range = maxData - minData;
+
+      calculatedMax = maxData + range * 0.05;
+
+      const double zeroMarginFraction = 0.05;
+      final bool isMinCloseToZero =
+          minData >= 0 && maxData > 0 && minData < maxData * zeroMarginFraction;
+
+      if (isMinCloseToZero) {
+        calculatedMin = 0.0;
+      } else {
+        calculatedMin = minData - range * 0.05;
+      }
+    }
+
+    minY ??= calculatedMin;
+    maxY ??= calculatedMax;
+
+    if (minY >= maxY) {
+      maxY = minY + 1;
+    }
+
+    final niceBounds = _calculateNiceBounds(minY, maxY, desiredTickCount);
+    return (
+      min: niceBounds.min,
+      max: niceBounds.max,
+      interval: niceBounds.interval,
+    );
+  }
+
+  ({double min, double max, double interval}) _calculateNiceBounds(
+    double min,
+    double max,
+    int tickCount,
+  ) {
+    if (tickCount < 2) {
+      return (min: min, max: max, interval: max - min);
+    }
+
+    if (min == max) {
+      return (min: min - 1, max: max + 1, interval: 0.5);
+    }
+
+    final double range = max - min;
+    double interval = range / (tickCount - 1);
+
+    if (interval == 0) {
+      return (min: min, max: max, interval: 0.5);
+    }
+
+    // Math taken from https://wiki.tcl-lang.org/page/Chart+generation+support
+    final double exponent = pow(
+      10,
+      -(log(interval.abs()) / ln10).floor(),
+    ).toDouble();
+    final double niceIntervalSize = (interval * exponent).roundToDouble();
+
+    double niceInterval;
+    if (niceIntervalSize < 1.5) {
+      niceInterval = 1.0;
+    } else if (niceIntervalSize < 3.0) {
+      niceInterval = 2.0;
+    } else if (niceIntervalSize < 7.0) {
+      niceInterval = 5.0;
+    } else {
+      niceInterval = 10.0;
+    }
+    niceInterval /= exponent;
+
+    double niceMin = (min / niceInterval).floor() * niceInterval;
+    double niceMax = (max / niceInterval).ceil() * niceInterval;
+
+    return (min: niceMin, max: niceMax, interval: niceInterval);
+  }
+
+  double _calculateReservedSize(
+    BuildContext context,
+    double min,
+    double max,
+    double interval,
+  ) {
+    final style = DefaultTextStyle.of(context).style;
+    if (interval <= 0) {
+      return style.fontSize ?? 14;
+    }
+
+    final TextPainter textPainter = TextPainter(
+      textDirection: TextDirection.ltr,
+    );
+
+    double maxWidth = 0;
+
+    final int stepCount = ((max - min) / interval).round();
+
+    for (int i = 0; i <= stepCount; i++) {
+      final double value = min + i * interval;
+
+      final String label = value.toGraphValueString();
+
+      textPainter.text = TextSpan(text: label, style: style);
+      textPainter.layout();
+
+      if (textPainter.width > maxWidth) {
+        maxWidth = textPainter.width;
+      }
+    }
+
+    return maxWidth;
+  }
 
   @override
-  Widget build(BuildContext context) => SfCartesianChart(
-    series: _getChartData(),
-    margin: const EdgeInsets.only(top: 8.0),
-    primaryXAxis: NumericAxis(
-      labelStyle: const TextStyle(color: Colors.transparent),
-      desiredIntervals: 5,
-    ),
-    primaryYAxis: NumericAxis(
-      minimum: widget.minValue,
-      maximum: widget.maxValue,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints constraints) {
+        final double chartHeight = constraints.maxHeight;
+
+        final (:min, :max, :interval) = _calculateAxisBounds(
+          context,
+          chartHeight,
+        );
+
+        final double reservedSize = _calculateReservedSize(
+          context,
+          min,
+          max,
+          interval,
+        );
+
+        return LineChart(
+          LineChartData(
+            minY: min,
+            maxY: max,
+            lineTouchData: LineTouchData(enabled: false),
+            clipData: const FlClipData.all(),
+            gridData: const FlGridData(show: true),
+            borderData: FlBorderData(
+              show: true,
+              border: Border.all(color: Colors.blueGrey, width: 0.4),
+            ),
+            titlesData: FlTitlesData(
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: reservedSize + 4,
+                  interval: interval,
+                  getTitlesWidget: (value, meta) => Padding(
+                    padding: const EdgeInsets.only(right: 4),
+                    child: Text(
+                      value.toGraphValueString(),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      textAlign: TextAlign.right,
+                      style: DefaultTextStyle.of(context).style,
+                    ),
+                  ),
+                ),
+              ),
+              rightTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(showTitles: false),
+              ),
+            ),
+            lineBarsData: [
+              LineChartBarData(
+                spots: _graphData,
+                isCurved: false,
+                color: widget.mainColor,
+                barWidth: widget.lineWidth,
+                dotData: const FlDotData(show: false),
+              ),
+            ],
+          ),
+          duration: Duration.zero,
+        );
+      },
     ),
   );
-}
-
-class _GraphPoint {
-  final double x;
-  final double y;
-
-  const _GraphPoint({required this.x, required this.y});
 }
