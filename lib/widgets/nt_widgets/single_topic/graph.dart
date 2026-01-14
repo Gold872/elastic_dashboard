@@ -481,6 +481,7 @@ class _GraphWidgetGraphState extends State<_GraphWidgetGraph> {
       return (min: min, max: max, interval: 0.5);
     }
 
+    // Math taken from https://wiki.tcl-lang.org/page/Chart+generation+support
     final double exponent = pow(
       10,
       -(log(interval.abs()) / ln10).floor(),
