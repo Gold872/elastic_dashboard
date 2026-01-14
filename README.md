@@ -21,29 +21,8 @@ Elastic is a simple and modern FRC dashboard made by Nadav from FRC Team 353. It
 ## Documentation
 View the online documentation [here](https://frc-elastic.gitbook.io/docs)
 
-## Building
-
-Elastic requires Flutter and platform-specific dependencies to run. See the [Flutter documentation](https://docs.flutter.dev/get-started) for installation instructions.
-
-Once Flutter is installed, download the package dependencies by running the command:
-```bash
-flutter pub get
-```
-
-For debug testing, build and run the app by running the command:
-```bash
-flutter run -d <PLATFORM>
-```
-
-For a release build, run the command:
-```bash
-flutter build <PLATFORM>
-```
-* The output executable will be located in:
-  * Windows: `<PROJECT DIR>/build/windows/x64/runner/Release`
-  * MacOS: `<PROJECT DIR>/build/macos/Build/Products/Release`
-  * Linux: `<PROJECT DIR>/build/linux/x64/release/bundle`
-  * Web: `<PROJECT DIR>/build/web`
+## Building and Contributing
+View the instructions for building code and making contributions to the project in the [CONTRIBUTING.md](CONTRIBUTING.md) file
 
 ## Special Thanks
 
