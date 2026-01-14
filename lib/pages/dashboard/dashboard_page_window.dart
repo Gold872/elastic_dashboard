@@ -1,13 +1,10 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-
-import 'package:screen_retriever/screen_retriever.dart';
-
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/services/settings.dart';
-
+import 'package:flutter/material.dart';
+import 'package:screen_retriever/screen_retriever.dart';
 import 'package:window_manager/window_manager.dart'
     if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
@@ -70,7 +67,8 @@ mixin DashboardPageWindow on DashboardPageViewModel {
       return;
     }
     showDialog(
-      barrierDismissible: false,
+      // left true, see issue #328
+      barrierDismissible: true,
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Unsaved Changes'),

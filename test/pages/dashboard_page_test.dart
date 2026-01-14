@@ -1,17 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-
-import 'package:elegant_notification/elegant_notification.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:http/http.dart';
-import 'package:mockito/mockito.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:titlebar_buttons/titlebar_buttons.dart';
-
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/elastic_layout_downloader.dart';
 import 'package:elastic_dashboard/services/field_images.dart';
@@ -36,6 +25,16 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
 import 'package:elastic_dashboard/widgets/tab_grid.dart';
+import 'package:elegant_notification/elegant_notification.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart';
+import 'package:mockito/mockito.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:titlebar_buttons/titlebar_buttons.dart';
+
 import '../services/elastic_layout_downloader_test.dart';
 import '../test_util.dart';
 import '../test_util.mocks.dart';
@@ -1919,6 +1918,18 @@ void main() {
 
       await widgetTester.tap(discardButton);
       await widgetTester.pumpAndSettle();
+
+      //test to ensure that popup is still dismissable (issue #328)
+      await widgetTester.tap(closeButton);
+      await widgetTester.pumpAndSettle();
+
+      await widgetTester.tapAt(Offset(0, 0));
+      await widgetTester.pumpAndSettle();
+      expect(
+          find.widgetWithText(AlertDialog, 'Unsaved Changes'),
+          findsNothing,
+          reason: 'The unsaved changes popup should be dismissable, but it is still on the screen despite clicking off of it.'
+      );
     });
   });
 
