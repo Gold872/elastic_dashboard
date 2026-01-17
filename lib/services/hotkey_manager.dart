@@ -7,25 +7,41 @@ import 'package:uuid/uuid.dart';
 class KeyModifier {
   static final KeyModifier control = KeyModifier._(
     () => HardwareKeyboard.instance.isControlPressed,
+    'CTRL',
   );
   static final KeyModifier shift = KeyModifier._(
     () => HardwareKeyboard.instance.isShiftPressed,
+    'SHIFT',
   );
   static final KeyModifier alt = KeyModifier._(
     () => HardwareKeyboard.instance.isAltPressed,
+    'ALT',
   );
 
-  const KeyModifier._(this.active);
+  const KeyModifier._(this.active, this.displayName);
 
   final bool Function() active;
+  final String displayName;
 }
 
 class HotKey {
   final LogicalKeyboardKey logicalKey;
   final List<KeyModifier>? modifiers;
+  final String description;
+  final String category;
+  final bool display;
   String identifier = const Uuid().v4();
 
-  HotKey(this.logicalKey, {this.modifiers, String? identifier}) {
+  HotKey(
+    this.logicalKey,
+    this.description,
+    this.category, {
+    this.modifiers,
+    String? identifier,
+
+    //whether or not this keybind will be displayed on the keybinds page
+    this.display = true,
+  }) {
     if (identifier != null) {
       this.identifier = identifier;
     }
@@ -153,6 +169,13 @@ class HotKeyManager {
   Future<void> resetKeysPressed() async {
     await HardwareKeyboard.instance.syncKeyboardState();
   }
+}
+
+class HotkeyCategories {
+  static String layout = 'Layout';
+  static String connection = 'Connection';
+  static String tabs = 'Tab Control';
+  static String misc = 'Miscellaneous';
 }
 
 final hotKeyManager = HotKeyManager.instance;
