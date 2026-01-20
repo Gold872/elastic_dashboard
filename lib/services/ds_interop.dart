@@ -9,7 +9,7 @@ import 'package:elastic_dashboard/services/log.dart';
 class DSInteropClient {
   final String serverBaseAddress = '127.0.0.1';
   bool _serverConnectionActive = false;
-  bool _dbModeConnectionActive = false;
+  bool _dbModeServerRunning = false;
 
   Function()? onConnect;
   Function()? onDisconnect;
@@ -20,6 +20,8 @@ class DSInteropClient {
   Socket? _socket;
   ServerSocket? _dbModeServer;
 
+  final List<Socket> _connectedSockets = [];
+
   List<int> _tcpBuffer = [];
 
   String? _lastAnnouncedIP;
@@ -28,23 +30,38 @@ class DSInteropClient {
   String? get lastAnnouncedIP => _lastAnnouncedIP;
   bool get driverStationDocked => _driverStationDocked;
 
+  bool _attemptServerStart = true;
+
+  DateTime serverStopTime = DateTime.now();
+
   DSInteropClient({
     this.onNewIPAnnounced,
     this.onDriverStationDockChanged,
     this.onConnect,
     this.onDisconnect,
   }) {
-    _connect();
+    _tcpSocketConnect();
   }
 
-  void _connect() {
-    if (_serverConnectionActive) {
-      return;
+  void startDBModeServer() {
+    // For some reason if the server is quickly stopped then started there's a 5 second delay
+    // The workaround is to use the cached value of the docked state
+    if (DateTime.now().microsecondsSinceEpoch -
+            serverStopTime.microsecondsSinceEpoch <=
+        5 * 1e6) {
+      onDriverStationDockChanged?.call(_driverStationDocked);
     }
     _tcpSocketConnect();
+
     if (!kIsWeb) {
-      _dbModeServerConnect();
+      _attemptServerStart = true;
+      _startDBModeServer();
     }
+  }
+
+  void stopDBModeServer() {
+    serverStopTime = DateTime.now();
+    _dbModeServerClose(false);
   }
 
   void _tcpSocketConnect() async {
@@ -77,31 +94,37 @@ class DSInteropClient {
     );
   }
 
-  void _dbModeServerConnect() async {
-    if (_dbModeConnectionActive) {
+  Future<void> _startDBModeServer() async {
+    if (_dbModeServerRunning || !_attemptServerStart) {
       return;
     }
     try {
       _dbModeServer = await ServerSocket.bind(serverBaseAddress, 1741);
     } catch (e) {
-      logger.info(
-        'Failed to start TCP server on port 1741, attempting to reconnect in 5 seconds',
-      );
-      Future.delayed(const Duration(seconds: 5), _dbModeServerConnect);
+      if (_attemptServerStart) {
+        logger.info(
+          'Failed to start TCP server on port 1741, attempting to restart in 5 seconds',
+        );
+        Future.delayed(const Duration(seconds: 5), _startDBModeServer);
+      } else {
+        logger.info('Failed to start TCP server on port 1741');
+      }
       return;
     }
+
+    _attemptServerStart = false;
+    _dbModeServerRunning = true;
 
     _dbModeServer!.listen(
       (socket) {
         logger.info('Received connection from Driver Station on TCP port 1741');
+        _connectedSockets.add(socket);
         socket.listen(
           (data) {
-            if (!_dbModeConnectionActive) {
-              _dbModeConnectionActive = true;
-            }
             _dbModeServerOnMessage(data);
           },
           onDone: () {
+            _connectedSockets.remove(socket);
             logger.info('Lost connection from Driver Station on TCP port 1741');
           },
         );
@@ -180,41 +203,55 @@ class DSInteropClient {
     }
   }
 
-  void _socketClose() {
+  void _socketClose() async {
     if (!_serverConnectionActive) {
       return;
     }
 
-    _socket?.close();
+    await _socket?.close();
     _socket = null;
 
     _serverConnectionActive = false;
 
-    _driverStationDocked = false;
-    onDriverStationDockChanged?.call(false);
     onDisconnect?.call();
 
     logger.info(
       'Driver Station connection on TCP port 1742 closed, attempting to reconnect in 5 seconds.',
     );
 
-    Future.delayed(const Duration(seconds: 5), _connect);
+    Future.delayed(const Duration(seconds: 5), _tcpSocketConnect);
   }
 
-  void _dbModeServerClose() {
-    if (!_dbModeConnectionActive) {
+  void _dbModeServerClose([bool reconnect = true]) async {
+    if (!_dbModeServerRunning) {
       return;
     }
 
-    _dbModeServer?.close();
+    _dbModeServerRunning = false;
+
+    // Cloning the list because closing each socket changes the size of the list
+    for (Socket socket in _connectedSockets.toList()) {
+      await socket.close();
+      socket.destroy();
+    }
+
+    await _dbModeServer?.close();
     _dbModeServer = null;
 
-    _dbModeConnectionActive = false;
+    onDriverStationDockChanged?.call(false);
 
-    logger.info(
-      'Driver Station TCP Server on Port 1741 closed, attempting to reconnect in 5 seconds.',
-    );
+    _tcpBuffer.clear();
 
-    Future.delayed(const Duration(seconds: 5), _dbModeServerConnect);
+    _attemptServerStart = reconnect;
+
+    if (reconnect) {
+      logger.info(
+        'Driver Station TCP Server on Port 1741 closed, attempting to reconnect in 5 seconds.',
+      );
+
+      Future.delayed(const Duration(seconds: 5), _startDBModeServer);
+    } else {
+      logger.info('Driver Station TCP Server on Port 1741 closed');
+    }
   }
 }

@@ -191,9 +191,10 @@ mixin DashboardPageSettings on DashboardPageViewModel {
   }
 
   Future<void> changeResizeToDS(bool value) async {
-    if (value && ntConnection.dsClient.driverStationDocked) {
-      onDriverStationDocked();
+    if (value) {
+      ntConnection.startDBModeServer();
     } else {
+      ntConnection.stopDBModeServer;
       onDriverStationUndocked();
     }
 

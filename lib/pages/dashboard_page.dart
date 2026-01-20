@@ -190,6 +190,11 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
     );
     robotNotificationListener.listen();
 
+    if (preferences.getBool(PrefKeys.autoResizeToDS) ??
+        Defaults.autoResizeToDS) {
+      ntConnection.startDBModeServer();
+    }
+
     ntConnection.dsClientConnect(
       onIPAnnounced: (ip) async {
         if (preferences.getInt(PrefKeys.ipAddressMode) !=
