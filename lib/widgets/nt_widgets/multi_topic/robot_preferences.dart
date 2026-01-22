@@ -45,7 +45,7 @@ class RobotPreferencesModel extends MultiTopicNTWidgetModel {
   @override
   void init() {
     topicAnnounceListener = (topic) {
-      if (!topic.name.contains(this.topic) ||
+      if (this.topic != null && !topic.name.contains(this.topic!) ||
           preferenceTopicNames.contains(topic.name) ||
           topic.name.contains('.type')) {
         return;

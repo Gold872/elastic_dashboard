@@ -286,8 +286,7 @@ class FieldWidget extends NTWidget {
   Widget build(BuildContext context) {
     FieldWidgetModel model = cast(context.watch<NTWidgetModel>());
 
-    List<NT4Subscription> listeners = [];
-    listeners.add(model.robotSubscription);
+    List<NT4Subscription> listeners = [?model.robotSubscription];
     if (model.showOtherObjects || model.showTrajectories) {
       listeners.addAll(model.otherObjectSubscriptions);
     }

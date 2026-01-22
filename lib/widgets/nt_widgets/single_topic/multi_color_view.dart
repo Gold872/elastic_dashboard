@@ -15,7 +15,7 @@ class MultiColorView extends NTWidget {
     SingleTopicNTWidgetModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         List<Object?> hexStringsRaw = data?.tryCast<List<Object?>>() ?? [];
         List<String> hexStrings = hexStringsRaw.whereType<String>().toList();
