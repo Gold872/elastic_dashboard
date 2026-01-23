@@ -119,7 +119,6 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                       children: [
                         ExpansionTile(
                           title: const Text('Network Tables Widgets'),
-                          childrenPadding: const EdgeInsets.only(left: 16),
                           children: NTWidgetRegistry.registeredWidgetNames
                               .sorted((a, b) => a.compareTo(b))
                               .map(

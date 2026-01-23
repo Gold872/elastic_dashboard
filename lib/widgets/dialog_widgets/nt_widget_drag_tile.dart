@@ -142,13 +142,18 @@ class _NTWidgetDragTileState extends State<NTWidgetDragTile> {
 
         setState(() => draggingWidget = null);
       },
-      child: Padding(
-        padding: const EdgeInsetsDirectional.only(start: 16),
-        child: ListTile(
-          dense: true,
-          contentPadding: const EdgeInsets.only(right: 20),
-          title: Text(widget.widgetName),
-        ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(start: 32),
+            child: ListTile(
+              dense: true,
+              contentPadding: const EdgeInsets.only(right: 20),
+              title: Text(widget.widgetName),
+            ),
+          ),
+          const Divider(height: 0),
+        ],
       ),
     ),
   );
