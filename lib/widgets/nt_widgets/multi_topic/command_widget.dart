@@ -14,13 +14,13 @@ class CommandModel extends MultiTopicNTWidgetModel {
   String get runningTopicName => '$topic/running';
   String get nameTopicName => '$topic/name';
 
-  late NT4Subscription runningSubscription;
-  late NT4Subscription nameSubscription;
+  NT4Subscription? runningSubscription;
+  NT4Subscription? nameSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    runningSubscription,
-    nameSubscription,
+    ?runningSubscription,
+    ?nameSubscription,
   ];
 
   NT4Topic? runningTopic;
@@ -66,6 +66,12 @@ class CommandModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      runningSubscription = null;
+      nameSubscription = null;
+      return;
+    }
+
     runningSubscription = ntConnection.subscribe(
       runningTopicName,
       super.period,
@@ -123,7 +129,9 @@ class CommandWidget extends NTWidget {
   Widget build(BuildContext context) {
     CommandModel model = cast(context.watch<NTWidgetModel>());
 
-    String buttonText = model.topic.substring(model.topic.lastIndexOf('/') + 1);
+    String buttonText = (model.topic != null)
+        ? model.topic!.substring(model.topic!.lastIndexOf('/') + 1)
+        : '';
 
     ThemeData theme = Theme.of(context);
 
@@ -145,12 +153,12 @@ class CommandWidget extends NTWidget {
 
         // Prevents widget from locking up if double pressed fast enough
         bool running =
-            model.runningSubscription.value?.tryCast<bool>() ?? false;
+            model.runningSubscription?.value?.tryCast<bool>() ?? false;
 
         model.ntConnection.updateDataFromTopic(model.runningTopic!, !running);
       },
       child: ValueListenableBuilder(
-        valueListenable: model.runningSubscription,
+        valueListenable: model.runningSubscription ?? ValueNotifier(null),
         builder: (context, data, child) {
           bool running = tryCast(data) ?? false;
 
@@ -191,7 +199,7 @@ class CommandWidget extends NTWidget {
         Visibility(
           visible: model.showType,
           child: ValueListenableBuilder(
-            valueListenable: model.nameSubscription,
+            valueListenable: model.nameSubscription ?? ValueNotifier(null),
             builder: (context, data, child) {
               String name = tryCast(data) ?? 'Unknown';
 

@@ -40,7 +40,11 @@ class TextDisplayModel extends SingleTopicNTWidgetModel {
     if (preferences.getBool(PrefKeys.autoTextSubmitButton) ?? false) {
       showSubmitButton ??= true;
     } else {
-      showSubmitButton ??= ntConnection.getTopicFromName(topic)?.isPersistent;
+      if (topic != null) {
+        showSubmitButton ??= ntConnection
+            .getTopicFromName(topic!)
+            ?.isPersistent;
+      }
       showSubmitButton ??= false;
     }
     _showSubmitButton = showSubmitButton;
@@ -109,9 +113,9 @@ class TextDisplay extends NTWidget {
     ThemeData themeData = Theme.of(context);
 
     return ListenableBuilder(
-      listenable: Listenable.merge([model.subscription!, model.controller]),
+      listenable: Listenable.merge([model.subscription, model.controller]),
       builder: (context, child) {
-        Object? data = model.subscription!.value;
+        Object? data = model.subscription?.value;
 
         if (data?.toString() != model.previousValue?.toString()) {
           // Needed to prevent errors

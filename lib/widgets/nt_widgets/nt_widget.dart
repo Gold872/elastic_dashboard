@@ -31,12 +31,12 @@ sealed class NTWidgetModel extends ChangeNotifier {
 
   late double _period;
 
-  late String _topic;
+  String? _topic;
 
   // ignore: unnecessary_getters_setters
-  String get topic => _topic;
+  String? get topic => _topic;
 
-  set topic(String value) => _topic = value;
+  set topic(String? value) => _topic = value;
 
   // ignore: unnecessary_getters_setters
   double get period => _period;
@@ -46,7 +46,7 @@ sealed class NTWidgetModel extends ChangeNotifier {
   NTWidgetModel({
     required this.ntConnection,
     required this.preferences,
-    required String topic,
+    required String? topic,
     double? period,
   }) : _topic = topic {
     this.period =
@@ -60,7 +60,7 @@ sealed class NTWidgetModel extends ChangeNotifier {
     required this.preferences,
     required Map<String, dynamic> jsonData,
   }) {
-    _topic = tryCast(jsonData['topic']) ?? '';
+    _topic = tryCast(jsonData['topic']);
 
     _period =
         tryCast(jsonData['period']) ??
@@ -227,17 +227,21 @@ class SingleTopicNTWidgetModel extends NTWidgetModel {
   @override
   @mustCallSuper
   void init() async {
-    subscription = ntConnection.subscribeWithOptions(
-      topic,
-      NT4SubscriptionOptions(
-        periodicRateSeconds: period,
-        structMeta: ntStructMeta,
-      ),
-    );
+    if (topic != null) {
+      subscription = ntConnection.subscribeWithOptions(
+        topic!,
+        NT4SubscriptionOptions(
+          periodicRateSeconds: period,
+          structMeta: ntStructMeta,
+        ),
+      );
+    }
   }
 
   void createTopicIfNull() {
-    ntTopic ??= ntConnection.getTopicFromName(topic);
+    if (topic != null) {
+      ntTopic ??= ntConnection.getTopicFromName(topic!);
+    }
   }
 
   @override
@@ -254,13 +258,15 @@ class SingleTopicNTWidgetModel extends NTWidgetModel {
   @override
   void resetSubscription() {
     if (subscription == null) {
-      subscription = ntConnection.subscribeWithOptions(
-        topic,
-        NT4SubscriptionOptions(
-          periodicRateSeconds: period,
-          structMeta: ntStructMeta,
-        ),
-      );
+      if (topic != null) {
+        subscription = ntConnection.subscribeWithOptions(
+          topic!,
+          NT4SubscriptionOptions(
+            periodicRateSeconds: period,
+            structMeta: ntStructMeta,
+          ),
+        );
+      }
 
       ntTopic = null;
 
@@ -271,13 +277,15 @@ class SingleTopicNTWidgetModel extends NTWidgetModel {
     bool resetDataType = subscription!.topic != topic;
 
     ntConnection.unSubscribe(subscription!);
-    subscription = ntConnection.subscribeWithOptions(
-      topic,
-      NT4SubscriptionOptions(
-        periodicRateSeconds: period,
-        structMeta: ntStructMeta,
-      ),
-    );
+    if (topic != null) {
+      subscription = ntConnection.subscribeWithOptions(
+        topic!,
+        NT4SubscriptionOptions(
+          periodicRateSeconds: period,
+          structMeta: ntStructMeta,
+        ),
+      );
+    }
 
     ntTopic = null;
 
@@ -292,9 +300,9 @@ class SingleTopicNTWidgetModel extends NTWidgetModel {
 
     // If the path of the struct has changed, we want to update its
     // value of the struct field
-    if (ntStructMeta != null) {
+    if (ntStructMeta != null && topic != null) {
       subscription!.updateValue(
-        ntConnection.getLastAnnouncedValue(topic),
+        ntConnection.getLastAnnouncedValue(topic!),
         subscription!.timestamp,
       );
     }

@@ -13,13 +13,13 @@ class SubsystemModel extends MultiTopicNTWidgetModel {
   String get defaultCommandTopic => '$topic/.default';
   String get currentCommandTopic => '$topic/.command';
 
-  late NT4Subscription defaultCommandSubscription;
-  late NT4Subscription currentCommandSubscription;
+  NT4Subscription? defaultCommandSubscription;
+  NT4Subscription? currentCommandSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    defaultCommandSubscription,
-    currentCommandSubscription,
+    ?defaultCommandSubscription,
+    ?currentCommandSubscription,
   ];
 
   SubsystemModel({
@@ -37,6 +37,12 @@ class SubsystemModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      defaultCommandSubscription = null;
+      currentCommandSubscription = null;
+      return;
+    }
+
     defaultCommandSubscription = ntConnection.subscribe(
       defaultCommandTopic,
       super.period,
@@ -61,7 +67,8 @@ class SubsystemWidget extends NTWidget {
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
         ValueListenableBuilder(
-          valueListenable: model.defaultCommandSubscription,
+          valueListenable:
+              model.defaultCommandSubscription ?? ValueNotifier(null),
           builder: (context, value, child) {
             String defaultCommand = tryCast(value) ?? 'none';
 
@@ -73,7 +80,8 @@ class SubsystemWidget extends NTWidget {
         ),
         const SizedBox(height: 5),
         ValueListenableBuilder(
-          valueListenable: model.currentCommandSubscription,
+          valueListenable:
+              model.currentCommandSubscription ?? ValueNotifier(null),
           builder: (context, value, child) {
             String currentCommand = tryCast(value) ?? 'none';
 

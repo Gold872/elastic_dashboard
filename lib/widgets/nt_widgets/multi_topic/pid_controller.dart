@@ -21,17 +21,17 @@ class PIDControllerModel extends MultiTopicNTWidgetModel {
   NT4Topic? _kdTopic;
   NT4Topic? _setpointTopic;
 
-  late NT4Subscription kpSubscription;
-  late NT4Subscription kiSubscription;
-  late NT4Subscription kdSubscription;
-  late NT4Subscription setpointSubscription;
+  NT4Subscription? kpSubscription;
+  NT4Subscription? kiSubscription;
+  NT4Subscription? kdSubscription;
+  NT4Subscription? setpointSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    kpSubscription,
-    kiSubscription,
-    kdSubscription,
-    setpointSubscription,
+    ?kpSubscription,
+    ?kiSubscription,
+    ?kdSubscription,
+    ?setpointSubscription,
   ];
 
   TextEditingController? kpTextController;
@@ -59,6 +59,14 @@ class PIDControllerModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      kpSubscription = null;
+      kiSubscription = null;
+      kdSubscription = null;
+      setpointSubscription = null;
+      return;
+    }
+
     kpSubscription = ntConnection.subscribe(kpTopicName, super.period);
     kiSubscription = ntConnection.subscribe(kiTopicName, super.period);
     kdSubscription = ntConnection.subscribe(kdTopicName, super.period);
@@ -169,10 +177,10 @@ class PIDControllerWidget extends NTWidget {
         model.setpointTextController,
       ]),
       builder: (context, child) {
-        double kP = tryCast(model.kpSubscription.value) ?? 0.0;
-        double kI = tryCast(model.kiSubscription.value) ?? 0.0;
-        double kD = tryCast(model.kdSubscription.value) ?? 0.0;
-        double setpoint = tryCast(model.setpointSubscription.value) ?? 0.0;
+        double kP = tryCast(model.kpSubscription?.value) ?? 0.0;
+        double kI = tryCast(model.kiSubscription?.value) ?? 0.0;
+        double kD = tryCast(model.kdSubscription?.value) ?? 0.0;
+        double setpoint = tryCast(model.setpointSubscription?.value) ?? 0.0;
 
         // Creates the text editing controllers if they are null
         bool wasNull =

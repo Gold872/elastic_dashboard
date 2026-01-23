@@ -17,10 +17,10 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
 
   String get streamsTopic => '$topic/streams';
 
-  late NT4Subscription streamsSubscription;
+  NT4Subscription? streamsSubscription;
 
   @override
-  List<NT4Subscription> get subscriptions => [streamsSubscription];
+  List<NT4Subscription> get subscriptions => [?streamsSubscription];
 
   int? quality;
   int? fps;
@@ -103,6 +103,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      streamsSubscription = null;
+      return;
+    }
+
     streamsSubscription = ntConnection.subscribe(streamsTopic, super.period);
   }
 
@@ -324,7 +329,7 @@ class CameraStreamWidget extends NTWidget {
       ]),
       builder: (context, child) {
         List<Object?> rawStreams =
-            tryCast(model.streamsSubscription.value) ?? [];
+            tryCast(model.streamsSubscription?.value) ?? [];
 
         List<String> streams = [];
         for (Object? stream in rawStreams) {

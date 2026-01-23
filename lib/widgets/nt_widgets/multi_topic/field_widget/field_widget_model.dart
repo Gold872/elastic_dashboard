@@ -37,14 +37,14 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   String type = 'Field';
 
   String get robotTopicName => '$topic/Robot';
-  late NT4Subscription robotSubscription;
+  NT4Subscription? robotSubscription;
 
   final List<String> _otherObjectTopics = [];
   final List<NT4Subscription> _otherObjectSubscriptions = [];
 
   @override
   List<NT4Subscription> get subscriptions => [
-    robotSubscription,
+    ?robotSubscription,
     ..._otherObjectSubscriptions,
   ];
 
@@ -144,7 +144,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   FieldObject getRobotObject() {
     List<Object?> robotPositionRaw =
-        robotSubscription.value?.tryCast<List<Object?>>() ?? [];
+        robotSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
     if (isPoseStruct(robotTopicName)) {
       List<int> poseBytes = robotPositionRaw.whereType<int>().toList();
@@ -374,7 +374,8 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     super.init();
 
     topicAnnounceListener = (nt4Topic) {
-      if (nt4Topic.name.startsWith(topic) &&
+      if (topic != null &&
+          nt4Topic.name.startsWith(topic!) &&
           !nt4Topic.name.endsWith('Robot') &&
           !nt4Topic.name.contains('.') &&
           !_otherObjectTopics.contains(nt4Topic.name)) {
@@ -393,6 +394,10 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   void initializeSubscriptions() {
     _otherObjectSubscriptions.clear();
 
+    if (topic == null) {
+      robotSubscription = null;
+      return;
+    }
     robotSubscription = ntConnection.subscribe(robotTopicName, super.period);
   }
 

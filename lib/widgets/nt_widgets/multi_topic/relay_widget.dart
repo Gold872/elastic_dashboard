@@ -12,10 +12,10 @@ class RelayModel extends MultiTopicNTWidgetModel {
 
   String get valueTopicName => '$topic/Value';
 
-  late NT4Subscription valueSubscription;
+  NT4Subscription? valueSubscription;
 
   @override
-  List<NT4Subscription> get subscriptions => [valueSubscription];
+  List<NT4Subscription> get subscriptions => [?valueSubscription];
 
   NT4Topic? valueTopic;
 
@@ -36,6 +36,11 @@ class RelayModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      valueSubscription = null;
+      return;
+    }
+
     valueSubscription = ntConnection.subscribe(valueTopicName, super.period);
   }
 
@@ -64,7 +69,7 @@ class RelayWidget extends NTWidget {
     RelayModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.valueSubscription,
+      valueListenable: model.valueSubscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         String selected = tryCast(data) ?? 'Off';
 

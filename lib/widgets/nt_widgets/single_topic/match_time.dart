@@ -179,7 +179,7 @@ class MatchTimeWidget extends NTWidget {
     MatchTimeModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         double time = tryCast(data) ?? -1.0;
         time = time.floorToDouble();

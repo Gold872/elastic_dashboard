@@ -21,21 +21,21 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
   String get replayNumberTopic => '$topic/ReplayNumber';
   String get stationNumberTopic => '$topic/StationNumber';
 
-  late NT4Subscription eventNameSubscription;
-  late NT4Subscription controlDataSubscription;
-  late NT4Subscription allianceSubscription;
-  late NT4Subscription matchNumberSubscription;
-  late NT4Subscription matchTypeSubscription;
-  late NT4Subscription replayNumberSubscription;
+  NT4Subscription? eventNameSubscription;
+  NT4Subscription? controlDataSubscription;
+  NT4Subscription? allianceSubscription;
+  NT4Subscription? matchNumberSubscription;
+  NT4Subscription? matchTypeSubscription;
+  NT4Subscription? replayNumberSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    eventNameSubscription,
-    controlDataSubscription,
-    allianceSubscription,
-    matchNumberSubscription,
-    matchTypeSubscription,
-    replayNumberSubscription,
+    ?eventNameSubscription,
+    ?controlDataSubscription,
+    ?allianceSubscription,
+    ?matchNumberSubscription,
+    ?matchTypeSubscription,
+    ?replayNumberSubscription,
   ];
 
   FMSInfoModel({
@@ -53,6 +53,16 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      eventNameSubscription = null;
+      controlDataSubscription = null;
+      allianceSubscription = null;
+      matchNumberSubscription = null;
+      matchTypeSubscription = null;
+      replayNumberSubscription = null;
+
+      return;
+    }
     eventNameSubscription = ntConnection.subscribe(
       eventNameTopic,
       super.period,
@@ -111,12 +121,12 @@ class FMSInfo extends NTWidget {
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, child) {
-        String eventName = tryCast(model.eventNameSubscription.value) ?? '';
-        int controlData = tryCast(model.controlDataSubscription.value) ?? 32;
-        bool redAlliance = tryCast(model.allianceSubscription.value) ?? true;
-        int matchNumber = tryCast(model.matchNumberSubscription.value) ?? 0;
-        int matchType = tryCast(model.matchTypeSubscription.value) ?? 0;
-        int replayNumber = tryCast(model.replayNumberSubscription.value) ?? 0;
+        String eventName = tryCast(model.eventNameSubscription?.value) ?? '';
+        int controlData = tryCast(model.controlDataSubscription?.value) ?? 32;
+        bool redAlliance = tryCast(model.allianceSubscription?.value) ?? true;
+        int matchNumber = tryCast(model.matchNumberSubscription?.value) ?? 0;
+        int matchType = tryCast(model.matchTypeSubscription?.value) ?? 0;
+        int replayNumber = tryCast(model.replayNumberSubscription?.value) ?? 0;
 
         String eventNameDisplay = '$eventName${(eventName != '') ? ' ' : ''}';
         String matchTypeString = _getMatchTypeString(matchType);

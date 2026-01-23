@@ -13,13 +13,13 @@ class EncoderModel extends MultiTopicNTWidgetModel {
   String get distanceTopic => '$topic/Distance';
   String get speedTopic => '$topic/Speed';
 
-  late NT4Subscription distanceSubscription;
-  late NT4Subscription speedSubscription;
+  NT4Subscription? distanceSubscription;
+  NT4Subscription? speedSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    distanceSubscription,
-    speedSubscription,
+    ?distanceSubscription,
+    ?speedSubscription,
   ];
 
   EncoderModel({
@@ -66,7 +66,8 @@ class EncoderWidget extends NTWidget {
                   ),
                 ),
                 child: ValueListenableBuilder(
-                  valueListenable: model.distanceSubscription,
+                  valueListenable:
+                      model.distanceSubscription ?? ValueNotifier(null),
                   builder: (context, value, child) {
                     double distance = tryCast(value) ?? 0.0;
                     return SelectableText(
@@ -95,7 +96,8 @@ class EncoderWidget extends NTWidget {
                   ),
                 ),
                 child: ValueListenableBuilder(
-                  valueListenable: model.speedSubscription,
+                  valueListenable:
+                      model.speedSubscription ?? ValueNotifier(null),
                   builder: (context, value, child) {
                     double speed = tryCast(value) ?? 0.0;
                     return SelectableText(

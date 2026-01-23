@@ -197,13 +197,13 @@ class NumberSlider extends NTWidget {
 
     return ListenableBuilder(
       listenable: Listenable.merge([
-        model.subscription!,
+        model.subscription,
         model.displayValue,
         model.dragging,
       ]),
       builder: (context, child) {
         double value =
-            tryCast<num>(model.subscription!.value)?.toDouble() ?? 0.0;
+            tryCast<num>(model.subscription?.value)?.toDouble() ?? 0.0;
 
         double clampedValue = value.clamp(model.minValue, model.maxValue);
 

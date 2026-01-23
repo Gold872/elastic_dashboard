@@ -16,20 +16,20 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
   String get activeTopicName => '$topic/active';
   String get defaultTopicName => '$topic/default';
 
-  late NT4Subscription optionsSubscription;
-  late NT4Subscription selectedSubscription;
-  late NT4Subscription activeSubscription;
-  late NT4Subscription defaultSubscription;
+  NT4Subscription? optionsSubscription;
+  NT4Subscription? selectedSubscription;
+  NT4Subscription? activeSubscription;
+  NT4Subscription? defaultSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    optionsSubscription,
-    selectedSubscription,
-    activeSubscription,
-    defaultSubscription,
+    ?optionsSubscription,
+    ?selectedSubscription,
+    ?activeSubscription,
+    ?defaultSubscription,
   ];
 
-  late Listenable chooserStateListenable;
+  Listenable? chooserStateListenable;
 
   String? previousDefault;
   String? previousSelected;
@@ -53,6 +53,15 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      optionsSubscription = null;
+      selectedSubscription = null;
+      activeSubscription = null;
+      defaultSubscription = null;
+      chooserStateListenable = null;
+      return;
+    }
+
     optionsSubscription = ntConnection.subscribe(
       optionsTopicName,
       super.period,
@@ -67,7 +76,7 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
       super.period,
     );
     chooserStateListenable = Listenable.merge(subscriptions);
-    chooserStateListenable.addListener(onChooserStateUpdate);
+    chooserStateListenable!.addListener(onChooserStateUpdate);
 
     previousOptions = null;
     previousActive = null;
@@ -82,28 +91,28 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
   @override
   void resetSubscription() {
     _selectedTopic = null;
-    chooserStateListenable.removeListener(onChooserStateUpdate);
+    chooserStateListenable?.removeListener(onChooserStateUpdate);
 
     super.resetSubscription();
   }
 
   void onChooserStateUpdate() {
-    List<Object?>? rawOptions = optionsSubscription.value
+    List<Object?>? rawOptions = optionsSubscription?.value
         ?.tryCast<List<Object?>>();
 
     List<String>? currentOptions = rawOptions?.whereType<String>().toList();
 
-    String? currentActive = tryCast(activeSubscription.value);
+    String? currentActive = tryCast(activeSubscription?.value);
     if (currentActive != null && currentActive.isEmpty) {
       currentActive = null;
     }
 
-    String? currentSelected = tryCast(selectedSubscription.value);
+    String? currentSelected = tryCast(selectedSubscription?.value);
     if (currentSelected != null && currentSelected.isEmpty) {
       currentSelected = null;
     }
 
-    String? currentDefault = tryCast(defaultSubscription.value);
+    String? currentDefault = tryCast(defaultSubscription?.value);
     if (currentDefault != null && currentDefault.isEmpty) {
       currentDefault = null;
     }

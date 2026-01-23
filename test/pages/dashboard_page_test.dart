@@ -20,12 +20,14 @@ import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
+import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/services/update_checker.dart';
 import 'package:elastic_dashboard/widgets/custom_appbar.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/layout_drag_tile.dart';
+import 'package:elastic_dashboard/widgets/dialog_widgets/nt_widget_drag_tile.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_layout.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_dialog.dart';
@@ -390,10 +392,10 @@ void main() {
         findsOneWidget,
       );
 
-      final layoutsTab = find.text('Layouts');
-      expect(layoutsTab, findsOneWidget);
+      final widgetsTab = find.text('Widgets');
+      expect(widgetsTab, findsOneWidget);
 
-      await widgetTester.tap(layoutsTab);
+      await widgetTester.tap(widgetsTab);
       await widgetTester.pumpAndSettle();
 
       final listLayoutContainer = find.widgetWithText(
@@ -583,10 +585,10 @@ void main() {
         findsOneWidget,
       );
 
-      final layoutsTab = find.text('Layouts');
-      expect(layoutsTab, findsOneWidget);
+      final widgetsTab = find.text('Widgets');
+      expect(widgetsTab, findsOneWidget);
 
-      await widgetTester.tap(layoutsTab);
+      await widgetTester.tap(widgetsTab);
       await widgetTester.pumpAndSettle();
 
       final listLayoutContainer = find.widgetWithText(
@@ -660,6 +662,88 @@ void main() {
       await widgetTester.pumpAndSettle();
 
       expect(testBooleanInLayout, findsNothing);
+    });
+
+    testWidgets('Widgets', skip: true, (widgetTester) async {
+      SharedPreferences.setMockInitialValues({});
+      await pumpDashboardPage(
+        widgetTester,
+        await SharedPreferences.getInstance(),
+        ntConnection: createMockOnlineNT4(),
+      );
+
+      final addWidget = find.widgetWithText(MenuItemButton, 'Add Widget');
+
+      expect(addWidget, findsOneWidget);
+      expect(find.widgetWithText(DraggableDialog, 'Add Widget'), findsNothing);
+
+      MenuItemButton addWidgetButton =
+          addWidget.evaluate().first.widget as MenuItemButton;
+
+      addWidgetButton.onPressed?.call();
+
+      await widgetTester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(DraggableDialog, 'Add Widget'),
+        findsOneWidget,
+      );
+
+      final widgetsTab = find.text('Widgets');
+      expect(widgetsTab, findsOneWidget);
+
+      await widgetTester.tap(widgetsTab);
+      await widgetTester.pumpAndSettle();
+
+      final widgetsDropdown = find
+          .widgetWithText(
+            ExpansionTile,
+            'Network Tables Widgets',
+          )
+          .hitTestable();
+      expect(widgetsDropdown, findsOneWidget);
+
+      expect(find.byType(NTWidgetDragTile), findsNothing);
+
+      await widgetTester.tap(widgetsDropdown);
+      await widgetTester.pumpAndSettle();
+
+      expect(find.byType(NTWidgetDragTile), findsWidgets);
+
+      Future<void> testWidgetDragOut(String typeName) async {
+        final dragOutTile = find
+            .widgetWithText(NTWidgetDragTile, typeName)
+            .hitTestable();
+        expect(dragOutTile, findsOneWidget);
+
+        await widgetTester.ensureVisible(dragOutTile);
+
+        final widget = find.widgetWithText(WidgetContainer, typeName);
+        expect(widget, findsNothing);
+
+        final gesture = await widgetTester.startGesture(
+          widgetTester.getCenter(dragOutTile),
+          kind: PointerDeviceKind.mouse,
+        );
+        await widgetTester.pump();
+        await gesture.moveBy(
+          const Offset(100, 0),
+          timeStamp: Duration(milliseconds: 100),
+        );
+        await widgetTester.pump();
+
+        expect(widget, findsOneWidget);
+
+        await gesture.moveBy(const Offset(100, 0));
+        await gesture.up();
+
+        await widgetTester.pumpAndSettle();
+      }
+
+      NTWidgetRegistry.ensureInitialized();
+      for (final name in NTWidgetRegistry.registeredWidgetNames) {
+        await testWidgetDragOut(name);
+      }
     });
   });
 

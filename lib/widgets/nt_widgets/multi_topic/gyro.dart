@@ -16,10 +16,10 @@ class GyroModel extends MultiTopicNTWidgetModel {
 
   String get valueTopic => '$topic/Value';
 
-  late NT4Subscription valueSubscription;
+  NT4Subscription? valueSubscription;
 
   @override
-  List<NT4Subscription> get subscriptions => [valueSubscription];
+  List<NT4Subscription> get subscriptions => [?valueSubscription];
 
   bool _counterClockwisePositive = false;
 
@@ -50,6 +50,10 @@ class GyroModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      valueSubscription = null;
+      return;
+    }
     valueSubscription = ntConnection.subscribe(valueTopic, super.period);
   }
 
@@ -102,7 +106,7 @@ class Gyro extends NTWidget {
         return Transform.scale(
           scale: squareSide / normalSquareSide,
           child: ValueListenableBuilder(
-            valueListenable: model.valueSubscription,
+            valueListenable: model.valueSubscription ?? ValueNotifier(null),
             builder: (context, data, child) {
               double value = tryCast(data) ?? 0.0;
 
