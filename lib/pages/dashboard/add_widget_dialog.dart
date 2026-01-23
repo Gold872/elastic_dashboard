@@ -97,7 +97,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
               const TabBar(
                 tabs: [
                   Tab(text: 'Network Tables'),
-                  Tab(text: 'Layouts'),
+                  Tab(text: 'Widgets'),
                 ],
               ),
               const SizedBox(height: 5),
