@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
 import 'package:elegant_notification/elegant_notification.dart';
+import 'package:elegant_notification/resources/stacked_options.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/log.dart';
@@ -115,6 +116,10 @@ mixin DashboardPageNotifications on DashboardPageViewModel {
         style: textTheme.bodyMedium!.copyWith(fontWeight: FontWeight.bold),
       ),
       description: Flexible(child: Text(message)),
+      stackedOptions: StackedOptions(
+        key: 'notification',
+        type: StackedType.above,
+      ),
     );
 
     state!.showNotification(notification);
