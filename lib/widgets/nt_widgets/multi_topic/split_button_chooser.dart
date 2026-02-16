@@ -143,11 +143,13 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
   }
 
   void publishSelectedTopic() {
-    if (_selectedTopic != null) {
+    if (_selectedTopic != null &&
+        ntConnection.isTopicPublished(_selectedTopic)) {
       return;
     }
 
-    NT4Topic? existing = ntConnection.getTopicFromName(selectedTopicName);
+    NT4Topic? existing =
+        _selectedTopic ?? ntConnection.getTopicFromName(selectedTopicName);
 
     if (existing != null) {
       existing.properties.addAll({'retained': true});
@@ -167,7 +169,8 @@ class SplitButtonChooserModel extends MultiTopicNTWidgetModel {
       return;
     }
 
-    if (_selectedTopic == null) {
+    if (_selectedTopic == null ||
+        !ntConnection.isTopicPublished(_selectedTopic)) {
       publishSelectedTopic();
     }
 
