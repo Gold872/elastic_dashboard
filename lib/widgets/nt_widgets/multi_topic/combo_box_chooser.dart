@@ -212,10 +212,11 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }
 
   void unpublishSelectedTopic() {
-    if (_selectedTopic != null) {
+    if (_selectedTopic != null &&
+        ntConnection.isTopicPublished(_selectedTopic)) {
       ntConnection.unpublishTopic(_selectedTopic!);
-      _selectedTopic = null;
     }
+    _selectedTopic = null;
   }
 
   void publishSelectedValue(String? selected, [bool initial = false]) {
@@ -223,7 +224,8 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
       return;
     }
 
-    if (_selectedTopic == null) {
+    if (_selectedTopic == null ||
+        !ntConnection.isTopicPublished(_selectedTopic)) {
       publishSelectedTopic();
     }
 
