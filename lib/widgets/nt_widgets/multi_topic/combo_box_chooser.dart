@@ -101,10 +101,17 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
 
   @override
   void resetSubscription() {
-    _selectedTopic = null;
+    unpublishSelectedTopic();
     chooserStateListenable.removeListener(onChooserStateUpdate);
 
     super.resetSubscription();
+  }
+
+  @override
+  void softDispose({bool deleting = false}) {
+    if (deleting) {
+      unpublishSelectedTopic();
+    }
   }
 
   @override
@@ -184,7 +191,8 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }
 
   void publishSelectedTopic() {
-    if (_selectedTopic != null) {
+    if (_selectedTopic != null &&
+        ntConnection.isTopicPublished(_selectedTopic)) {
       return;
     }
 
@@ -200,6 +208,13 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
         NT4Type.string(),
         properties: {'retained': true},
       );
+    }
+  }
+
+  void unpublishSelectedTopic() {
+    if (_selectedTopic != null) {
+      ntConnection.unpublishTopic(_selectedTopic!);
+      _selectedTopic = null;
     }
   }
 
