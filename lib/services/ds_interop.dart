@@ -1,12 +1,9 @@
-import 'dart:convert';
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-
-import 'package:dot_cast/dot_cast.dart';
 
 import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/log.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:web_socket_channel/status.dart' as status;
 
 class DSInteropClient {
   final String serverBaseAddress = '127.0.0.1';
@@ -16,7 +13,7 @@ class DSInteropClient {
   ValueNotifier<String?> ipNotifier = ValueNotifier(null);
   ValueNotifier<int?> dsHeightNotifier = ValueNotifier(null);
 
-  Socket? _socket;
+  WebSocketChannel? _socket;
 
   DSInteropClient() {
     _connect();
@@ -34,23 +31,29 @@ class DSInteropClient {
       return;
     }
     try {
-      _socket = await Socket.connect(serverBaseAddress, 1742);
+      _socket = WebSocketChannel.connect(Uri.parse('ws://$serverBaseAddress:6768/ipws'));
+      await _socket!.ready;
     } catch (e) {
+      _socket = null;
       logger.debug(
-        'Failed to connect to Driver Station on port 1742, attempting to reconnect in 5 seconds.',
+        'Failed to connect to Driver Station on Websocket port 6768, attempting to reconnect in 5 seconds.',
       );
       Future.delayed(const Duration(seconds: 5), _tcpSocketConnect);
       return;
     }
 
-    _socket!.listen(
+    _socket!.stream.listen(
       (data) {
         if (!_serverConnectionActive) {
-          logger.info('Driver Station connected on TCP port 1742');
+          logger.info('Driver Station connected on Websocket port 6768');
           _serverConnectionActive = true;
           connectionStatus.value = true;
         }
-        _tcpSocketOnMessage(utf8.decode(data));
+        if (data is Uint8List) {
+          _tcpSocketOnMessage(data);
+        } else {
+          logger.warning('[DS INTEROP] Received data from Websocket 6768: "$data" with unknown type ${data.runtimeType}');
+        }
       },
       onDone: _socketClose,
       onError: (err) {
@@ -59,38 +62,27 @@ class DSInteropClient {
     );
   }
 
-  void _tcpSocketOnMessage(String data) {
-    logger.debug('Received data from TCP 1742: "$data"');
-    var jsonData = jsonDecode(data.toString());
+  void _tcpSocketOnMessage(Uint8List data) {
+    logger.debug('Received data from Websocket 6768: "$data"');
+    var blob = ByteData.sublistView(data);
 
-    if (jsonData is! Map) {
-      logger.warning('[DS INTEROP] Ignoring text message, not a Json Object');
-      return;
+    var tag = blob.getUint8(2);
+    if (tag == 50) {
+      var rawIP = blob.getUint32(3, Endian.big);
+      if (rawIP == 0) {
+        return;
+      }
+      String ipAddress = IPAddressUtil.getIpFromInt32Value(rawIP);
+      logger.info('Received IP Address from Driver Station: $ipAddress');
+      ipNotifier.value = ipAddress;
     }
-
-    int? dockedHeight = tryCast(jsonData['dockedHeight']);
-    if (dockedHeight != null) {
+    else if (tag == 51) {
+      var dockedHeight = blob.getUint32(3, Endian.big);
       logger.debug('[DS INTEROP] Received docked height: $dockedHeight');
       dsHeightNotifier.value = dockedHeight > 0 ? dockedHeight : null;
+    } else {
+      logger.warning('[DS INTEROP] Received d1ata with unknown tag: $tag');
     }
-
-    int? rawIP = tryCast(jsonData['robotIP']);
-    if (rawIP == null) {
-      logger.warning(
-        '[DS INTEROP] Ignoring Json message, robot IP is not valid',
-      );
-      return;
-    }
-
-    if (rawIP == 0) {
-      return;
-    }
-
-    String ipAddress = IPAddressUtil.getIpFromInt32Value(rawIP);
-
-    logger.info('Received IP Address from Driver Station: $ipAddress');
-
-    ipNotifier.value = ipAddress;
   }
 
   void _socketClose() {
@@ -98,7 +90,7 @@ class DSInteropClient {
       return;
     }
 
-    _socket?.close();
+    _socket?.sink.close(status.goingAway);
     _socket = null;
 
     _serverConnectionActive = false;
@@ -107,7 +99,7 @@ class DSInteropClient {
     connectionStatus.value = false;
 
     logger.info(
-      'Driver Station connection on TCP port 1742 closed, attempting to reconnect in 5 seconds.',
+      'Driver Station connection on Websocket port 6768 closed, attempting to reconnect in 5 seconds.',
     );
 
     Future.delayed(const Duration(seconds: 5), _connect);
