@@ -1,6 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
-import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/log.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
@@ -49,7 +50,7 @@ class DSInteropClient {
           _serverConnectionActive = true;
           connectionStatus.value = true;
         }
-        if (data is Uint8List) {
+        if (data is String) {
           _tcpSocketOnMessage(data);
         } else {
           logger.warning('[DS INTEROP] Received data from Websocket 6768: "$data" with unknown type ${data.runtimeType}');
@@ -62,26 +63,38 @@ class DSInteropClient {
     );
   }
 
-  void _tcpSocketOnMessage(Uint8List data) {
+  void _tcpSocketOnMessage(String data) {
     logger.debug('Received data from Websocket 6768: "$data"');
-    var blob = ByteData.sublistView(data);
+    var jsonData = jsonDecode(data.toString());
 
-    var tag = blob.getUint8(2);
-    if (tag == 50) {
-      var rawIP = blob.getUint32(3, Endian.big);
-      if (rawIP == 0) {
-        return;
-      }
-      String ipAddress = IPAddressUtil.getIpFromInt32Value(rawIP);
-      logger.info('Received IP Address from Driver Station: $ipAddress');
-      ipNotifier.value = ipAddress;
+    if (jsonData is! Map) {
+      logger.warning('[DS INTEROP] Ignoring text message, not a Json Object');
+      return;
     }
-    else if (tag == 51) {
-      var dockedHeight = blob.getUint32(3, Endian.big);
-      logger.debug('[DS INTEROP] Received docked height: $dockedHeight');
-      dsHeightNotifier.value = dockedHeight > 0 ? dockedHeight : null;
+
+    var rawIp = jsonData['robotIp'];
+
+    if (rawIp is String) {
+      if (rawIp != '0.0.0.0') {
+        logger.info('Received robot IP from DS Interop: $rawIp');
+        ipNotifier.value = rawIp;
+      }
     } else {
-      logger.warning('[DS INTEROP] Received d1ata with unknown tag: $tag');
+      // print type of rawIp for debugging
+      logger.debug('Type of robotIP field: ${rawIp.runtimeType}');
+      logger.warning(
+        '[DS INTEROP] Missing robot IP field in DS Interop message ',
+      );
+    }
+
+    var rawDockedHeight = jsonData['dockedHeight'];
+    if (rawDockedHeight is int) {
+      logger.info('Received docked height from DS Interop: $rawDockedHeight');
+      dsHeightNotifier.value = rawDockedHeight > 0 ? rawDockedHeight : null;
+    } else {
+      logger.warning(
+        '[DS INTEROP] Missing docked height field in DS Interop message',
+      );
     }
   }
 
