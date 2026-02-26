@@ -26,10 +26,12 @@ class ElasticLayoutDownloader {
             'Cannot download a remote layout while disconnected from the robot.',
       );
     }
+    String layoutPort =
+        preferences.getString(PrefKeys.layoutPort) ?? Defaults.layoutPort;
     String robotIP =
         preferences.getString(PrefKeys.ipAddress) ?? Defaults.ipAddress;
     String escapedName = Uri.encodeComponent('$layoutName.json');
-    Uri robotUri = Uri.parse('http://$robotIP:5800/$escapedName');
+    Uri robotUri = Uri.parse('http://$robotIP:$layoutPort/$escapedName');
     Response response;
     try {
       response = await client.get(robotUri);
@@ -61,7 +63,9 @@ class ElasticLayoutDownloader {
     }
     String robotIP =
         preferences.getString(PrefKeys.ipAddress) ?? Defaults.ipAddress;
-    Uri robotUri = Uri.parse('http://$robotIP:5800/?format=json');
+    String layoutPort =
+        preferences.getString(PrefKeys.layoutPort) ?? Defaults.layoutPort;
+    Uri robotUri = Uri.parse('http://$robotIP:$layoutPort/?format=json');
     Response response;
     try {
       response = await client.get(robotUri);

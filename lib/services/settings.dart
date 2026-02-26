@@ -50,6 +50,7 @@ class Defaults {
   static const String defaultLogLevelName = 'Automatic';
   static const Level logLevel = kDebugMode ? Level.debug : Level.info;
   static final String ipAddress = defaultIPForPlatform();
+  static final String layoutPort = '5800';
 
   static const int teamNumber = 9999;
   static const int gridSize = 128;
@@ -65,6 +66,7 @@ class Defaults {
 }
 
 class PrefKeys {
+  static String layoutPort = 'layout_port';
   static String layout = 'layout';
   static String ipAddress = 'ip_address';
   static String ipAddressMode = 'ip_address_mode';

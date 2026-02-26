@@ -37,6 +37,7 @@ mixin DashboardPageSettings on DashboardPageViewModel {
 
           updateIPAddress(data);
         },
+        onLayoutPortChanged: onLayoutPortChanged,
         onGridToggle: toggleGrid,
         onGridSizeChanged: changeGridSize,
         onCornerRadiusChanged: changeCornerRadius,
@@ -90,6 +91,70 @@ mixin DashboardPageSettings on DashboardPageViewModel {
         notifyListeners();
         break;
     }
+  }
+
+  Future<void> onLayoutPortChanged(String? data) async {
+    if (data == null) {
+      return;
+    }
+
+    int? newPort = int.tryParse(data);
+
+    if (newPort == null ||
+        (newPort.toString() == preferences.getString(PrefKeys.layoutPort))) {
+      return;
+    }
+    if (newPort < 1 || newPort > 65535) {
+      logger.warning('User entered an invalid port: $newPort');
+      await showDialog(
+        context: state!.context,
+        builder: (context) => AlertDialog(
+          title: const Text('Invalid Port'),
+          content: const Text('Please enter a valid port number (1-65535).'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Okay'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    bool allowedPort =
+        newPort == 80 ||
+        (newPort >= 1180 && newPort <= 1190) ||
+        (newPort >= 5800 && newPort <= 5810);
+
+    if (!allowedPort) {
+      logger.warning('User entered a potentially unsafe port: $newPort');
+      bool? proceed = await showDialog<bool>(
+        context: state!.context,
+        builder: (context) => AlertDialog(
+          title: const Text('Warning'),
+          content: const Text(
+            'The port you entered is blocked by the FMS firewall (see rule R704). \nOnly continue if you know what you\'re doing.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Continue'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Abort'),
+            ),
+          ],
+        ),
+      );
+
+      if (proceed != true) {
+        return;
+      }
+    }
+
+    await preferences.setString(PrefKeys.layoutPort, newPort.toString());
+    notifyListeners();
   }
 
   Future<void> toggleGrid(bool value) async {
