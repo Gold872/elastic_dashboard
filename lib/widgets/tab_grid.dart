@@ -169,8 +169,6 @@ class TabGridModel extends ChangeNotifier {
                 dragOutEnd: layoutDragOutEnd,
               ),
               onDragCancel: _layoutContainerOnDragCancel,
-              minWidth: 128.0 * 2,
-              minHeight: 128.0 * 2,
             ),
           );
         }
@@ -229,8 +227,6 @@ class TabGridModel extends ChangeNotifier {
               dragOutEnd: layoutDragOutEnd,
             ),
             onDragCancel: _layoutContainerOnDragCancel,
-            minWidth: 128.0 * 2,
-            minHeight: 128.0 * 2,
             onJsonLoadingWarning: onJsonLoadingWarning,
           );
         default:
@@ -713,8 +709,6 @@ class TabGridModel extends ChangeNotifier {
       NTWidgetRegistry.getNormalSize(preferences.getInt(PrefKeys.gridSize)) * 2,
     ),
     children: children,
-    minWidth: 128.0,
-    minHeight: 128.0,
     dragOutFunctions: (
       dragOutUpdate: layoutDragOutUpdate,
       dragOutEnd: layoutDragOutEnd,
