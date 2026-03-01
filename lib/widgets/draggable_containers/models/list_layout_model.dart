@@ -31,8 +31,8 @@ class ListLayoutModel extends LayoutContainerModel {
 
   String labelPosition = 'TOP';
 
-  static const double _minWidth = 128 * 1.5;
-  static const double _minHeight = 128 * 1.5;
+  static const double _minWidth = 128 * 2;
+  static const double _minHeight = 128 * 2;
 
   final DragOutFunctions? dragOutFunctions;
   final NTWidgetContainerModel? Function(
