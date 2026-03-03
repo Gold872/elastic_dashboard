@@ -699,11 +699,9 @@ class NT4Client {
     }
   }
 
-  void _indexSubscription(NT4Subscription subscription) {
-    _subscriptionsByTopic
-        .putIfAbsent(subscription.topic, () => {})
-        .add(subscription);
-  }
+  void _indexSubscription(NT4Subscription subscription) => _subscriptionsByTopic
+      .putIfAbsent(subscription.topic, () => {})
+      .add(subscription);
 
   void _unindexSubscription(NT4Subscription subscription) {
     final subscriptions = _subscriptionsByTopic[subscription.topic];
