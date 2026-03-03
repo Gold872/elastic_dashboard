@@ -102,10 +102,13 @@ class NT4Subscription extends ValueNotifier<Object?> {
         options.structMeta!.schema != null) {
       NTStructSchema schema = options.structMeta!.schema!;
       List<String> path = options.structMeta!.path;
-      NTStruct struct = NTStruct.parse(
-        schema: schema,
-        data: Uint8List.fromList(value),
-      );
+      Uint8List structData;
+      if (value is Uint8List) {
+        structData = value;
+      } else {
+        structData = Uint8List.fromList(value);
+      }
+      NTStruct struct = NTStruct.parse(schema: schema, data: structData);
       Object? fieldValue = struct.get(path);
       // Should only be displaying/subscribing to data types in structs
       if (fieldValue is NTStruct) {
