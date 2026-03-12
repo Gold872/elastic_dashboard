@@ -2,9 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
-import 'package:elastic_dashboard/services/log.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
+import 'package:web_socket_channel/web_socket_channel.dart';
+
+import 'package:elastic_dashboard/services/log.dart';
 
 class DSInteropClient {
   final String serverBaseAddress = '127.0.0.1';
