@@ -32,7 +32,9 @@ class DSInteropClient {
       return;
     }
     try {
-      _socket = WebSocketChannel.connect(Uri.parse('ws://$serverBaseAddress:6768/ipws'));
+      _socket = WebSocketChannel.connect(
+        Uri.parse('ws://$serverBaseAddress:6768/ipws'),
+      );
       await _socket!.ready;
     } catch (e) {
       _socket = null;
@@ -53,7 +55,9 @@ class DSInteropClient {
         if (data is String) {
           _tcpSocketOnMessage(data);
         } else {
-          logger.warning('[DS INTEROP] Received data from Websocket 6768: "$data" with unknown type ${data.runtimeType}');
+          logger.warning(
+            '[DS INTEROP] Received data from Websocket 6768: "$data" with unknown type ${data.runtimeType}',
+          );
         }
       },
       onDone: _socketClose,
