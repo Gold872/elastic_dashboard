@@ -668,6 +668,7 @@ void main() {
       setUp(() async {
         SharedPreferences.setMockInitialValues({
           PrefKeys.ipAddress: '127.0.0.1',
+          PrefKeys.layoutPort: '5800',
           PrefKeys.layoutLocked: false,
         });
 
@@ -677,10 +678,11 @@ void main() {
       testWidgets('Shows list of layouts', (widgetTester) async {
         Client mockClient = createHttpClient(
           mockGetResponses: {
-            'http://127.0.0.1:5800/?format=json': Response(
-              jsonEncode(layoutFiles),
-              200,
-            ),
+            'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                Response(
+                  jsonEncode(layoutFiles),
+                  200,
+                ),
           },
         );
 
@@ -717,10 +719,11 @@ void main() {
         testWidgets('shows help text', (widgetTester) async {
           Client mockClient = createHttpClient(
             mockGetResponses: {
-              'http://127.0.0.1:5800/?format=json': Response(
-                jsonEncode(layoutFiles),
-                200,
-              ),
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                  Response(
+                    jsonEncode(layoutFiles),
+                    200,
+                  ),
             },
           );
 
@@ -873,11 +876,12 @@ void main() {
           testWidgets('without merges', (widgetTester) async {
             Client mockClient = createHttpClient(
               mockGetResponses: {
-                'http://127.0.0.1:5800/?format=json': Response(
-                  jsonEncode(layoutFiles),
-                  200,
-                ),
-                'http://127.0.0.1:5800/${Uri.encodeComponent('elastic-layout 1.json')}':
+                'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                    Response(
+                      jsonEncode(layoutFiles),
+                      200,
+                    ),
+                'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/${Uri.encodeComponent('elastic-layout 1.json')}':
                     Response(jsonEncode(layoutOne), 200),
               },
             );
@@ -1047,11 +1051,12 @@ void main() {
       testWidgets('reload mode', (widgetTester) async {
         Client mockClient = createHttpClient(
           mockGetResponses: {
-            'http://127.0.0.1:5800/?format=json': Response(
-              jsonEncode(layoutFiles),
-              200,
-            ),
-            'http://127.0.0.1:5800/${Uri.encodeComponent('elastic-layout 1.json')}':
+            'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                Response(
+                  jsonEncode(layoutFiles),
+                  200,
+                ),
+            'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/${Uri.encodeComponent('elastic-layout 1.json')}':
                 Response(jsonEncode(layoutOne), 200),
           },
         );
@@ -1154,7 +1159,8 @@ void main() {
         testWidgets('layout fetching is not a json', (widgetTester) async {
           Client mockClient = createHttpClient(
             mockGetResponses: {
-              'http://127.0.0.1:5800/?format=json': Response('[1, 2, 3]', 200),
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                  Response('[1, 2, 3]', 200),
             },
           );
 
@@ -1190,7 +1196,8 @@ void main() {
         testWidgets('layout json does not list files', (widgetTester) async {
           Client mockClient = createHttpClient(
             mockGetResponses: {
-              'http://127.0.0.1:5800/?format=json': Response('{}', 200),
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                  Response('{}', 200),
             },
           );
 
@@ -1226,10 +1233,11 @@ void main() {
         testWidgets('layout json has empty files list', (widgetTester) async {
           Client mockClient = createHttpClient(
             mockGetResponses: {
-              'http://127.0.0.1:5800/?format=json': Response(
-                jsonEncode({'files': []}),
-                200,
-              ),
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                  Response(
+                    jsonEncode({'files': []}),
+                    200,
+                  ),
             },
           );
 
@@ -1265,11 +1273,12 @@ void main() {
         testWidgets('selected file was not found', (widgetTester) async {
           Client mockClient = createHttpClient(
             mockGetResponses: {
-              'http://127.0.0.1:5800/?format=json': Response(
-                jsonEncode(layoutFiles),
-                200,
-              ),
-              'http://127.0.0.1:5800/${Uri.encodeComponent('elastic-layout 1.json')}':
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/?format=json':
+                  Response(
+                    jsonEncode(layoutFiles),
+                    200,
+                  ),
+              'http://${preferences.getString(PrefKeys.ipAddress)}:${preferences.getString(PrefKeys.layoutPort)}/${Uri.encodeComponent('elastic-layout 1.json')}':
                   Response('', 404),
             },
           );

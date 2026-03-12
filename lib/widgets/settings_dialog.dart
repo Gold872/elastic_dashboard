@@ -56,6 +56,7 @@ class SettingsDialog extends StatefulWidget {
   final FutureOr<void> Function(String? value)? onGridDPIChanged;
   final void Function()? onOpenAssetsFolderPressed;
   final FutureOr<void> Function(bool value)? onAutoSubmitButtonChanged;
+  final FutureOr<void> Function(String? value)? onLayoutPortChanged;
 
   const SettingsDialog({
     super.key,
@@ -78,6 +79,7 @@ class SettingsDialog extends StatefulWidget {
     this.onGridDPIChanged,
     this.onOpenAssetsFolderPressed,
     this.onAutoSubmitButtonChanged,
+    this.onLayoutPortChanged,
   });
 
   @override
@@ -159,7 +161,7 @@ class _SettingsDialogState extends State<SettingsDialog> {
                     padding: const EdgeInsets.symmetric(horizontal: 4.0),
                     child: SingleChildScrollView(
                       child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxHeight: 205),
+                        constraints: const BoxConstraints(maxHeight: 260),
                         child: Column(children: [..._advancedSettings()]),
                       ),
                     ),
@@ -576,6 +578,23 @@ class _SettingsDialogState extends State<SettingsDialog> {
               icon: const Icon(Icons.folder_outlined),
               label: const Text('Open Assets Folder'),
             ),
+        ],
+      ),
+      Row(
+        children: [
+          Flexible(
+            flex: 3,
+            child: DialogTextInput(
+              initialText:
+                  widget.preferences.getString(PrefKeys.layoutPort) ??
+                  Defaults.layoutPort,
+              label: 'Layout Port',
+              onSubmit: (data) async {
+                await widget.onLayoutPortChanged?.call(data);
+                setState(() {});
+              },
+            ),
+          ),
         ],
       ),
     ];
