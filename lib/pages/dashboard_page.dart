@@ -182,7 +182,7 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
           icon: icon,
           description: Text(description),
           stackedOptions: StackedOptions(
-            key: 'robot_notification',
+            key: 'notification',
             type: StackedType.above,
           ),
         );

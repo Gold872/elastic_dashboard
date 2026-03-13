@@ -31,6 +31,9 @@ class ListLayoutModel extends LayoutContainerModel {
 
   String labelPosition = 'TOP';
 
+  static const double _minWidth = 128 * 2;
+  static const double _minHeight = 128 * 2;
+
   final DragOutFunctions? dragOutFunctions;
   final NTWidgetContainerModel? Function(
     SharedPreferences preferences,
@@ -58,8 +61,8 @@ class ListLayoutModel extends LayoutContainerModel {
     required this.onDragCancel,
     this.ntWidgetBuilder,
     List<NTWidgetContainerModel>? children,
-    super.minWidth,
-    super.minHeight,
+    super.minWidth = _minWidth,
+    super.minHeight = _minHeight,
     this.labelPosition = 'TOP',
   }) : super() {
     if (children != null) {
@@ -74,8 +77,8 @@ class ListLayoutModel extends LayoutContainerModel {
     this.dragOutFunctions,
     required this.onDragCancel,
     super.enabled,
-    super.minWidth,
-    super.minHeight,
+    super.minWidth = _minWidth,
+    super.minHeight = _minHeight,
     super.onJsonLoadingWarning,
   }) : super.fromJson();
 
