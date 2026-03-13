@@ -26,7 +26,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
     'Seconds Only',
   ];
 
-  int _redStartTime = 15;
+  int _redStartTime = 20;
   int _yellowStartTime = 30;
 
   int get redStartTime => _redStartTime;
@@ -48,7 +48,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
     required super.preferences,
     required super.topic,
     String timeDisplayMode = 'Minutes and Seconds',
-    int redStartTime = 15,
+    int redStartTime = 20,
     int yellowStartTime = 30,
     super.ntStructMeta,
     super.dataType,
