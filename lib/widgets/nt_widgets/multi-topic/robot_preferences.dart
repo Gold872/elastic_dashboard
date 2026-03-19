@@ -243,7 +243,7 @@ class PreferenceSearch extends StatelessWidget {
         ),
       ),
       searchTextController: model.searchTextController,
-      seperatorBuilder: (context, _) => const Divider(height: 4.0),
+      separatorBuilder: (context, _) => const Divider(height: 4.0),
       searchFieldPadding: const EdgeInsets.symmetric(
         horizontal: 2,
         vertical: 7.5,

@@ -1,3 +1,4 @@
+import 'package:elastic_dashboard/widgets/nt_widgets/multi-topic/limelight.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dot_cast/dot_cast.dart';
@@ -104,6 +105,9 @@ class NTWidgetBuilder {
         fromJson: GraphModel.fromJson,
         minWidth: _normalSize * 2,
         minHeight: _normalSize * 2);
+
+    register(name: LimelightWiget.widgetType, model: LimelightModel.new, widget: LimelightWiget.new, fromJson: LimelightModel.fromJson);
+
 
     register(
         name: MatchTimeWidget.widgetType,
