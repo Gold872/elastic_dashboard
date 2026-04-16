@@ -9,7 +9,26 @@ import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/mjpeg.dart';
+import 'package:elastic_dashboard/widgets/whep.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
+
+enum CameraStreamType {
+  whep('whep:'),
+  mjpeg('mjpg:');
+
+  const CameraStreamType(this.prefix);
+
+  final String prefix;
+
+  static CameraStreamType? fromUrl(String url) {
+    for (final type in values) {
+      if (url.startsWith(type.prefix)) {
+        return type;
+      }
+    }
+    return null;
+  }
+}
 
 class CameraStreamModel extends MultiTopicNTWidgetModel {
   @override
@@ -27,7 +46,22 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   Size? resolution;
   int _rotationTurns = 0;
 
+  String? selectedStream;
+
   MjpegController? controller;
+  WhepController? whepController;
+
+  CameraStreamType get activeStreamType {
+    final selected = selectedStream;
+    if (selected != null) {
+      return CameraStreamType.fromUrl(selected) ?? CameraStreamType.mjpeg;
+    }
+    final live = tryCast<List<Object?>>(streamsSubscription.value)?.whereType<String>() ?? const <String>[];
+    for (final type in CameraStreamType.values) {
+      if (live.any((s) => s.startsWith(type.prefix))) return type;
+    }
+    return CameraStreamType.mjpeg;
+  }
 
   int get rotationTurns => _rotationTurns;
 
@@ -39,16 +73,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   String getUrlWithParameters(String urlString) {
     Uri url = Uri.parse(urlString);
 
-    Map<String, String> parameters = Map<String, String>.from(
-      url.queryParameters,
-    );
+    Map<String, String> parameters = Map<String, String>.from(url.queryParameters);
 
     parameters.addAll({
-      if (resolution != null &&
-          resolution!.width != 0.0 &&
-          resolution!.height != 0.0)
-        'resolution':
-            '${resolution!.width.floor()}x${resolution!.height.floor()}',
+      if (resolution != null && resolution!.width != 0.0 && resolution!.height != 0.0)
+        'resolution': '${resolution!.width.floor()}x${resolution!.height.floor()}',
       if (fps != null) 'fps': '$fps',
       if (quality != null) 'compression': '$quality',
     });
@@ -64,33 +93,27 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     this.fps,
     this.resolution,
     int rotation = 0,
+    this.selectedStream,
     super.period,
   }) : quality = compression,
        _rotationTurns = rotation,
        super();
 
-  CameraStreamModel.fromJson({
-    required super.ntConnection,
-    required super.preferences,
-    required Map<String, dynamic> jsonData,
-  }) : super.fromJson(jsonData: jsonData) {
+  CameraStreamModel.fromJson({required super.ntConnection, required super.preferences, required Map<String, dynamic> jsonData})
+    : super.fromJson(jsonData: jsonData) {
     quality = tryCast(jsonData['compression']);
     fps = tryCast(jsonData['fps']);
     _rotationTurns = tryCast(jsonData['rotation_turns']) ?? 0;
+    selectedStream = tryCast(jsonData['selected_stream']);
 
-    List<num>? resolution = tryCast<List<Object?>>(
-      jsonData['resolution'],
-    )?.whereType<num>().toList();
+    List<num>? resolution = tryCast<List<Object?>>(jsonData['resolution'])?.whereType<num>().toList();
 
     if (resolution != null && resolution.length > 1) {
       if (resolution[0] % 2 != 0) {
         resolution[0] += 1;
       }
       if (resolution[0] > 0 && resolution[1] > 0) {
-        this.resolution = Size(
-          resolution[0].toDouble(),
-          resolution[1].toDouble(),
-        );
+        this.resolution = Size(resolution[0].toDouble(), resolution[1].toDouble());
       }
     }
   }
@@ -119,12 +142,70 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     'rotation_turns': rotationTurns,
     if (quality != null) 'compression': quality,
     if (fps != null) 'fps': fps,
-    if (resolution != null)
-      'resolution': [resolution!.width, resolution!.height],
+    if (resolution != null) 'resolution': [resolution!.width, resolution!.height],
+    if (selectedStream != null) 'selected_stream': selectedStream,
   };
 
   @override
   List<Widget> getEditProperties(BuildContext context) => [
+    StatefulBuilder(
+      builder: (context, setState) => ListenableBuilder(
+        listenable: streamsSubscription,
+        builder: (context, _) {
+          final liveStreams = tryCast<List<Object?>>(streamsSubscription.value)?.whereType<String>().toList() ?? <String>[];
+          // Always include currently selected stream as option
+          final options = <String>{if (selectedStream != null) selectedStream!, ...liveStreams}.toList();
+          return Row(
+            children: [
+              const Text('Stream:'),
+              const SizedBox(width: 10),
+              Expanded(
+                child: DropdownButton<String?>(
+                  isExpanded: true,
+                  value: selectedStream,
+                  hint: const Text('Auto'),
+                  items: [
+                    const DropdownMenuItem<String?>(value: null, child: Text('Auto')),
+                    ...options.map(
+                      (s) => DropdownMenuItem<String?>(
+                        value: s,
+                        child: Text(s, overflow: TextOverflow.ellipsis),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() => selectedStream = value);
+                    // Fixed reactivity
+                    notifyListeners();
+                    closeClient();
+                    refresh();
+                  },
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    ),
+    const SizedBox(height: 5),
+    ListenableBuilder(
+      listenable: Listenable.merge([this, streamsSubscription]),
+      builder: (context, _) => Column(children: _editFieldsFor(activeStreamType)),
+    ),
+  ];
+
+  List<Widget> _editFieldsFor(CameraStreamType type) {
+    switch (type) {
+      case CameraStreamType.whep:
+        return _whepEditFields();
+      case CameraStreamType.mjpeg:
+        return _mjpegEditFields();
+    }
+  }
+
+  List<Widget> _whepEditFields() => _rotationFields();
+
+  List<Widget> _mjpegEditFields() => [
     StatefulBuilder(
       builder: (context, setState) => Row(
         children: [
@@ -170,10 +251,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
                     newWidth = newWidth! + 1;
                   }
 
-                  resolution = Size(
-                    newWidth!.toDouble(),
-                    resolution?.height.toDouble() ?? 0,
-                  );
+                  resolution = Size(newWidth!.toDouble(), resolution?.height.toDouble() ?? 0);
                 });
               },
             ),
@@ -194,10 +272,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
                     return;
                   }
 
-                  resolution = Size(
-                    resolution?.width.toDouble() ?? 0,
-                    newHeight.toDouble(),
-                  );
+                  resolution = Size(resolution?.width.toDouble() ?? 0, newHeight.toDouble());
                 });
               },
             ),
@@ -230,10 +305,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
         ],
       ),
     ),
-    TextButton(
-      onPressed: () => refresh(),
-      child: const Text('Apply Quality Settings'),
-    ),
+    TextButton(onPressed: () => refresh(), child: const Text('Apply Quality Settings')),
+    ..._rotationFields(),
+  ];
+
+  List<Widget> _rotationFields() => [
     const SizedBox(height: 5),
     Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -242,11 +318,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-              ),
+              style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0))),
               label: const Text('Rotate Left'),
               icon: const Icon(Icons.rotate_90_degrees_ccw),
               onPressed: () {
@@ -263,11 +335,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4.0),
             child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-              ),
+              style: OutlinedButton.styleFrom(shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5.0))),
               label: const Text('Rotate Right'),
               icon: const Icon(Icons.rotate_90_degrees_cw),
               onPressed: () {
@@ -288,6 +356,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   void softDispose({bool deleting = false}) {
     if (deleting) {
       controller?.dispose();
+      whepController?.dispose();
       ntConnection.ntConnected.removeListener(onNTConnected);
     }
 
@@ -299,12 +368,17 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
       closeClient();
     } else {
       controller?.changeCycleState(StreamCycleState.idle);
+      // Just tear down i think. todo?
+      whepController?.dispose();
+      whepController = null;
     }
   }
 
   void closeClient() {
     controller?.dispose();
     controller = null;
+    whepController?.dispose();
+    whepController = null;
   }
 }
 
@@ -318,23 +392,65 @@ class CameraStreamWidget extends NTWidget {
     CameraStreamModel model = cast(context.watch<NTWidgetModel>());
 
     return ListenableBuilder(
-      listenable: Listenable.merge([
-        model.streamsSubscription,
-        model.ntConnection.ntConnected,
-      ]),
+      listenable: Listenable.merge([model.streamsSubscription, model.ntConnection.ntConnected]),
       builder: (context, child) {
-        List<Object?> rawStreams =
-            tryCast(model.streamsSubscription.value) ?? [];
+        List<Object?> rawStreams = tryCast(model.streamsSubscription.value) ?? [];
 
-        List<String> streams = [];
+        final byType = <CameraStreamType, List<String>>{};
         for (Object? stream in rawStreams) {
-          if (stream == null ||
-              stream is! String ||
-              !stream.startsWith('mjpg:')) {
+          if (stream == null || stream is! String) continue;
+          if (model.selectedStream != null && stream != model.selectedStream) {
             continue;
           }
+          final type = CameraStreamType.fromUrl(stream);
+          if (type == null) continue;
+          byType.putIfAbsent(type, () => <String>[]).add(stream.substring(type.prefix.length));
+        }
 
-          streams.add(stream.substring('mjpg:'.length));
+        final whepStreams = byType[CameraStreamType.whep] ?? const <String>[];
+        final streams = byType[CameraStreamType.mjpeg] ?? const <String>[];
+
+        if (whepStreams.isNotEmpty && model.ntConnection.ntConnected.value) {
+          if (model.controller != null) {
+            model.controller!.dispose();
+            model.controller = null;
+          }
+
+          bool createNewWhep = model.whepController == null || !model.whepController!.streams.equals(whepStreams);
+
+          if (createNewWhep) {
+            model.whepController?.dispose();
+            model.whepController = WhepController(streams: whepStreams);
+          }
+
+          final whepCtrl = model.whepController!;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Row(
+                children: [
+                  ValueListenableBuilder(
+                    valueListenable: whepCtrl.framesPerSecond,
+                    builder: (context, value, child) => Text('FPS: $value'),
+                  ),
+                  const Spacer(),
+                  ValueListenableBuilder(
+                    valueListenable: whepCtrl.bandwidth,
+                    builder: (context, value, child) => Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
+                  ),
+                ],
+              ),
+              Flexible(
+                child: Whep(controller: whepCtrl, quarterTurns: model.rotationTurns),
+              ),
+              const Text(''),
+            ],
+          );
+        }
+
+        if (model.whepController != null) {
+          model.whepController!.dispose();
+          model.whepController = null;
         }
 
         if (streams.isEmpty || !model.ntConnection.ntConnected.value) {
@@ -342,13 +458,7 @@ class CameraStreamWidget extends NTWidget {
             fit: StackFit.expand,
             children: [
               if (model.controller?.previousImage != null)
-                Opacity(
-                  opacity: 0.35,
-                  child: Image.memory(
-                    Uint8List.fromList(model.controller!.previousImage!),
-                    fit: BoxFit.contain,
-                  ),
-                ),
+                Opacity(opacity: 0.35, child: Image.memory(Uint8List.fromList(model.controller!.previousImage!), fit: BoxFit.contain)),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -369,21 +479,14 @@ class CameraStreamWidget extends NTWidget {
 
         bool createNewWidget = model.controller == null;
 
-        List<String> streamUrls = streams
-            .map((stream) => model.getUrlWithParameters(stream))
-            .toList();
+        List<String> streamUrls = streams.map((stream) => model.getUrlWithParameters(stream)).toList();
 
-        createNewWidget =
-            createNewWidget ||
-            !(model.controller?.streams.equals(streamUrls) ?? false);
+        createNewWidget = createNewWidget || !(model.controller?.streams.equals(streamUrls) ?? false);
 
         if (createNewWidget) {
           model.controller?.dispose();
 
-          model.controller = MjpegController(
-            streams: streamUrls,
-            timeout: const Duration(milliseconds: 500),
-          );
+          model.controller = MjpegController(streams: streamUrls, timeout: const Duration(milliseconds: 500));
         }
 
         return IntrinsicWidth(
@@ -399,18 +502,12 @@ class CameraStreamWidget extends NTWidget {
                   const Spacer(),
                   ValueListenableBuilder(
                     valueListenable: model.controller!.bandwidth,
-                    builder: (context, value, child) =>
-                        Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
+                    builder: (context, value, child) => Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
                   ),
                 ],
               ),
               Flexible(
-                child: Mjpeg(
-                  controller: model.controller!,
-                  fit: BoxFit.contain,
-                  expandToFit: true,
-                  quarterTurns: model.rotationTurns,
-                ),
+                child: Mjpeg(controller: model.controller!, fit: BoxFit.contain, expandToFit: true, quarterTurns: model.rotationTurns),
               ),
               const Text(''),
             ],
