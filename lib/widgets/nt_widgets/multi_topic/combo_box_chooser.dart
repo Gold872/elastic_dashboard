@@ -132,8 +132,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   ];
 
   void onChooserStateUpdate() {
-    List<Object?>? rawOptions = optionsSubscription.value
-        ?.tryCast<List<Object?>>();
+    List<Object?>? rawOptions = optionsSubscription.value?.tryCast<List<Object?>>();
 
     List<String>? currentOptions = rawOptions?.whereType<String>().toList();
 
@@ -156,13 +155,9 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
       currentDefault = null;
     }
 
-    bool hasValue =
-        currentOptions != null ||
-        currentActive != null ||
-        currentDefault != null;
+    bool hasValue = currentOptions != null || currentActive != null || currentDefault != null;
 
-    bool publishCurrent =
-        hasValue && previousSelected != null && currentSelected == null;
+    bool publishCurrent = hasValue && previousSelected != null && currentSelected == null;
 
     // We only want to publish the selected topic if we're getting values
     // from the others, since it means the chooser is published on network tables
@@ -191,8 +186,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }
 
   void publishSelectedTopic() {
-    if (_selectedTopic != null &&
-        ntConnection.isTopicPublished(_selectedTopic)) {
+    if (_selectedTopic != null && ntConnection.isTopicPublished(_selectedTopic)) {
       return;
     }
 
@@ -212,8 +206,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }
 
   void unpublishSelectedTopic() {
-    if (_selectedTopic != null &&
-        ntConnection.isTopicPublished(_selectedTopic)) {
+    if (_selectedTopic != null && ntConnection.isTopicPublished(_selectedTopic)) {
       ntConnection.unpublishTopic(_selectedTopic!);
     }
     _selectedTopic = null;
@@ -224,8 +217,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
       return;
     }
 
-    if (_selectedTopic == null ||
-        !ntConnection.isTopicPublished(_selectedTopic)) {
+    if (_selectedTopic == null || !ntConnection.isTopicPublished(_selectedTopic)) {
       publishSelectedTopic();
     }
 
@@ -269,8 +261,7 @@ class ComboBoxChooser extends NTWidget {
         const SizedBox(width: 5),
         (showWarning)
             ? const Tooltip(
-                message:
-                    'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
+                message: 'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
                 child: Icon(Icons.priority_high, color: Colors.red),
               )
             : const Icon(Icons.check, color: Colors.green),
@@ -322,10 +313,9 @@ class _StringChooserDropdown extends StatelessWidget {
           ),
           dropdownSearchData: DropdownSearchData(
             searchController: textController,
-            searchMatchFn: (item, searchValue) =>
-                item.value.toString().toLowerCase().contains(
-                  searchValue.toLowerCase(),
-                ),
+            searchMatchFn: (item, searchValue) => item.value.toString().toLowerCase().contains(
+              searchValue.toLowerCase(),
+            ),
             searchInnerWidgetHeight: 50,
             searchInnerWidget: Container(
               color: Theme.of(context).colorScheme.surface,
