@@ -13,7 +13,7 @@ import 'package:elastic_dashboard/widgets/whep.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 enum CameraStreamType {
-  whep('whep:', 'WEBRTC'),
+  whep('whep:', 'webRTC'),
   mjpeg('mjpg:', 'MJPEG');
 
   const CameraStreamType(this.prefix, this.displayName);
