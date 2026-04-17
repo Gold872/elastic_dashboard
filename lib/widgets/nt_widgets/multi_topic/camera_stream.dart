@@ -13,12 +13,13 @@ import 'package:elastic_dashboard/widgets/whep.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 enum CameraStreamType {
-  whep('whep:'),
-  mjpeg('mjpg:');
+  whep('whep:', 'WEBRTC'),
+  mjpeg('mjpg:', 'MJPEG');
 
-  const CameraStreamType(this.prefix);
+  const CameraStreamType(this.prefix, this.displayName);
 
   final String prefix;
+  final String displayName;
 
   static CameraStreamType? fromUrl(String url) {
     for (final type in values) {
@@ -443,7 +444,7 @@ class CameraStreamWidget extends NTWidget {
               Flexible(
                 child: Whep(controller: whepCtrl, quarterTurns: model.rotationTurns),
               ),
-              const Text(''),
+              Text('[${CameraStreamType.whep.displayName}]'),
             ],
           );
         }
@@ -509,7 +510,7 @@ class CameraStreamWidget extends NTWidget {
               Flexible(
                 child: Mjpeg(controller: model.controller!, fit: BoxFit.contain, expandToFit: true, quarterTurns: model.rotationTurns),
               ),
-              const Text(''),
+              Text('[${CameraStreamType.mjpeg.displayName}]'),
             ],
           ),
         );
