@@ -13,8 +13,8 @@ import 'package:elastic_dashboard/widgets/whep.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 enum CameraStreamType {
-  whep('whep:', 'webRTC'),
-  mjpeg('mjpg:', 'MJPEG');
+  whep('whep:', 'WebRTC'),
+  mjpeg('mjpg:', 'MJPG');
 
   const CameraStreamType(this.prefix, this.displayName);
 
@@ -58,8 +58,9 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
       return CameraStreamType.fromUrl(selected) ?? CameraStreamType.mjpeg;
     }
     final live = tryCast<List<Object?>>(streamsSubscription.value)?.whereType<String>() ?? const <String>[];
-    for (final type in CameraStreamType.values) {
-      if (live.any((s) => s.startsWith(type.prefix))) return type;
+    for (final url in live) {
+      final type = CameraStreamType.fromUrl(url);
+      if (type != null) return type;
     }
     return CameraStreamType.mjpeg;
   }
@@ -369,7 +370,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
       closeClient();
     } else {
       controller?.changeCycleState(StreamCycleState.idle);
-      // Just tear down i think. todo?
+      // Just tear down.
       whepController?.dispose();
       whepController = null;
     }
@@ -397,7 +398,9 @@ class CameraStreamWidget extends NTWidget {
       builder: (context, child) {
         List<Object?> rawStreams = tryCast(model.streamsSubscription.value) ?? [];
 
-        final byType = <CameraStreamType, List<String>>{};
+        // Publisher decides stream type priority, but we keep streams of same type grouped to be used as fallbacks.
+        CameraStreamType? preferredType;
+        final urlsForPreferred = <String>[];
         for (Object? stream in rawStreams) {
           if (stream == null || stream is! String) continue;
           if (model.selectedStream != null && stream != model.selectedStream) {
@@ -405,11 +408,14 @@ class CameraStreamWidget extends NTWidget {
           }
           final type = CameraStreamType.fromUrl(stream);
           if (type == null) continue;
-          byType.putIfAbsent(type, () => <String>[]).add(stream.substring(type.prefix.length));
+          preferredType ??= type;
+          if (type == preferredType) {
+            urlsForPreferred.add(stream.substring(type.prefix.length));
+          }
         }
 
-        final whepStreams = byType[CameraStreamType.whep] ?? const <String>[];
-        final streams = byType[CameraStreamType.mjpeg] ?? const <String>[];
+        final whepStreams = preferredType == CameraStreamType.whep ? urlsForPreferred : const <String>[];
+        final mjpegStreams = preferredType == CameraStreamType.mjpeg ? urlsForPreferred : const <String>[];
 
         if (whepStreams.isNotEmpty && model.ntConnection.ntConnected.value) {
           if (model.controller != null) {
@@ -454,7 +460,7 @@ class CameraStreamWidget extends NTWidget {
           model.whepController = null;
         }
 
-        if (streams.isEmpty || !model.ntConnection.ntConnected.value) {
+        if (mjpegStreams.isEmpty || !model.ntConnection.ntConnected.value) {
           return Stack(
             fit: StackFit.expand,
             children: [
@@ -480,7 +486,7 @@ class CameraStreamWidget extends NTWidget {
 
         bool createNewWidget = model.controller == null;
 
-        List<String> streamUrls = streams.map((stream) => model.getUrlWithParameters(stream)).toList();
+        List<String> streamUrls = mjpegStreams.map((stream) => model.getUrlWithParameters(stream)).toList();
 
         createNewWidget = createNewWidget || !(model.controller?.streams.equals(streamUrls) ?? false);
 
