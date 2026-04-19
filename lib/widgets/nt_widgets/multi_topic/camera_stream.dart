@@ -6,6 +6,7 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/mjpeg.dart';
@@ -49,8 +50,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
 
   String? selectedStream;
 
-  MjpegController? controller;
-  WhepController? whepController;
+  CameraStreamController? controller;
 
   CameraStreamType get activeStreamType {
     final selected = selectedStream;
@@ -404,7 +404,6 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   void softDispose({bool deleting = false}) {
     if (deleting) {
       controller?.dispose();
-      whepController?.dispose();
       ntConnection.ntConnected.removeListener(onNTConnected);
     }
 
@@ -417,16 +416,14 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     } else {
       controller?.changeCycleState(StreamCycleState.idle);
       // Just tear down.
-      whepController?.dispose();
-      whepController = null;
+      controller?.dispose();
+      controller = null;
     }
   }
 
   void closeClient() {
     controller?.dispose();
     controller = null;
-    whepController?.dispose();
-    whepController = null;
   }
 }
 
@@ -472,21 +469,21 @@ class CameraStreamWidget extends NTWidget {
             : const <String>[];
 
         if (whepStreams.isNotEmpty && model.ntConnection.ntConnected.value) {
-          if (model.controller != null) {
+          if (model.controller is MjpegController) {
             model.controller!.dispose();
             model.controller = null;
           }
 
           bool createNewWhep =
-              model.whepController == null ||
-              !model.whepController!.streams.equals(whepStreams);
+              model.controller is! WhepController ||
+              !model.controller!.streams.equals(whepStreams);
 
           if (createNewWhep) {
-            model.whepController?.dispose();
-            model.whepController = WhepController(streams: whepStreams);
+            model.controller?.dispose();
+            model.controller = WhepController(streams: whepStreams);
           }
 
-          final whepCtrl = model.whepController!;
+          final whepCtrl = model.controller as WhepController;
           return Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -515,20 +512,23 @@ class CameraStreamWidget extends NTWidget {
           );
         }
 
-        if (model.whepController != null) {
-          model.whepController!.dispose();
-          model.whepController = null;
+        if (model.controller is WhepController) {
+          model.controller!.dispose();
+          model.controller = null;
         }
 
         if (mjpegStreams.isEmpty || !model.ntConnection.ntConnected.value) {
           return Stack(
             fit: StackFit.expand,
             children: [
-              if (model.controller?.previousImage != null)
+              if (model.controller is MjpegController &&
+                  (model.controller as MjpegController).previousImage != null)
                 Opacity(
                   opacity: 0.35,
                   child: Image.memory(
-                    Uint8List.fromList(model.controller!.previousImage!),
+                    Uint8List.fromList(
+                      (model.controller as MjpegController).previousImage!,
+                    ),
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -550,7 +550,7 @@ class CameraStreamWidget extends NTWidget {
           );
         }
 
-        bool createNewWidget = model.controller == null;
+        bool createNewWidget = model.controller is! MjpegController;
 
         List<String> streamUrls = mjpegStreams
             .map((stream) => model.getUrlWithParameters(stream))
@@ -569,6 +569,8 @@ class CameraStreamWidget extends NTWidget {
           );
         }
 
+        final mjpegCtrl = model.controller as MjpegController;
+
         return IntrinsicWidth(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -576,12 +578,12 @@ class CameraStreamWidget extends NTWidget {
               Row(
                 children: [
                   ValueListenableBuilder(
-                    valueListenable: model.controller!.framesPerSecond,
+                    valueListenable: mjpegCtrl.framesPerSecond,
                     builder: (context, value, child) => Text('FPS: $value'),
                   ),
                   const Spacer(),
                   ValueListenableBuilder(
-                    valueListenable: model.controller!.bandwidth,
+                    valueListenable: mjpegCtrl.bandwidth,
                     builder: (context, value, child) =>
                         Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
                   ),
@@ -589,7 +591,7 @@ class CameraStreamWidget extends NTWidget {
               ),
               Flexible(
                 child: Mjpeg(
-                  controller: model.controller!,
+                  controller: mjpegCtrl,
                   fit: BoxFit.contain,
                   expandToFit: true,
                   quarterTurns: model.rotationTurns,

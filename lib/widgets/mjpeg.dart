@@ -8,6 +8,7 @@ import 'package:http/http.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 
 /// A preprocessor for each JPEG frame from an MJPEG stream.
@@ -176,31 +177,16 @@ class _MjpegState extends State<Mjpeg> {
   }
 }
 
-enum StreamCycleState { idle, connecting, reconnecting, streaming, disposed }
-
-class MjpegController extends ChangeNotifier {
+class MjpegController extends CameraStreamController {
   static const _trigger = 0xFF;
   static const _soi = 0xD8;
   static const _eoi = 0xD9;
 
-  final List<String> streams;
   final bool isLive;
-  final Duration timeout;
-  final Map<String, String> headers;
-
-  int currentStreamIndex = 0;
-
-  String get currentStream =>
-      streams[currentStreamIndex.clamp(0, streams.length - 1)];
 
   Client httpClient = Client();
 
   StreamSubscription<List<int>>? _rawSubscription;
-
-  ValueNotifier<double> bandwidth = ValueNotifier(0);
-  ValueNotifier<int> framesPerSecond = ValueNotifier(0);
-
-  Timer? _metricsTimer;
 
   final List<int> _buffer = [];
 
@@ -215,9 +201,6 @@ class MjpegController extends ChangeNotifier {
 
   final Set<Key> _mountedKeys = {};
   final Set<Key> _visibleKeys = {};
-
-  StreamCycleState _cycleState = StreamCycleState.idle;
-  StreamCycleState get cycleState => _cycleState;
 
   bool get _inUse =>
       cycleState != StreamCycleState.disposed && _mountedKeys.isNotEmpty;
@@ -266,13 +249,18 @@ class MjpegController extends ChangeNotifier {
     }
   }
 
+  @override
   void changeCycleState(StreamCycleState next) {
     if (cycleState == next || cycleState == StreamCycleState.disposed) {
       return;
     }
 
     logger.debug('Transitioning from $cycleState to $next');
-    _cycleState = next;
+    super.changeCycleState(next);
+  }
+
+  @override
+  void onCycleStateChanged() {
     _updateCycleState();
   }
 
@@ -287,6 +275,7 @@ class MjpegController extends ChangeNotifier {
         startStream();
         break;
       case StreamCycleState.streaming:
+      case StreamCycleState.failed:
         break;
       case StreamCycleState.reconnecting:
         if (isStreamActive) stopStream();
@@ -305,10 +294,10 @@ class MjpegController extends ChangeNotifier {
   bool get isStreamActive => _rawSubscription != null;
 
   MjpegController({
-    required this.streams,
+    required super.streams,
     this.isLive = true,
-    this.timeout = const Duration(seconds: 5),
-    this.headers = const {},
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
     this.preprocessor,
   }) {
     errorState.addListener(_onError);
@@ -316,10 +305,10 @@ class MjpegController extends ChangeNotifier {
 
   @visibleForTesting
   MjpegController.withMockClient({
-    required this.streams,
+    required super.streams,
     this.isLive = true,
-    this.timeout = const Duration(seconds: 5),
-    this.headers = const {},
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
     this.preprocessor,
     required this.httpClient,
   }) {
@@ -419,15 +408,13 @@ class MjpegController extends ChangeNotifier {
       },
     );
 
-    _metricsTimer ??= Timer.periodic(
-      const Duration(seconds: 1),
-      _updateMetrics,
-    );
+    startMetricsTimer();
 
     notifyListeners();
   }
 
-  void _updateMetrics(dynamic _) {
+  @override
+  Future<void> updateMetrics() async {
     bandwidth.value = _bitCount / 1e6;
     framesPerSecond.value = _frameCount;
 
@@ -447,8 +434,7 @@ class MjpegController extends ChangeNotifier {
 
   Future<void> stopStream() async {
     logger.info('Stopping camera stream on URL $currentStream');
-    _metricsTimer?.cancel();
-    _metricsTimer = null;
+    stopMetricsTimer();
     await _rawSubscription?.cancel();
     _rawSubscription = null;
     _buffer.clear();

@@ -7,25 +7,13 @@ import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:elastic_dashboard/services/log.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 
-enum WhepConnectionState { idle, connecting, streaming, failed, disposed }
-
-class WhepController extends ChangeNotifier {
-  final List<String> streams;
-  final Duration timeout;
-  final Map<String, String> headers;
-
-  final int _currentStreamIndex = 0;
-  String get currentStream =>
-      streams[_currentStreamIndex.clamp(0, streams.length - 1)];
-
+class WhepController extends CameraStreamController {
   RTCPeerConnection? _pc;
   RTCVideoRenderer? _renderer;
   Uri? _resourceUri;
-
-  WhepConnectionState _state = WhepConnectionState.idle;
-  WhepConnectionState get state => _state;
 
   Object? _lastError;
   Object? get lastError => _lastError;
@@ -35,28 +23,24 @@ class WhepController extends ChangeNotifier {
   Timer? _reconnectTimer;
   int _retryCount = 0;
 
-  Timer? _metricsTimer;
   int _lastBytesReceived = 0;
   DateTime? _lastStatsAt;
 
-  final ValueNotifier<double> bandwidth = ValueNotifier(0);
-  final ValueNotifier<int> framesPerSecond = ValueNotifier(0);
-
   WhepController({
-    required this.streams,
-    this.timeout = const Duration(seconds: 5),
-    this.headers = const {},
+    required super.streams,
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
   });
 
   RTCVideoRenderer? get renderer => _renderer;
 
   Future<void> ensureStarted() async {
-    if (_state == WhepConnectionState.disposed) return;
+    if (cycleState == StreamCycleState.disposed) return;
     if (_pc != null || _connecting) return;
     if (streams.isEmpty) return;
 
     _connecting = true;
-    _state = WhepConnectionState.connecting;
+    changeCycleState(StreamCycleState.connecting);
     notifyListeners();
 
     RTCPeerConnection? pc;
@@ -85,7 +69,7 @@ class WhepController extends ChangeNotifier {
         logger.debug('WHEP peer connection state: $s for $currentStream');
         if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
             s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-          _state = WhepConnectionState.failed;
+          changeCycleState(StreamCycleState.failed);
           _lastError ??= Exception('Peer connection $s');
           notifyListeners();
           _scheduleReconnect();
@@ -137,15 +121,15 @@ class WhepController extends ChangeNotifier {
         RTCSessionDescription(response.body, 'answer'),
       );
 
-      _state = WhepConnectionState.streaming;
+      changeCycleState(StreamCycleState.streaming);
       _lastError = null;
       _retryCount = 0;
-      _startMetricsTimer();
+      startMetricsTimer();
       notifyListeners();
     } catch (error, stack) {
       logger.error('WHEP connection failed for $currentStream', error, stack);
       _lastError = error;
-      _state = WhepConnectionState.failed;
+      changeCycleState(StreamCycleState.failed);
       await _teardown();
       notifyListeners();
       _scheduleReconnect();
@@ -173,54 +157,55 @@ class WhepController extends ChangeNotifier {
     pc.onIceGatheringState = null;
   }
 
-  void _startMetricsTimer() {
-    _metricsTimer?.cancel();
+  @override
+  void startMetricsTimer() {
     _lastBytesReceived = 0;
     _lastStatsAt = null;
-    _metricsTimer = Timer.periodic(const Duration(seconds: 1), (_) async {
-      final pc = _pc;
-      if (pc == null) return;
-      try {
-        final reports = await pc.getStats();
-        int? bytesReceived;
-        int? fps;
-        for (final report in reports) {
-          if (report.type != 'inbound-rtp') continue;
-          final values = report.values;
-          if (values['kind'] != 'video') continue;
-          bytesReceived ??= (values['bytesReceived'] as num?)?.toInt();
-          fps ??= (values['framesPerSecond'] as num?)?.toInt();
-        }
-        final now = DateTime.now();
-        if (bytesReceived != null) {
-          if (_lastStatsAt != null && _lastBytesReceived > 0) {
-            final dt = now.difference(_lastStatsAt!).inMilliseconds / 1000.0;
-            final delta = bytesReceived - _lastBytesReceived;
-            if (dt > 0 && delta >= 0) {
-              bandwidth.value = (delta * 8) / 1e6 / dt;
-            }
-          }
-          _lastBytesReceived = bytesReceived;
-          _lastStatsAt = now;
-        }
-        if (fps != null) framesPerSecond.value = fps;
-      } catch (e) {
-        logger.trace('WHEP getStats failed: $e');
-      }
-    });
+    super.startMetricsTimer();
   }
 
-  void _stopMetricsTimer() {
-    _metricsTimer?.cancel();
-    _metricsTimer = null;
-    bandwidth.value = 0;
-    framesPerSecond.value = 0;
+  @override
+  Future<void> updateMetrics() async {
+    final pc = _pc;
+    if (pc == null) return;
+    try {
+      final reports = await pc.getStats();
+      int? bytesReceived;
+      int? fps;
+      for (final report in reports) {
+        if (report.type != 'inbound-rtp') continue;
+        final values = report.values;
+        if (values['kind'] != 'video') continue;
+        bytesReceived ??= (values['bytesReceived'] as num?)?.toInt();
+        fps ??= (values['framesPerSecond'] as num?)?.toInt();
+      }
+      final now = DateTime.now();
+      if (bytesReceived != null) {
+        if (_lastStatsAt != null && _lastBytesReceived > 0) {
+          final dt = now.difference(_lastStatsAt!).inMilliseconds / 1000.0;
+          final delta = bytesReceived - _lastBytesReceived;
+          if (dt > 0 && delta >= 0) {
+            bandwidth.value = (delta * 8) / 1e6 / dt;
+          }
+        }
+        _lastBytesReceived = bytesReceived;
+        _lastStatsAt = now;
+      }
+      if (fps != null) framesPerSecond.value = fps;
+    } catch (e) {
+      logger.trace('WHEP getStats failed: $e');
+    }
+  }
+
+  @override
+  void stopMetricsTimer() {
+    super.stopMetricsTimer();
     _lastBytesReceived = 0;
     _lastStatsAt = null;
   }
 
   void _scheduleReconnect() {
-    if (_state == WhepConnectionState.disposed) return;
+    if (cycleState == StreamCycleState.disposed) return;
     _reconnectTimer?.cancel();
     _retryCount++;
     const delay = Duration(milliseconds: 500);
@@ -228,21 +213,21 @@ class WhepController extends ChangeNotifier {
       'WebRTC reconnection attempt in ${delay.inMilliseconds}ms for $currentStream (attempt $_retryCount)',
     );
     _reconnectTimer = Timer(delay, () {
-      if (_state == WhepConnectionState.disposed) return;
+      if (cycleState == StreamCycleState.disposed) return;
       unawaited(_restart());
     });
   }
 
   Future<void> _restart() async {
     await _teardown();
-    if (_state == WhepConnectionState.disposed) return;
-    _state = WhepConnectionState.idle;
+    if (cycleState == StreamCycleState.disposed) return;
+    changeCycleState(StreamCycleState.idle);
     notifyListeners();
     await ensureStarted();
   }
 
   Future<void> _teardown() async {
-    _stopMetricsTimer();
+    stopMetricsTimer();
 
     final resource = _resourceUri;
     _resourceUri = null;
@@ -275,18 +260,16 @@ class WhepController extends ChangeNotifier {
 
   @override
   void dispose() {
-    _state = WhepConnectionState.disposed;
+    changeCycleState(StreamCycleState.disposed);
     _reconnectTimer?.cancel();
     _reconnectTimer = null;
     unawaited(_teardown());
-    bandwidth.dispose();
-    framesPerSecond.dispose();
     super.dispose();
   }
 
   @visibleForTesting
-  void debugSetState(WhepConnectionState state, {Object? lastError}) {
-    _state = state;
+  void debugSetState(StreamCycleState state, {Object? lastError}) {
+    changeCycleState(state);
     _lastError = lastError;
     notifyListeners();
   }
@@ -341,7 +324,8 @@ class _WhepState extends State<Whep> {
     final controller = widget.controller;
     final renderer = controller.renderer;
 
-    if (renderer == null || controller.state != WhepConnectionState.streaming) {
+    if (renderer == null ||
+        controller.cycleState != StreamCycleState.streaming) {
       final errText = controller.lastError?.toString();
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -350,13 +334,13 @@ class _WhepState extends State<Whep> {
           CustomLoadingIndicator(),
           const SizedBox(height: 10),
           Text(
-            controller.state == WhepConnectionState.failed
+            controller.cycleState == StreamCycleState.failed
                 ? (kDebugMode && errText != null
                       ? 'WHEP error: $errText\nReconnecting...'
                       : 'WHEP connection lost. Reconnecting...')
                 : 'Negotiating WHEP stream...',
             textAlign: TextAlign.center,
-            style: controller.state == WhepConnectionState.failed
+            style: controller.cycleState == StreamCycleState.failed
                 ? const TextStyle(color: Colors.red)
                 : null,
           ),
