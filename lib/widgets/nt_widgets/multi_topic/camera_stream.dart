@@ -496,18 +496,20 @@ class CameraStreamWidget extends NTWidget {
     }
 
     final whepCtrl = model.controller as WhepController;
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        _buildMetricsRow(whepCtrl),
-        Flexible(
-          child: Whep(
-            controller: whepCtrl,
-            quarterTurns: model.rotationTurns,
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMetricsRow(whepCtrl),
+          Flexible(
+            child: Whep(
+              controller: whepCtrl,
+              quarterTurns: model.rotationTurns,
+            ),
           ),
-        ),
-        Text('[${CameraStreamType.whep.displayName}]'),
-      ],
+          Text('[${CameraStreamType.whep.displayName}]'),
+        ],
+      ),
     );
   }
 
