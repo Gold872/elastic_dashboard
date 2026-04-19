@@ -442,166 +442,168 @@ class CameraStreamWidget extends NTWidget {
         model.ntConnection.ntConnected,
       ]),
       builder: (context, child) {
-        List<Object?> rawStreams =
-            tryCast(model.streamsSubscription.value) ?? [];
+        var (preferredType, urls) = _getPreferredStream(model);
 
-        // Publisher decides stream type priority, but we keep streams of same type grouped to be used as fallbacks.
-        CameraStreamType? preferredType;
-        final urlsForPreferred = <String>[];
-        for (Object? stream in rawStreams) {
-          if (stream == null || stream is! String) continue;
-          if (model.selectedStream != null && stream != model.selectedStream) {
-            continue;
-          }
-          final type = CameraStreamType.fromUrl(stream);
-          if (type == null) continue;
-          preferredType ??= type;
-          if (type == preferredType) {
-            urlsForPreferred.add(stream.substring(type.prefix.length));
-          }
-        }
-
-        final whepStreams = preferredType == CameraStreamType.whep
-            ? urlsForPreferred
-            : const <String>[];
-        final mjpegStreams = preferredType == CameraStreamType.mjpeg
-            ? urlsForPreferred
-            : const <String>[];
-
-        if (whepStreams.isNotEmpty && model.ntConnection.ntConnected.value) {
-          if (model.controller is MjpegController) {
-            model.controller!.dispose();
-            model.controller = null;
-          }
-
-          bool createNewWhep =
-              model.controller is! WhepController ||
-              !model.controller!.streams.equals(whepStreams);
-
-          if (createNewWhep) {
-            model.controller?.dispose();
-            model.controller = WhepController(streams: whepStreams);
-          }
-
-          final whepCtrl = model.controller as WhepController;
-          return Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: whepCtrl.framesPerSecond,
-                    builder: (context, value, child) => Text('FPS: $value'),
-                  ),
-                  const Spacer(),
-                  ValueListenableBuilder(
-                    valueListenable: whepCtrl.bandwidth,
-                    builder: (context, value, child) =>
-                        Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
-                  ),
-                ],
-              ),
-              Flexible(
-                child: Whep(
-                  controller: whepCtrl,
-                  quarterTurns: model.rotationTurns,
-                ),
-              ),
-              Text('[${CameraStreamType.whep.displayName}]'),
-            ],
+        if (preferredType == CameraStreamType.whep &&
+            model.ntConnection.ntConnected.value) {
+          return _buildWhepStream(model, urls);
+        } else {
+          return _buildMjpegStream(
+            model,
+            preferredType == CameraStreamType.mjpeg ? urls : [],
           );
         }
-
-        if (model.controller is WhepController) {
-          model.controller!.dispose();
-          model.controller = null;
-        }
-
-        if (mjpegStreams.isEmpty || !model.ntConnection.ntConnected.value) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              if (model.controller is MjpegController &&
-                  (model.controller as MjpegController).previousImage != null)
-                Opacity(
-                  opacity: 0.35,
-                  child: Image.memory(
-                    Uint8List.fromList(
-                      (model.controller as MjpegController).previousImage!,
-                    ),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CustomLoadingIndicator(),
-                  const SizedBox(height: 10),
-                  Text(
-                    (model.ntConnection.isNT4Connected)
-                        ? 'Waiting for Camera Stream connection...'
-                        : 'Waiting for Network Tables connection...',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ],
-          );
-        }
-
-        bool createNewWidget = model.controller is! MjpegController;
-
-        List<String> streamUrls = mjpegStreams
-            .map((stream) => model.getUrlWithParameters(stream))
-            .toList();
-
-        createNewWidget =
-            createNewWidget ||
-            !(model.controller?.streams.equals(streamUrls) ?? false);
-
-        if (createNewWidget) {
-          model.controller?.dispose();
-
-          model.controller = MjpegController(
-            streams: streamUrls,
-            timeout: const Duration(milliseconds: 500),
-          );
-        }
-
-        final mjpegCtrl = model.controller as MjpegController;
-
-        return IntrinsicWidth(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: mjpegCtrl.framesPerSecond,
-                    builder: (context, value, child) => Text('FPS: $value'),
-                  ),
-                  const Spacer(),
-                  ValueListenableBuilder(
-                    valueListenable: mjpegCtrl.bandwidth,
-                    builder: (context, value, child) =>
-                        Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
-                  ),
-                ],
-              ),
-              Flexible(
-                child: Mjpeg(
-                  controller: mjpegCtrl,
-                  fit: BoxFit.contain,
-                  expandToFit: true,
-                  quarterTurns: model.rotationTurns,
-                ),
-              ),
-              Text('[${CameraStreamType.mjpeg.displayName}]'),
-            ],
-          ),
-        );
       },
     );
   }
+
+  (CameraStreamType?, List<String>) _getPreferredStream(
+    CameraStreamModel model,
+  ) {
+    List<Object?> rawStreams = tryCast(model.streamsSubscription.value) ?? [];
+    CameraStreamType? preferredType;
+    final urlsForPreferred = <String>[];
+    for (Object? stream in rawStreams) {
+      if (stream == null || stream is! String) continue;
+      if (model.selectedStream != null && stream != model.selectedStream) {
+        continue;
+      }
+      final type = CameraStreamType.fromUrl(stream);
+      if (type == null) {
+        continue;
+      }
+      preferredType ??= type;
+      if (type == preferredType) {
+        urlsForPreferred.add(stream.substring(type.prefix.length));
+      }
+    }
+    return (preferredType, urlsForPreferred);
+  }
+
+  Widget _buildWhepStream(CameraStreamModel model, List<String> whepStreams) {
+    if (model.controller is MjpegController) {
+      model.controller!.dispose();
+      model.controller = null;
+    }
+
+    bool createNewWhep =
+        model.controller is! WhepController ||
+        !model.controller!.streams.equals(whepStreams);
+
+    if (createNewWhep) {
+      model.controller?.dispose();
+      model.controller = WhepController(streams: whepStreams);
+    }
+
+    final whepCtrl = model.controller as WhepController;
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildMetricsRow(whepCtrl),
+        Flexible(
+          child: Whep(
+            controller: whepCtrl,
+            quarterTurns: model.rotationTurns,
+          ),
+        ),
+        Text('[${CameraStreamType.whep.displayName}]'),
+      ],
+    );
+  }
+
+  Widget _buildMjpegStream(CameraStreamModel model, List<String> mjpegStreams) {
+    if (model.controller is WhepController) {
+      model.controller!.dispose();
+      model.controller = null;
+    }
+
+    if (mjpegStreams.isEmpty || !model.ntConnection.ntConnected.value) {
+      return _buildWaitingScreen(model);
+    }
+
+    bool createNewWidget = model.controller is! MjpegController;
+
+    List<String> streamUrls = mjpegStreams
+        .map((stream) => model.getUrlWithParameters(stream))
+        .toList();
+
+    createNewWidget =
+        createNewWidget ||
+        !(model.controller?.streams.equals(streamUrls) ?? false);
+
+    if (createNewWidget) {
+      model.controller?.dispose();
+
+      model.controller = MjpegController(
+        streams: streamUrls,
+        timeout: const Duration(milliseconds: 500),
+      );
+    }
+
+    final mjpegCtrl = model.controller as MjpegController;
+
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMetricsRow(mjpegCtrl),
+          Flexible(
+            child: Mjpeg(
+              controller: mjpegCtrl,
+              fit: BoxFit.contain,
+              expandToFit: true,
+              quarterTurns: model.rotationTurns,
+            ),
+          ),
+          Text('[${CameraStreamType.mjpeg.displayName}]'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingScreen(CameraStreamModel model) => Stack(
+    fit: StackFit.expand,
+    children: [
+      if (model.controller is MjpegController &&
+          (model.controller as MjpegController).previousImage != null)
+        Opacity(
+          opacity: 0.35,
+          child: Image.memory(
+            Uint8List.fromList(
+              (model.controller as MjpegController).previousImage!,
+            ),
+            fit: BoxFit.contain,
+          ),
+        ),
+      Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CustomLoadingIndicator(),
+          const SizedBox(height: 10),
+          Text(
+            (model.ntConnection.isNT4Connected)
+                ? 'Waiting for Camera Stream connection...'
+                : 'Waiting for Network Tables connection...',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ],
+  );
+
+  Widget _buildMetricsRow(CameraStreamController controller) => Row(
+    children: [
+      ValueListenableBuilder(
+        valueListenable: controller.framesPerSecond,
+        builder: (context, value, child) => Text('FPS: $value'),
+      ),
+      const Spacer(),
+      ValueListenableBuilder(
+        valueListenable: controller.bandwidth,
+        builder: (context, value, child) =>
+            Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
+      ),
+    ],
+  );
 }
