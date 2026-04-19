@@ -17,7 +17,8 @@ class WhepController extends ChangeNotifier {
   final Map<String, String> headers;
 
   final int _currentStreamIndex = 0;
-  String get currentStream => streams[_currentStreamIndex.clamp(0, streams.length - 1)];
+  String get currentStream =>
+      streams[_currentStreamIndex.clamp(0, streams.length - 1)];
 
   RTCPeerConnection? _pc;
   RTCVideoRenderer? _renderer;
@@ -82,7 +83,8 @@ class WhepController extends ChangeNotifier {
       pc.onConnectionState = (RTCPeerConnectionState s) {
         if (!identical(_pc, sessionPc)) return;
         logger.debug('WHEP peer connection state: $s for $currentStream');
-        if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed || s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+        if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+            s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
           _state = WhepConnectionState.failed;
           _lastError ??= Exception('Peer connection $s');
           notifyListeners();
@@ -153,12 +155,14 @@ class WhepController extends ChangeNotifier {
   }
 
   Future<void> _waitForIceGathering(RTCPeerConnection pc) async {
-    if (pc.iceGatheringState == RTCIceGatheringState.RTCIceGatheringStateComplete) {
+    if (pc.iceGatheringState ==
+        RTCIceGatheringState.RTCIceGatheringStateComplete) {
       return;
     }
     final completer = Completer<void>();
     pc.onIceGatheringState = (RTCIceGatheringState s) {
-      if (s == RTCIceGatheringState.RTCIceGatheringStateComplete && !completer.isCompleted) {
+      if (s == RTCIceGatheringState.RTCIceGatheringStateComplete &&
+          !completer.isCompleted) {
         completer.complete();
       }
     };
@@ -244,7 +248,10 @@ class WhepController extends ChangeNotifier {
     _resourceUri = null;
     if (resource != null) {
       unawaited(
-        http.delete(resource, headers: headers).timeout(const Duration(seconds: 2)).catchError((_) => http.Response('', 0)),
+        http
+            .delete(resource, headers: headers)
+            .timeout(const Duration(seconds: 2))
+            .catchError((_) => http.Response('', 0)),
       );
     }
 
@@ -344,10 +351,14 @@ class _WhepState extends State<Whep> {
           const SizedBox(height: 10),
           Text(
             controller.state == WhepConnectionState.failed
-                ? (kDebugMode && errText != null ? 'WHEP error: $errText\nReconnecting...' : 'WHEP connection lost. Reconnecting...')
+                ? (kDebugMode && errText != null
+                      ? 'WHEP error: $errText\nReconnecting...'
+                      : 'WHEP connection lost. Reconnecting...')
                 : 'Negotiating WHEP stream...',
             textAlign: TextAlign.center,
-            style: controller.state == WhepConnectionState.failed ? const TextStyle(color: Colors.red) : null,
+            style: controller.state == WhepConnectionState.failed
+                ? const TextStyle(color: Colors.red)
+                : null,
           ),
         ],
       );
