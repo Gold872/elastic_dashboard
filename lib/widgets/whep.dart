@@ -348,17 +348,24 @@ class _WhepState extends State<Whep> {
       );
     }
 
-    Widget video = ExcludeSemantics(
-      child: RTCVideoView(
-        renderer,
-        objectFit: widget.objectFit,
-      ),
+    return ValueListenableBuilder(
+      valueListenable: renderer,
+      builder: (context, _, _) {
+        final hasSize = renderer.videoWidth > 0 && renderer.videoHeight > 0;
+        final aspect = hasSize
+            ? renderer.videoWidth / renderer.videoHeight
+            : 16.0 / 9.0;
+        Widget video = ExcludeSemantics(
+          child: AspectRatio(
+            aspectRatio: aspect,
+            child: RTCVideoView(renderer, objectFit: widget.objectFit),
+          ),
+        );
+        if (widget.quarterTurns != 0) {
+          video = RotatedBox(quarterTurns: widget.quarterTurns, child: video);
+        }
+        return video;
+      },
     );
-
-    if (widget.quarterTurns != 0) {
-      video = RotatedBox(quarterTurns: widget.quarterTurns, child: video);
-    }
-
-    return video;
   }
 }
