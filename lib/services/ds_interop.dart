@@ -21,14 +21,14 @@ class DSInteropClient {
     _connect();
   }
 
-  void _connect() {
+  Future<void> _connect() async {
     if (_serverConnectionActive) {
       return;
     }
-    _tcpSocketConnect();
+    return _dsSocketConnect();
   }
 
-  void _tcpSocketConnect() async {
+  Future<void> _dsSocketConnect() async {
     if (_serverConnectionActive) {
       return;
     }
@@ -40,9 +40,9 @@ class DSInteropClient {
     } catch (e) {
       _socket = null;
       logger.debug(
-        'Failed to connect to Driver Station on Websocket port 6768, attempting to reconnect in 5 seconds.',
+        'Failed to connect to Driver Station on Websocket port 6768, attempting to reconnect in 1 second.',
       );
-      Future.delayed(const Duration(seconds: 5), _tcpSocketConnect);
+      Future.delayed(const Duration(seconds: 1), _dsSocketConnect);
       return;
     }
 
@@ -54,21 +54,21 @@ class DSInteropClient {
           connectionStatus.value = true;
         }
         if (data is String) {
-          _tcpSocketOnMessage(data);
+          _dsSocketOnMessage(data);
         } else {
           logger.warning(
             '[DS INTEROP] Received data from Websocket 6768: "$data" with unknown type ${data.runtimeType}',
           );
         }
       },
-      onDone: _socketClose,
+      onDone: _dsSocketClose,
       onError: (err) {
         logger.error('DS Interop Error', err);
       },
     );
   }
 
-  void _tcpSocketOnMessage(String data) {
+  void _dsSocketOnMessage(String data) {
     logger.debug('Received data from Websocket 6768: "$data"');
     var jsonData = jsonDecode(data.toString());
 
@@ -77,33 +77,34 @@ class DSInteropClient {
       return;
     }
 
-    var rawIp = jsonData['robotIp'];
-
-    if (rawIp is String) {
-      if (rawIp != '0.0.0.0') {
-        logger.info('Received robot IP from DS Interop: $rawIp');
-        ipNotifier.value = rawIp;
+    if (jsonData.containsKey('robotIp')) {
+      var rawIp = jsonData['robotIp'];
+      if (rawIp is String) {
+        if (rawIp != '0.0.0.0') {
+          logger.info('Received robot IP from DS Interop: $rawIp');
+          ipNotifier.value = rawIp;
+        }
+      } else {
+        logger.warning(
+          '[DS INTEROP] Invalid robotIP field type: ${rawIp.runtimeType}',
+        );
       }
-    } else {
-      // print type of rawIp for debugging
-      logger.debug('Type of robotIP field: ${rawIp.runtimeType}');
-      logger.warning(
-        '[DS INTEROP] Missing robot IP field in DS Interop message ',
-      );
     }
 
-    var rawDockedHeight = jsonData['dockedHeight'];
-    if (rawDockedHeight is int) {
-      logger.info('Received docked height from DS Interop: $rawDockedHeight');
-      dsHeightNotifier.value = rawDockedHeight > 0 ? rawDockedHeight : null;
-    } else {
-      logger.warning(
-        '[DS INTEROP] Missing docked height field in DS Interop message',
-      );
+    if (jsonData.containsKey('dockedHeight')) {
+      var rawDockedHeight = jsonData['dockedHeight'];
+      if (rawDockedHeight is int) {
+        logger.info('Received docked height from DS Interop: $rawDockedHeight');
+        dsHeightNotifier.value = rawDockedHeight > 0 ? rawDockedHeight : null;
+      } else {
+        logger.warning(
+          '[DS INTEROP] Invalid dockedHeight field type: ${rawDockedHeight.runtimeType}',
+        );
+      }
     }
   }
 
-  void _socketClose() {
+  void _dsSocketClose() {
     if (!_serverConnectionActive) {
       return;
     }
@@ -117,9 +118,9 @@ class DSInteropClient {
     connectionStatus.value = false;
 
     logger.info(
-      'Driver Station connection on Websocket port 6768 closed, attempting to reconnect in 5 seconds.',
+      'Driver Station connection on Websocket port 6768 closed, attempting to reconnect in 1 second.',
     );
 
-    Future.delayed(const Duration(seconds: 5), _connect);
+    Future.delayed(const Duration(seconds: 1), _connect);
   }
 }
