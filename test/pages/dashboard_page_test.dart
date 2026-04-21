@@ -1966,9 +1966,6 @@ void main() {
       });
 
       MockNTConnection ntConnection = createMockOfflineNT4();
-      MockDSInteropClient dsClient = MockDSInteropClient();
-      when(dsClient.lastAnnouncedIP).thenReturn(null);
-      when(ntConnection.dsClient).thenReturn(dsClient);
 
       await pumpDashboardPage(
         widgetTester,
