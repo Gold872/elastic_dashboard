@@ -10,7 +10,6 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
-import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
@@ -573,7 +572,7 @@ void main() {
 
     await widgetTester.pumpAndSettle();
 
-    final game = find.byType(DialogDropdownChooser<String?>);
+    final game = find.byType(FieldChooser);
     final width = find.widgetWithText(DialogTextInput, 'Robot Width (meters)');
     final length = find.widgetWithText(
       DialogTextInput,
