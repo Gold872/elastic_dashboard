@@ -108,20 +108,20 @@ class Field {
     fieldImageHeight = 1400;
 
     game = jsonData['game'];
-    sourceURL = jsonData['source-url'];
+    sourceURL = jsonData['source_url'];
     program = jsonData['program'];
 
-    fieldWidthMeters = jsonData['field-size'][0];
-    fieldHeightMeters = jsonData['field-size'][1];
+    fieldWidthMeters = jsonData['field_size'][0];
+    fieldHeightMeters = jsonData['field_size'][1];
 
     topLeftCorner = Offset(
-      (jsonData['field-corners']['top-left'][0] as int).toDouble(),
-      (jsonData['field-corners']['top-left'][1] as int).toDouble(),
+      (jsonData['field_corners']['top_left'][0] as int).toDouble(),
+      (jsonData['field_corners']['top_left'][1] as int).toDouble(),
     );
 
     bottomRightCorner = Offset(
-      (jsonData['field-corners']['bottom-right'][0] as int).toDouble(),
-      (jsonData['field-corners']['bottom-right'][1] as int).toDouble(),
+      (jsonData['field_corners']['bottom_right'][0] as int).toDouble(),
+      (jsonData['field_corners']['bottom_right'][1] as int).toDouble(),
     );
 
     double fieldWidthPixels = bottomRightCorner.dx - topLeftCorner.dx;
@@ -133,7 +133,7 @@ class Field {
 
   void loadFieldImage() {
     logger.debug('Loading field image for $game');
-    fieldImage = Image.asset(jsonData['field-image'], fit: BoxFit.contain);
+    fieldImage = Image.asset(jsonData['field_image'], fit: BoxFit.contain);
     fieldImage.image
         .resolve(ImageConfiguration.empty)
         .addListener(

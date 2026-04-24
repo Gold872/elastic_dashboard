@@ -1,19 +1,19 @@
 {
   "game": "Power Up",
   "program": "FRC",
-  "source-url": "https://www.chiefdelphi.com/t/pic-top-down-orthographic-view-of-the-field/161896/21",
-  "field-image": "assets/fields/frc/2018-field.png",
-  "field-corners": {
-    "top-left": [
+  "source_url": "https://www.chiefdelphi.com/t/pic-top-down-orthographic-view-of-the-field/161896/21",
+  "field_image": "assets/fields/frc/2018-field.png",
+  "field_corners": {
+    "top_left": [
       519,
       78
     ],
-    "bottom-right": [
+    "bottom_right": [
       3320,
       1480
     ]
   },
-  "field-size": [
+  "field_size": [
     16.459,
     8.230
   ]
