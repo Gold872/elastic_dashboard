@@ -58,12 +58,44 @@ class FieldImages {
   }
 }
 
+enum CoordinateSystem {
+  /// Standard WPILib coordinate system pre-2027
+  ///
+  /// Origin at blue alliance corner, positive X going towards the left of the image,
+  /// positive Y going towards the bottom of image
+  wallBlue('wall_blue'),
+
+  /// Standard FTC coordinate system pre-2028
+  ///
+  /// Origin at center of field, positive X going along the red wall towards the bottom
+  /// of the image, positive Y going towards the right of the image, away from red wall
+  centerRotated('center_rotated'),
+
+  /// Standard WPILib coordinate system 2027+
+  ///
+  /// Origin at center of field, positive X going towards the blue alliance wall (right of image),
+  /// positive Y going towards the scoring table (top of image)
+  center('center');
+
+  final String jsonKey;
+
+  const CoordinateSystem(this.jsonKey);
+
+  static CoordinateSystem fromJson(String key) =>
+      CoordinateSystem.values.firstWhere(
+        (e) => e.jsonKey == key,
+        orElse: () => CoordinateSystem.center,
+      );
+}
+
 class Field {
   final Map<String, dynamic> jsonData;
 
   late String? game;
   late String? sourceURL;
   late String? program;
+
+  late CoordinateSystem coordinateSystem;
 
   bool get isFrc => program != null && program == 'FRC';
 
@@ -110,6 +142,8 @@ class Field {
     game = jsonData['game'];
     sourceURL = jsonData['source_url'];
     program = jsonData['program'];
+
+    coordinateSystem = CoordinateSystem.fromJson(jsonData['coordinate_system']);
 
     fieldWidthMeters = jsonData['field_size'][0];
     fieldHeightMeters = jsonData['field_size'][1];

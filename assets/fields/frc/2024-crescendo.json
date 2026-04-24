@@ -3,6 +3,7 @@
   "program": "FRC",
   "source_url": "https://www.chiefdelphi.com/t/2024-crescendo-top-down-field-renders/447764",
   "field_image": "assets/fields/frc/2024-field.png",
+  "coordinate_system": "wall_blue",
   "field_corners": {
     "top_left": [
       513,

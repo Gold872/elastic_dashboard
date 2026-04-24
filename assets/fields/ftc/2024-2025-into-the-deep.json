@@ -2,6 +2,7 @@
   "game": "Into The Deep",
   "program": "FTC",
   "field_image": "assets/fields/ftc/2024-2025-field.png",
+  "coordinate_system": "center_rotated",
   "field_corners": {
     "top_left": [
       0,

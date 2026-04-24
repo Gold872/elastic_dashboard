@@ -3,6 +3,7 @@
   "program": "FRC",
   "source_url": "https://www.chiefdelphi.com/t/2023-top-down-field-renders/421365",
   "field_image": "assets/fields/frc/2023-field.png",
+  "coordinate_system": "wall_blue",
   "field_corners": {
     "top_left": [
       482,

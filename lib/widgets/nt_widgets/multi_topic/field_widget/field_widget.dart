@@ -8,6 +8,7 @@ import 'package:vector_math/vector_math_64.dart' show radians;
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/util/test_utils.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/coordinate_system_converter.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget/field_widget_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
@@ -32,19 +33,29 @@ class FieldWidget extends NTWidget {
     required double scaleReduction,
     Size? objectSize,
   }) {
-    final double x = (object.x.isFinite && !object.x.isNaN) ? object.x : 0;
-    final double y = (object.y.isFinite && !object.y.isNaN) ? object.y : 0;
-    final double angleRadians = (object.angle.isFinite && !object.angle.isNaN)
-        ? object.angle
-        : 0;
+    final double rawX = (object.x.isFinite && !object.x.isNaN) ? object.x : 0;
+    final double rawY = (object.y.isFinite && !object.y.isNaN) ? object.y : 0;
+    final double rawAngleRadians =
+        (object.angle.isFinite && !object.angle.isNaN) ? object.angle : 0;
 
-    double xFromCenter =
-        (x * model.field.pixelsPerMeterHorizontal - fieldCenter.dx) *
-        scaleReduction;
+    var (
+      internalX,
+      internalY,
+      internalAngle,
+    ) = CoordinateSystemConverter.convertToInternal(
+      model.coordinateSystem,
+      rawX,
+      rawY,
+      rawAngleRadians,
+      model.field,
+    );
 
-    double yFromCenter =
-        (fieldCenter.dy - (y * model.field.pixelsPerMeterVertical)) *
-        scaleReduction;
+    Offset pixelsFromCenter = CoordinateSystemConverter.internalToPixels(
+      internalX,
+      internalY,
+      scaleReduction,
+      model.field,
+    );
 
     double width =
         (objectSize?.width ?? model.otherObjectSize) *
@@ -56,8 +67,11 @@ class FieldWidget extends NTWidget {
         model.field.pixelsPerMeterVertical *
         scaleReduction;
 
-    Matrix4 transform = Matrix4.translationValues(xFromCenter, yFromCenter, 0.0)
-      ..rotateZ(-angleRadians);
+    Matrix4 transform = Matrix4.translationValues(
+      pixelsFromCenter.dx,
+      pixelsFromCenter.dy,
+      0.0,
+    )..rotateZ(-internalAngle);
 
     Widget otherObject = Container(
       alignment: Alignment.center,
@@ -91,21 +105,27 @@ class FieldWidget extends NTWidget {
     required Offset fieldCenter,
     required double scaleReduction,
   }) {
-    if (!x.isFinite) {
-      x = 0;
-    }
-    if (!y.isFinite) {
-      y = 0;
-    }
-    double xFromCenter =
-        (x * model.field.pixelsPerMeterHorizontal - fieldCenter.dx) *
-        scaleReduction;
+    double rawX = (!x.isFinite || x.isNaN) ? 0 : x;
+    double rawY = (!y.isFinite || y.isNaN) ? 0 : y;
 
-    double yFromCenter =
-        (fieldCenter.dy - (y * model.field.pixelsPerMeterVertical)) *
-        scaleReduction;
+    var (
+      internalX,
+      internalY,
+      _,
+    ) = CoordinateSystemConverter.convertToInternal(
+      model.coordinateSystem,
+      rawX,
+      rawY,
+      0,
+      model.field,
+    );
 
-    return Offset(xFromCenter, yFromCenter);
+    return CoordinateSystemConverter.internalToPixels(
+      internalX,
+      internalY,
+      scaleReduction,
+      model.field,
+    );
   }
 
   List<List<Offset>> _getTrajectoryPoints({
@@ -204,18 +224,25 @@ class FieldWidget extends NTWidget {
 
     final Matrix4 totalTransform = controller.value * innerTransform;
 
-    double xFromCenter =
-        (robotObject.x * model.field.pixelsPerMeterHorizontal -
-            fieldCenter.dx) *
-        scaleReduction;
+    var (
+      internalX,
+      internalY,
+      _,
+    ) = CoordinateSystemConverter.convertToInternal(
+      model.coordinateSystem,
+      robotObject.x,
+      robotObject.y,
+      0,
+      model.field,
+    );
+    Offset pixelsFromCenter = CoordinateSystemConverter.internalToPixels(
+      internalX,
+      internalY,
+      scaleReduction,
+      model.field,
+    );
 
-    double yFromCenter =
-        (fieldCenter.dy -
-            (robotObject.y * model.field.pixelsPerMeterVertical)) *
-        scaleReduction;
-
-    Offset robotInStack =
-        size.center(Offset.zero) + Offset(xFromCenter, yFromCenter);
+    Offset robotInStack = size.center(Offset.zero) + pixelsFromCenter;
 
     Offset robotInViewport = MatrixUtils.transformPoint(
       totalTransform,

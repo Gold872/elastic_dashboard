@@ -135,6 +135,8 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
   Field get field => _field;
 
+  CoordinateSystem get coordinateSystem => field.coordinateSystem;
+
   final TransformationController transformController =
       TransformationController();
 
