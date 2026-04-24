@@ -1,7 +1,8 @@
 {
   "game": "Charged Up",
+  "program": "FRC",
   "source-url": "https://www.chiefdelphi.com/t/2023-top-down-field-renders/421365",
-  "field-image": "assets/fields/2023-field.png",
+  "field-image": "assets/fields/frc/2023-field.png",
   "field-corners": {
     "top-left": [
       482,

@@ -76,7 +76,8 @@ flutter:
 
   assets:
     - assets/logos/
-    - assets/fields/
+    - assets/fields/frc/
+    - assets/fields/ftc/
     - assets/third_party_licenses/
 
 import_sorter:

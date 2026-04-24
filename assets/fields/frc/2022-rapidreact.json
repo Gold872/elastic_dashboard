@@ -1,7 +1,8 @@
 {
   "game": "Rapid React",
+  "program": "FRC",
   "source-url": "https://www.chiefdelphi.com/t/2022-top-down-field-renders/399031",
-  "field-image": "assets/fields/2022-field.png",
+  "field-image": "assets/fields/frc/2022-field.png",
   "field-corners": {
     "top-left": [
       884,

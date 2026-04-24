@@ -1,7 +1,8 @@
 {
   "game": "Crescendo",
+  "program": "FRC",
   "source-url": "https://www.chiefdelphi.com/t/2024-crescendo-top-down-field-renders/447764",
-  "field-image": "assets/fields/2024-field.png",
+  "field-image": "assets/fields/frc/2024-field.png",
   "field-corners": {
     "top-left": [
       513,

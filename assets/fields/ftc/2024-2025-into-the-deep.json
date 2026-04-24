@@ -1,0 +1,19 @@
+{
+  "game": "Into The Deep",
+  "program": "FTC",
+  "field-image": "assets/fields/ftc/2024-2025-field.png",
+  "field-corners": {
+    "top-left": [
+      0,
+      0
+    ],
+    "bottom-right": [
+      2214,
+      2214
+    ]
+  },
+  "field-size": [
+    3.6368228,
+    3.6368228
+  ]
+}

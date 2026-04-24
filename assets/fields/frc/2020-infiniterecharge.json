@@ -1,7 +1,8 @@
 {
   "game": "Infinite Recharge",
+  "program": "FRC",
   "source-url": "https://www.chiefdelphi.com/t/2020-top-down-orthographic-field-views/369892",
-  "field-image": "assets/fields/2020-field.png",
+  "field-image": "assets/fields/frc/2020-field.png",
   "field-corners": {
     "top-left": [
       519,

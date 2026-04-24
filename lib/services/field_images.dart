@@ -63,6 +63,11 @@ class Field {
 
   late String? game;
   late String? sourceURL;
+  late String? program;
+
+  bool get isFrc => program != null && program == 'FRC';
+
+  bool get isFtc => program != null && program == 'FTC';
 
   int? fieldImageWidth;
   int? fieldImageHeight;
@@ -104,6 +109,7 @@ class Field {
 
     game = jsonData['game'];
     sourceURL = jsonData['source-url'];
+    program = jsonData['program'];
 
     fieldWidthMeters = jsonData['field-size'][0];
     fieldHeightMeters = jsonData['field-size'][1];

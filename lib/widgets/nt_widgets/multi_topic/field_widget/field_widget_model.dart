@@ -12,9 +12,9 @@ import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/struct_schemas/pose2d_struct.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
-import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 enum FieldObjectType { robot, trajectory, otherObject }
@@ -485,7 +485,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
       ),
     ),
-    DialogDropdownChooser<String?>(
+    FieldChooser(
       onSelectionChanged: (value) async {
         if (value == null) {
           return;
@@ -506,7 +506,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
         refresh();
       },
-      choices: FieldImages.fields.map((e) => e.game).toList(),
+      choices: FieldImages.fields,
       initialValue: _field.game,
     ),
     const SizedBox(height: 5),

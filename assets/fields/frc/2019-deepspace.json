@@ -1,7 +1,8 @@
 {
   "game": "Destination: Deep Space",
+  "program": "FRC",
   "source-url": "https://www.chiefdelphi.com/t/8k-2019-top-down-orthographic-field-views/337019",
-  "field-image": "assets/fields/2019-field.png",
+  "field-image": "assets/fields/frc/2019-field.png",
   "field-corners": {
     "top-left": [
       496,

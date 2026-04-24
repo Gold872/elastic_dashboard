@@ -1,0 +1,19 @@
+{
+  "game": "Decode",
+  "program": "FTC",
+  "field-image": "assets/fields/ftc/2025-2026-field.png",
+  "field-corners": {
+    "top-left": [
+      0,
+      0
+    ],
+    "bottom-right": [
+      2445,
+      2445
+    ]
+  },
+  "field-size": [
+    3.6368228,
+    3.6368228
+  ]
+}
