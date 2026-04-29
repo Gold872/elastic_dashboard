@@ -10,6 +10,7 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
+import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
@@ -26,6 +27,7 @@ void main() {
     'topic': 'Test/Field',
     'period': 0.100,
     'field_game': 'Rebuilt',
+    'coordinate_system': 'center',
     'robot_width': 1.0,
     'robot_length': 1.0,
     'show_other_objects': true,
@@ -121,6 +123,7 @@ void main() {
       Colors.white.toARGB32(),
     );
     expect(fieldWidgetModel.showRobotOutsideWidget, isTrue);
+    expect(fieldWidgetModel.coordinateSystem, CoordinateSystem.center);
   });
 
   test('Field to json', () {
@@ -138,10 +141,12 @@ void main() {
       robotColor: Colors.red,
       trajectoryColor: Colors.white,
       showRobotOutsideWidget: true,
+      coordinateSystem: CoordinateSystem.center,
     );
 
     expect(fieldWidgetModel.toJson(), fieldWidgetJson);
   });
+
   group('Field widget with', () {
     final fieldObject = find.byWidgetPredicate(
       (widget) => widget is CustomPaint && widget.painter is TrianglePainter,
@@ -582,6 +587,9 @@ void main() {
       DialogToggleSwitch,
       'Show Non-Robot Objects',
     );
+    final coordinateSystem = find.byType(
+      DialogDropdownChooser<CoordinateSystem>,
+    );
     final showTrajectories = find.widgetWithText(
       DialogToggleSwitch,
       'Show Trajectories',
@@ -605,6 +613,7 @@ void main() {
     );
 
     expect(game, findsOneWidget);
+    expect(coordinateSystem, findsOneWidget);
     expect(width, findsOneWidget);
     expect(length, findsOneWidget);
     expect(showNonRobot, findsOneWidget);
@@ -631,6 +640,21 @@ void main() {
     await widgetTester.testTextInput.receiveAction(TextInputAction.done);
     await widgetTester.pumpAndSettle();
     expect(fieldWidgetModel.robotWidthMeters, 0.5);
+
+    await widgetTester.ensureVisible(coordinateSystem);
+    await widgetTester.tap(coordinateSystem);
+    await widgetTester.pumpAndSettle();
+
+    final centerRotatedButton = find.text('Center Rotated (FTC Pre-2028)');
+    expect(centerRotatedButton, findsOneWidget);
+
+    await widgetTester.tap(centerRotatedButton);
+    await widgetTester.pumpAndSettle();
+
+    expect(
+      fieldWidgetModel.selectedCoordinateSystem,
+      CoordinateSystem.centerRotated,
+    );
 
     await widgetTester.enterText(length, '0.50');
     await widgetTester.testTextInput.receiveAction(TextInputAction.done);

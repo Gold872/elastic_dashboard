@@ -18,6 +18,7 @@ class CoordinateSystemConverter {
         return wallBlueToInternal(rawX, rawY, rawAngleRadians, field);
       case CoordinateSystem.centerRotated:
         return centerRotatedToInternal(rawX, rawY, rawAngleRadians, field);
+      case CoordinateSystem.unknown:
       case CoordinateSystem.center:
         return centerToInternal(rawX, rawY, rawAngleRadians, field);
     }

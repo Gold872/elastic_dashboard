@@ -145,6 +145,16 @@ void main() {
           field,
         );
         expect(center.$1, closeTo(5.0, 0.001));
+
+        // Unknown delegate (falls back to Center)
+        var unknown = CoordinateSystemConverter.convertToInternal(
+          CoordinateSystem.unknown,
+          5.0,
+          -3.0,
+          pi,
+          field,
+        );
+        expect(unknown.$1, closeTo(5.0, 0.001));
       },
     );
   });

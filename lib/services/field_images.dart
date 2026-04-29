@@ -59,27 +59,33 @@ class FieldImages {
 }
 
 enum CoordinateSystem {
+  unknown(jsonKey: 'default', displayName: 'Default'),
+
   /// Standard WPILib coordinate system pre-2027
   ///
   /// Origin at blue alliance corner, positive X going towards the left of the image,
   /// positive Y going towards the bottom of image
-  wallBlue('wall_blue'),
+  wallBlue(jsonKey: 'wall_blue', displayName: 'Blue Wall (WPILib Pre-2027)'),
 
   /// Standard FTC coordinate system pre-2028
   ///
   /// Origin at center of field, positive X going along the red wall towards the bottom
   /// of the image, positive Y going towards the right of the image, away from red wall
-  centerRotated('center_rotated'),
+  centerRotated(
+    jsonKey: 'center_rotated',
+    displayName: 'Center Rotated (FTC Pre-2028)',
+  ),
 
   /// Standard WPILib coordinate system 2027+
   ///
   /// Origin at center of field, positive X going towards the blue alliance wall (right of image),
   /// positive Y going towards the scoring table (top of image)
-  center('center');
+  center(jsonKey: 'center', displayName: 'Center (WPILib 2027+)');
 
   final String jsonKey;
+  final String displayName;
 
-  const CoordinateSystem(this.jsonKey);
+  const CoordinateSystem({required this.jsonKey, required this.displayName});
 
   static CoordinateSystem fromJson(String key) =>
       CoordinateSystem.values.firstWhere(
