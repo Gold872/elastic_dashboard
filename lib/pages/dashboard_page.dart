@@ -191,31 +191,38 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
     );
     robotNotificationListener.listen();
 
-    ntConnection.dsClientConnect(
-      onIPAnnounced: (ip) async {
-        if (preferences.getInt(PrefKeys.ipAddressMode) !=
-            IPAddressMode.driverStation.index) {
-          return;
-        }
+    ntConnection.dsClientConnect();
 
-        if (preferences.getString(PrefKeys.ipAddress) != ip) {
-          await preferences.setString(PrefKeys.ipAddress, ip);
-        } else {
-          return;
-        }
+    ntConnection.dsIpAddress.addListener(() async {
+      String? ip = ntConnection.dsIpAddress.value;
 
-        ntConnection.changeIPAddress(ip);
-      },
-      onDriverStationDockChanged: (docked) {
-        if ((preferences.getBool(PrefKeys.autoResizeToDS) ??
-                Defaults.autoResizeToDS) &&
-            docked) {
-          onDriverStationDocked();
-        } else {
-          onDriverStationUndocked();
-        }
-      },
-    );
+      if (ip == null) return;
+
+      if (preferences.getInt(PrefKeys.ipAddressMode) !=
+          IPAddressMode.driverStation.id) {
+        return;
+      }
+
+      if (preferences.getString(PrefKeys.ipAddress) != ip) {
+        await preferences.setString(PrefKeys.ipAddress, ip);
+      } else {
+        return;
+      }
+
+      ntConnection.changeIPAddress(ip);
+    });
+
+    ntConnection.dsHeight.addListener(() {
+      int? height = ntConnection.dsHeight.value;
+
+      if ((preferences.getBool(PrefKeys.autoResizeToDS) ??
+              Defaults.autoResizeToDS) &&
+          height != null) {
+        onDriverStationDocked(height);
+      } else {
+        onDriverStationUndocked();
+      }
+    });
 
     ntConnection.addConnectedListener(() {
       for (TabGridModel grid in tabData.map((e) => e.tabGrid)) {
@@ -308,7 +315,9 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
         description: const Text('A new update is available!'),
         action: TextButton(
           onPressed: () async {
-            Uri url = Uri.parse(Settings.releasesLink);
+            Uri url = Uri.parse(
+              '${Settings.repositoryLink}/releases/tag/v${updateResponse.latestVersion!}',
+            );
 
             if (await canLaunchUrl(url)) {
               await launchUrl(url);
@@ -430,9 +439,11 @@ abstract class DashboardPageViewModel extends ChangeNotifier {
 
   Future<void> changeIPAddressMode(IPAddressMode mode) async {}
 
+  Future<void> changeNTTargetServer(NTServerTarget mode) async {}
+
   Future<void> updateIPAddress(String newIPAddress) async {}
 
-  Future<void> onDriverStationDocked() async {}
+  Future<void> onDriverStationDocked(int dsHeight) async {}
 
   Future<void> onDriverStationUndocked() async {}
 
@@ -831,7 +842,7 @@ class _DashboardPageState extends State<DashboardPage>
       ),
       callback: () {
         if (preferences.getInt(PrefKeys.ipAddressMode) ==
-            IPAddressMode.driverStation.index) {
+            IPAddressMode.driverStation.id) {
           return;
         }
         model.updateIPAddress(
@@ -852,7 +863,7 @@ class _DashboardPageState extends State<DashboardPage>
       ),
       callback: () {
         if (preferences.getInt(PrefKeys.ipAddressMode) ==
-            IPAddressMode.localhost.index) {
+            IPAddressMode.localhost.id) {
           return;
         }
         widget.model.changeIPAddressMode(IPAddressMode.localhost);

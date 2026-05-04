@@ -7,8 +7,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elastic_dashboard/pages/dashboard/dashboard_page_settings.dart';
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/ip_address_util.dart';
+import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import '../../test_util.dart';
+import '../../test_util.mocks.dart';
 
 class SettingsDashboardViewModel = DashboardPageViewModel
     with DashboardPageSettings;
@@ -49,7 +51,7 @@ void main() {
       test('Driver station', () async {
         await preferences.setInt(
           PrefKeys.ipAddressMode,
-          IPAddressMode.driverStation.index,
+          IPAddressMode.driverStation.id,
         );
         await dashboardModel.changeTeamNumber('2053');
         // If driver station is disconnect, it does not change from the team number
@@ -58,23 +60,63 @@ void main() {
       test('Team number', () async {
         await preferences.setInt(
           PrefKeys.ipAddressMode,
-          IPAddressMode.teamNumber.index,
+          IPAddressMode.teamNumber.id,
         );
         await dashboardModel.changeTeamNumber('2053');
         expect(preferences.getString(PrefKeys.ipAddress), '10.20.53.2');
       });
-      test('RoboRIO mDNS', () async {
-        await preferences.setInt(
-          PrefKeys.ipAddressMode,
-          IPAddressMode.roboRIOmDNS.index,
-        );
-        await dashboardModel.changeTeamNumber('2053');
-        expect(
-          preferences.getString(PrefKeys.ipAddress),
-          'roboRIO-2053-FRC.local',
+    });
+  });
+
+  group('[IP Address Mode]:', () {
+    group('Changing IP address mode to', () {
+      setUp(() async {
+        await preferences.setString(PrefKeys.ipAddress, '10.3.53.2');
+
+        MockNTConnection mockConnection = createMockOfflineNT4();
+
+        dashboardModel = SettingsDashboardViewModel(
+          ntConnection: mockConnection,
+          preferences: preferences,
+          version: '0.0.0.0',
         );
       });
+      test('Driver Station', () async {
+        await dashboardModel.changeIPAddressMode(IPAddressMode.driverStation);
+
+        expect(preferences.getString(PrefKeys.ipAddress), '10.3.53.2');
+      });
+      test('SystemCore Wifi', () async {
+        await dashboardModel.changeIPAddressMode(IPAddressMode.systemCoreAP);
+
+        expect(preferences.getString(PrefKeys.ipAddress), '172.30.0.1');
+      });
+      test('SystemCore mDNS', () async {
+        await dashboardModel.changeIPAddressMode(IPAddressMode.systemCoremDNS);
+
+        expect(preferences.getString(PrefKeys.ipAddress), 'robot.local');
+      });
     });
+  });
+
+  test('NT Target Server', () async {
+    await preferences.setInt(
+      PrefKeys.ntTargetServer,
+      NTServerTarget.robotCode.index,
+    );
+    await dashboardModel.changeNTTargetServer(NTServerTarget.robotCode);
+
+    expect(
+      preferences.getInt(PrefKeys.ntTargetServer),
+      NTServerTarget.robotCode.index,
+    );
+
+    await dashboardModel.changeNTTargetServer(NTServerTarget.systemCore);
+
+    expect(
+      preferences.getInt(PrefKeys.ntTargetServer),
+      NTServerTarget.systemCore.index,
+    );
   });
 
   test('Toggle Grid', () async {

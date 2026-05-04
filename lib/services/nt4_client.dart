@@ -328,6 +328,7 @@ class NT4Client {
   static const int _pingTimeoutMsV41 = 1000;
 
   String serverBaseAddress;
+  int serverPort;
   final VoidCallback? onConnect;
   final VoidCallback? onDisconnect;
   final List<Function(NT4Topic topic)> _topicAnnounceListeners = [];
@@ -382,6 +383,7 @@ class NT4Client {
 
   NT4Client({
     required this.serverBaseAddress,
+    this.serverPort = 5810,
     required this.schemaManager,
     this.onConnect,
     this.onDisconnect,
@@ -405,6 +407,18 @@ class NT4Client {
     this.serverBaseAddress = serverBaseAddress;
     await _wsOnClose();
     // IP address is changed, so we're "resetting" the attempt state
+    // In the connect method, we don't change the attempting state if
+    // the address changes during connection, so this will have no effect
+    // on existing connections
+    _attemptingNTConnection = false;
+    _attemptingRTTConnection = false;
+    Future.delayed(const Duration(milliseconds: 100), _connect);
+  }
+
+  Future<void> setServerPort(int serverPort) async {
+    this.serverPort = serverPort;
+    await _wsOnClose();
+    // Port is changed, so we're "resetting" the attempt state
     // In the connect method, we don't change the attempting state if
     // the address changes during connection, so this will have no effect
     // on existing connections
@@ -687,7 +701,7 @@ class NT4Client {
 
     _clientId = Random().nextInt(99999999);
 
-    String mainServerAddr = 'ws://$serverBaseAddress:5810/nt/Elastic';
+    String mainServerAddr = 'ws://$serverBaseAddress:$serverPort/nt/Elastic';
 
     WebSocketChannel connectionAttempt;
     try {
@@ -706,7 +720,8 @@ class NT4Client {
       // When changing IP addresses we ignore any current connection attempts
       // since the handshake can take a long time, this will avoid logging information
       // that is from an old connection attempt
-      if (mainServerAddr.contains(serverBaseAddress)) {
+      if (mainServerAddr.contains(serverBaseAddress) &&
+          mainServerAddr.contains(serverPort.toString())) {
         logger.info(
           'Failed to connect to network tables, attempting to reconnect in 500 ms',
         );
@@ -719,8 +734,11 @@ class NT4Client {
       logger.trace('Connection failed with error', e);
       return;
     }
-    if (!mainServerAddr.contains(serverBaseAddress)) {
-      logger.info('IP Address changed while connecting, aborting connection');
+    if (!mainServerAddr.contains(serverBaseAddress) ||
+        !mainServerAddr.contains(serverPort.toString())) {
+      logger.info(
+        'IP Address/Port changed while connecting, aborting connection',
+      );
 
       // We don't set attempting connection to false here since we're assuming
       // that when the address changes, it will "reset" the attempt state to
@@ -802,7 +820,7 @@ class NT4Client {
     }
     _attemptingRTTConnection = true;
 
-    String rttServerAddr = 'ws://$serverBaseAddress:5810/nt/Elastic';
+    String rttServerAddr = 'ws://$serverBaseAddress:$serverPort/nt/Elastic';
 
     Uri? rttUri = Uri.tryParse(rttServerAddr);
 
@@ -824,14 +842,16 @@ class NT4Client {
         'Failed to connect to RTT Network Tables protocol, attempting to reconnect in 500 ms',
       );
       // Only reset connection attempt if the address hasn't changed, see explanation above
-      if (rttServerAddr.contains(serverBaseAddress)) {
+      if (rttServerAddr.contains(serverBaseAddress) &&
+          rttServerAddr.contains(serverPort.toString())) {
         _attemptingRTTConnection = false;
       }
       return;
     }
-    if (!rttServerAddr.contains(serverBaseAddress)) {
+    if (!rttServerAddr.contains(serverBaseAddress) ||
+        !rttServerAddr.contains(serverPort.toString())) {
       logger.info(
-        'IP Addressed changed while connecting to RTT, aborting RTT connection',
+        'IP Addressed/Port changed while connecting to RTT, aborting RTT connection',
       );
       connectionAttempt.sink.close().ignore();
       return;
