@@ -355,9 +355,11 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     required Map<String, dynamic> jsonData,
   }) : super.fromJson(jsonData: jsonData) {
     _fieldGame = tryCast(jsonData['field_game']) ?? _fieldGame;
-    _selectedCoordinateSystem = CoordinateSystem.fromJson(
-      tryCast(jsonData['coordinate_system']) ?? 'default',
-    );
+    if (jsonData['coordinate_system'] is String) {
+      _selectedCoordinateSystem = CoordinateSystem.fromJson(
+        jsonData['coordinate_system'],
+      );
+    }
 
     _robotWidthMeters = tryCast(jsonData['robot_width']) ?? 0.85;
     _robotLengthMeters =
