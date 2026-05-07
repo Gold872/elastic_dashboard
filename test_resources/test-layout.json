@@ -204,7 +204,7 @@
             "y": 0.0,
             "width": 256.0,
             "height": 128.0,
-            "type": "ComboBox Chooser",
+            "type": "Dropdown Chooser",
             "properties": {
               "topic": "/Telemetry/Test Chooser",
               "period": 0.033,
