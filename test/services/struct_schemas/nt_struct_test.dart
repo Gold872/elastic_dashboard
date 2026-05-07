@@ -173,7 +173,7 @@ void main() {
             name: 'TestEnum',
             schema: 'enum {a=1, b=2, c=3}',
           ),
-          throwsA(isA<Error>()),
+          throwsA(isA<SchemaParseException>()),
           reason: 'Enum declared with no field',
         );
 
@@ -182,7 +182,7 @@ void main() {
             name: 'TestEnum',
             schema: 'enum int8 testEnum',
           ),
-          throwsA(isA<Error>()),
+          throwsA(isA<SchemaParseException>()),
           reason: 'Invalid enum syntax',
         );
       });
@@ -543,6 +543,113 @@ void main() {
       );
 
       expect(NT4StructMeta.fromJson(structMetaJson), structMeta);
+    });
+  });
+
+  group('[WPILib Bit-Packing Spec Examples]:', () {
+    test('int8 a:4; int16 b:4;', () {
+      final schema = NTStructSchema.parse(
+        name: 'Ex1',
+        schema: 'int8 a:4; int16 b:4;',
+      );
+      // int8(8 bits) + int16(16 bits) = 24 bits (3 bytes)
+      expect(schema.bitLength, 24);
+
+      // Encoding: 0000aaaa 0000bbbb 00000000
+      final data = Uint8List.fromList([0x05, 0x03, 0x00]); // a=5, b=3
+      final struct = NTStruct.parse(schema: schema, data: data);
+
+      expect(struct['a'], 5);
+      expect(struct['b'], 3);
+    });
+
+    test('int16 a:4; uint16 b:5; bool c:1; int16 d:7;', () {
+      final schema = NTStructSchema.parse(
+        name: 'Ex2',
+        schema: 'int16 a:4; uint16 b:5; bool c:1; int16 d:7;',
+      );
+      // a, b, c pack into first 16-bit slot (4+5+1=10 bits used, 6 wasted).
+      // d (7 bits) flushes to next 16-bit slot.
+      // Total: 16 + 16 = 32 bits (4 bytes).
+      expect(schema.bitLength, 32);
+
+      // Encoding: bbbbaaaa 000000cb 0ddddddd 00000000
+      // a=10 (1010), b=21 (10101), c=true (1), d=66 (1000010)
+      final data = Uint8List.fromList([0x5A, 0x03, 0x42, 0x00]);
+      final struct = NTStruct.parse(schema: schema, data: data);
+
+      expect(struct['a'], 10);
+      expect(struct['b'], 21);
+      expect(struct['c'], true);
+      expect(struct['d'], 66);
+    });
+
+    test('uint8 a:4; int8 b:2; bool c:1; int16 d:1;', () {
+      final schema = NTStructSchema.parse(
+        name: 'Ex3',
+        schema: 'uint8 a:4; int8 b:2; bool c:1; int16 d:1;',
+      );
+      // a, b, c pack into first 8-bit slot (4+2+1=7 bits used, 1 wasted).
+      // d flushes to next 16-bit slot.
+      // Total: 8 + 16 = 24 bits (3 bytes).
+      expect(schema.bitLength, 24);
+
+      // Encoding: 0cbbaaaa 0000000d 00000000
+      final data = Uint8List.fromList([
+        0x65,
+        0x01,
+        0x00,
+      ]); // a=5, b=2, c=true, d=1
+      final struct = NTStruct.parse(schema: schema, data: data);
+
+      expect(struct['a'], 5);
+      expect(struct['b'], 2);
+      expect(struct['c'], true);
+      expect(struct['d'], 1);
+    });
+
+    test('bool a:1; bool b:1; int8 c:2;', () {
+      final schema = NTStructSchema.parse(
+        name: 'Ex4',
+        schema: 'bool a:1; bool b:1; int8 c:2;',
+      );
+      // All pack into a single uint8 slot (default for bool if not specified).
+      expect(schema.bitLength, 8);
+
+      final data = Uint8List.fromList([0x0D]); // 00001101 -> c=3 (11), b=0, a=1
+      final struct = NTStruct.parse(schema: schema, data: data);
+
+      expect(struct['a'], true);
+      expect(struct['b'], false);
+      expect(struct['c'], 3);
+    });
+
+    test('bool a:1; bool b:1; int16 c:2;', () {
+      final schema = NTStructSchema.parse(
+        name: 'Ex5',
+        schema: 'bool a:1; bool b:1; int16 c:2;',
+      );
+      // a, b start a uint8 slot. c is int16, flushes.
+      // Total: 8 + 16 = 24 bits.
+      expect(schema.bitLength, 24);
+
+      final data = Uint8List.fromList([0x03, 0x02, 0x00]); // a=1, b=1, c=2
+      final struct = NTStruct.parse(schema: schema, data: data);
+
+      expect(struct['a'], true);
+      expect(struct['b'], true);
+      expect(struct['c'], 2);
+    });
+
+    test('Nested structs do not pack bits', () {
+      final sub = NTStructSchema.parse(name: 'Inner', schema: 'int8 a:1;');
+      final schema = NTStructSchema.parse(
+        name: 'Outer',
+        schema: 'int8 b:1; Inner s; int8 c:1;',
+        knownSchemas: {'Inner': sub},
+      );
+      // b:1 (bits 0-1), flush (8), Inner (bits 8-16), flush (8), c:1 (bits 16-17), flush (8)
+      expect(schema.bitLength, 24);
     });
   });
 

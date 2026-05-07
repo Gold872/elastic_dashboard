@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
@@ -261,6 +262,7 @@ class NTFieldSchema {
   final int? arrayLength;
   final Map<int, String>? enumData;
   final (int start, int end) bitRange;
+  final bool isBitField;
 
   StructValueType get valueType => StructValueType.parse(type);
 
@@ -290,7 +292,28 @@ class NTFieldSchema {
     this.subSchema,
     this.enumData,
     required this.bitRange,
+    required this.isBitField,
   });
+
+  NTFieldSchema copyWith({
+    String? fieldName,
+    String? type,
+    NTStructSchema? subSchema,
+    int? bitLength,
+    int? arrayLength,
+    Map<int, String>? enumData,
+    (int start, int end)? bitRange,
+    bool? isBitField,
+  }) => NTFieldSchema(
+    fieldName: fieldName ?? this.fieldName,
+    type: type ?? this.type,
+    subSchema: subSchema ?? this.subSchema,
+    bitLength: bitLength ?? this.bitLength,
+    arrayLength: arrayLength ?? this.arrayLength,
+    enumData: enumData ?? this.enumData,
+    bitRange: bitRange ?? this.bitRange,
+    isBitField: isBitField ?? this.isBitField,
+  );
 
   factory NTFieldSchema.parse({
     required int start,
@@ -298,13 +321,18 @@ class NTFieldSchema {
     required Map<String, NTStructSchema> knownSchemas,
   }) {
     Map<int, String>? enumData;
-    if (schemaString.startsWith('enum')) {
-      enumData = {};
-      int enumStart = schemaString.indexOf('{') + 1;
+    schemaString = schemaString.trim();
+    if (schemaString.startsWith('enum') || schemaString.startsWith('{')) {
+      int enumStart = schemaString.indexOf('{');
       int enumEnd = schemaString.indexOf('}');
 
+      if (enumStart == -1 || enumEnd == -1 || enumEnd < enumStart) {
+        throw SchemaParseException('Invalid enum syntax: $schemaString');
+      }
+
+      enumData = {};
       String enumString = schemaString
-          .substring(enumStart, enumEnd)
+          .substring(enumStart + 1, enumEnd)
           .split('')
           .whereNot((e) => e == ' ')
           .join();
@@ -312,30 +340,38 @@ class NTFieldSchema {
       enumString.split(',').where((e) => e.isNotEmpty).forEach((pairString) {
         List<String> pair = pairString.split('=');
 
-        if (pair.length == 2 && !int.parse(pair[1]).isNaN) {
-          enumData![int.parse(pair[1])] = pair[0];
+        if (pair.length == 2) {
+          int? value = int.tryParse(pair[1].trim());
+          if (value != null) {
+            enumData![value] = pair[0].trim();
+          }
         }
       });
 
       schemaString = schemaString.substring(enumEnd + 1).trim();
     }
 
-    var [type, definition] = [
-      schemaString.substring(0, schemaString.indexOf(' ')),
-      schemaString.substring(schemaString.indexOf(' ') + 1),
-    ];
+    List<String> parts = schemaString
+        .split(' ')
+        .where((e) => e.isNotEmpty)
+        .toList();
+    if (parts.length < 2) {
+      throw SchemaParseException('Invalid declaration: $schemaString');
+    }
+
+    String type = parts.removeAt(0);
+    String definition = parts.join(' ').trim();
 
     StructValueType fieldType = StructValueType.parse(type);
     late String fieldName;
-    late (int start, int end) bitRange;
     int? bitLength;
     int? arrayLength;
     NTStructSchema? subSchema;
+    bool isBitField = false;
 
     if (fieldType == StructValueType.struct) {
       NTStructSchema? schema = knownSchemas[type];
       if (schema == null) {
-        logger.debug('Unknown struct type: $type');
         throw SchemaParseException('Unknown struct type: $type');
       }
       bitLength = schema.bitLength;
@@ -343,19 +379,20 @@ class NTFieldSchema {
     }
 
     if (definition.contains(':')) {
-      var [name, length] = definition.split(':');
-      fieldName = name.trim();
-      bitLength = int.tryParse(length.trim());
+      var split = definition.split(':');
+      fieldName = split[0].trim();
+      bitLength = int.tryParse(split[1].trim());
+      isBitField = true;
     } else if (definition.contains('[')) {
       List<String> split = definition.split('[');
-      String rawLength = split[1].split(']')[0];
+      String rawLength = split[1].split(']')[0].trim();
       arrayLength = int.parse(rawLength);
 
       bitLength = (bitLength ?? fieldType.maxBits) * arrayLength;
 
-      fieldName = split[0];
+      fieldName = split[0].trim();
     } else {
-      fieldName = definition;
+      fieldName = definition.trim();
     }
 
     if (fieldName.contains(' ')) {
@@ -364,24 +401,36 @@ class NTFieldSchema {
 
     bitLength ??= fieldType.maxBits;
 
-    bitRange = (start, start + bitLength);
-
     return NTFieldSchema(
       fieldName: fieldName,
       type: type,
       subSchema: subSchema,
-      bitRange: bitRange,
+      bitRange: (start, start + bitLength),
       arrayLength: arrayLength,
       enumData: enumData,
       bitLength: bitLength,
+      isBitField: isBitField,
     );
   }
 
   Object? toValue(Uint8List data) {
+    int requiredBytes = valueType.maxBits ~/ 8;
+    if (data.length < requiredBytes) {
+      Uint8List padded = Uint8List(requiredBytes);
+      padded.setRange(0, data.length, data);
+      data = padded;
+    }
     final view = data.buffer.asByteData();
     final Object? value = switch (valueType) {
       StructValueType.bool => view.getUint8(0) > 0,
-      StructValueType.char => utf8.decode(data),
+      StructValueType.char => () {
+        String decoded = utf8.decode(data);
+        int nullIndex = decoded.indexOf('\x00');
+        if (nullIndex != -1) {
+          return decoded.substring(0, nullIndex);
+        }
+        return decoded;
+      }(),
       StructValueType.int8 => view.getInt8(0),
       StructValueType.int16 => view.getInt16(0, Endian.little),
       StructValueType.int32 => view.getInt32(0, Endian.little),
@@ -432,27 +481,83 @@ class NTStructSchema {
     List<NTFieldSchema> fields = [];
     List<String> schemaParts = schema.replaceAll('\n', '').split(';');
 
-    int bitStart = 0;
     for (final String part in schemaParts.map((e) => e.trim())) {
       if (part.isEmpty) {
         continue;
       }
 
-      NTFieldSchema field = NTFieldSchema.parse(
-        start: bitStart,
-        schemaString: part,
-        knownSchemas: knownSchemas,
+      fields.add(
+        NTFieldSchema.parse(
+          start: 0,
+          schemaString: part,
+          knownSchemas: knownSchemas,
+        ),
       );
-      bitStart += field.bitLength;
-      fields.add(field);
     }
 
-    int bits = 0;
-    for (final field in fields) {
-      bits += field.bitLength;
+    int bitPosition = 0;
+    int? bitfieldPosition;
+    int? bitfieldLength;
+
+    for (int i = 0; i < fields.length; i++) {
+      NTFieldSchema field = fields[i];
+
+      if (field.valueType == StructValueType.struct) {
+        // Child struct
+        if (bitfieldPosition != null || bitfieldLength != null) {
+          bitPosition += bitfieldLength! - bitfieldPosition!;
+        }
+        bitfieldPosition = null;
+        bitfieldLength = null;
+
+        int length = field.bitLength;
+        fields[i] = field.copyWith(
+          bitRange: (bitPosition, bitPosition + length),
+        );
+        bitPosition += length;
+      } else if (!field.isBitField) {
+        // Normal or array value
+        if (bitfieldPosition != null || bitfieldLength != null) {
+          bitPosition += bitfieldLength! - bitfieldPosition!;
+        }
+        bitfieldPosition = null;
+        bitfieldLength = null;
+
+        int length = field.bitLength;
+        fields[i] = field.copyWith(
+          bitRange: (bitPosition, bitPosition + length),
+        );
+        bitPosition += length;
+      } else {
+        // Bitfield value
+        int typeLength = field.valueType.maxBits;
+        int valueBitLength = min(field.bitLength, typeLength);
+
+        if (bitfieldPosition == null ||
+            bitfieldLength == null ||
+            (field.valueType != StructValueType.bool &&
+                bitfieldLength != typeLength) ||
+            bitfieldPosition + valueBitLength > bitfieldLength) {
+          // Start new bitfield
+          if (bitfieldPosition != null || bitfieldLength != null) {
+            bitPosition += bitfieldLength! - bitfieldPosition!;
+          }
+          bitfieldPosition = 0;
+          bitfieldLength = typeLength;
+        }
+        fields[i] = field.copyWith(
+          bitRange: (bitPosition, bitPosition + valueBitLength),
+        );
+        bitfieldPosition += valueBitLength;
+        bitPosition += valueBitLength;
+      }
     }
 
-    return NTStructSchema(name: name, fields: fields, bitLength: bits);
+    if (bitfieldPosition != null || bitfieldLength != null) {
+      bitPosition += bitfieldLength! - bitfieldPosition!;
+    }
+
+    return NTStructSchema(name: name, fields: fields, bitLength: bitPosition);
   }
 
   NTFieldSchema? operator [](String key) {
@@ -484,13 +589,34 @@ class NTStruct {
     required NTStructSchema schema,
     required Uint8List data,
   }) {
-    List<bool> dataBitArray = data.toBitArray();
-
     Map<String, Object?> values = {};
 
+    Uint8List sliceBits(Uint8List input, int start, int end) {
+      if (start % 8 == 0 && end % 8 == 0) {
+        return input.sublist(start ~/ 8, end ~/ 8);
+      } else {
+        return input.toBitArray().slice(start, end).toUint8List();
+      }
+    }
+
     for (final field in schema.fields) {
-      if (field.bitRange.$2 > dataBitArray.length) break;
+      if (field.bitRange.$2 > data.length * 8) break;
+
       if (field.isArray) {
+        if (field.valueType == StructValueType.char) {
+          Uint8List bytes = sliceBits(
+            data,
+            field.bitRange.$1,
+            field.bitRange.$2,
+          );
+          String decoded = utf8.decode(bytes, allowMalformed: true);
+          int nullIndex = decoded.indexOf('\x00');
+          values[field.fieldName] = (nullIndex != -1)
+              ? decoded.substring(0, nullIndex)
+              : decoded;
+          continue;
+        }
+
         List<Object?> value = [];
 
         int itemLength =
@@ -498,26 +624,18 @@ class NTStruct {
 
         for (
           int position = field.bitRange.$1;
-          position < dataBitArray.length;
+          position < field.bitRange.$2;
           position += itemLength
         ) {
           value.add(
-            field.toValue(
-              dataBitArray.slice(position, position + itemLength).toUint8List(),
-            ),
+            field.toValue(sliceBits(data, position, position + itemLength)),
           );
         }
 
-        if (field.valueType == StructValueType.char) {
-          values[field.fieldName] = value.join();
-        } else {
-          values[field.fieldName] = value;
-        }
+        values[field.fieldName] = value;
       } else {
         final value = field.toValue(
-          dataBitArray
-              .slice(field.bitRange.$1, field.bitRange.$2)
-              .toUint8List(),
+          sliceBits(data, field.bitRange.$1, field.bitRange.$2),
         );
 
         values[field.fieldName] = value;
