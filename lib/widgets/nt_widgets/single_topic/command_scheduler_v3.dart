@@ -33,13 +33,12 @@ class CommandSchedulerV3 extends NTWidget {
           minVerticalPadding: 2,
           title: Text(command.name),
           subtitle: Text(
-            '  ${command.requirements.map((e) => e.name).join(', ')}:\n  Last: ${command.lastTimeMs.toStringAsFixed(3)} ms | Total: ${command.totalTimeMs.toStringAsFixed(2)} ms',
-            maxLines: 2,
+            '  ${command.requirements.map((e) => e.name).join(', ')}\n  Last: ${command.lastTimeMs.toStringAsFixed(3)} ms | Total: ${command.totalTimeMs.toStringAsFixed(2)} ms',
           ),
         );
 
         final Map<int, ProtobufCommand> idToCommand = {};
-        final Map<int, int> parentToChildId = {};
+        final Map<int, List<int>> parentToChildrenIds = {};
         final List<ProtobufCommand> roots = [];
 
         for (final command in schedulerData.runningCommands) {
@@ -47,26 +46,43 @@ class CommandSchedulerV3 extends NTWidget {
           if (!command.hasParentId()) {
             roots.add(command);
           } else {
-            parentToChildId[command.parentId] = command.id;
+            parentToChildrenIds
+                .putIfAbsent(command.parentId, () => [])
+                .add(command.id);
           }
         }
 
-        Iterable<Widget> commandWidgets = roots.expand((root) sync* {
-          var bottom = root;
-          while (parentToChildId.containsKey(bottom.id)) {
-            bottom = idToCommand[parentToChildId[bottom.id]]!;
+        List<ProtobufCommand> findLeaves(ProtobufCommand root) {
+          List<ProtobufCommand> leaves = [];
+          List<ProtobufCommand> stack = [root];
+          while (stack.isNotEmpty) {
+            final current = stack.removeLast();
+            final childrenIds = parentToChildrenIds[current.id];
+            if (childrenIds == null || childrenIds.isEmpty) {
+              if (current.id != root.id) {
+                leaves.add(current);
+              }
+            } else {
+              for (final childId in childrenIds) {
+                stack.add(idToCommand[childId]!);
+              }
+            }
           }
+          return leaves;
+        }
+
+        Iterable<Widget> commandWidgets = roots.expand((root) sync* {
           yield buildCommandView(root);
-          if (bottom.id != root.id) {
+          final leaves = findLeaves(root);
+          for (final leaf in leaves) {
             yield Padding(
               padding: const EdgeInsets.only(left: 12.0),
-              child: buildCommandView(bottom),
+              child: buildCommandView(leaf),
             );
           }
         });
 
         return ListView(
-          padding: EdgeInsets.all(0),
           children: [
             Center(
               child: Text(
