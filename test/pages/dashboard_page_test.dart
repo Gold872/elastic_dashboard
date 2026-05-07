@@ -227,14 +227,14 @@ void main() {
         findsOneWidget,
       );
 
-      final smartDashboardTile = find.widgetWithText(
+      final telemetryTile = find.widgetWithText(
         TreeTile,
-        'SmartDashboard',
+        'Telemetry',
       );
 
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
-      await widgetTester.tap(smartDashboardTile);
+      await widgetTester.tap(telemetryTile);
       await widgetTester.pumpAndSettle();
 
       final searchQuery = find.widgetWithText(DialogTextInput, 'Search');
@@ -263,7 +263,7 @@ void main() {
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsNothing);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
       // No matches
       await widgetTester.enterText(searchQuery, 'no match');
@@ -273,17 +273,17 @@ void main() {
 
       expect(testValueOne, findsNothing);
       expect(testValueTwo, findsNothing);
-      expect(smartDashboardTile, findsNothing);
+      expect(telemetryTile, findsNothing);
 
-      // Match only smart dashboard tile (all should show)
-      await widgetTester.enterText(searchQuery, 'Smart');
+      // Match only telemetry tile (all should show)
+      await widgetTester.enterText(searchQuery, 'Telem');
       await widgetTester.testTextInput.receiveAction(TextInputAction.done);
 
       await widgetTester.pumpAndSettle();
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsOneWidget);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
       // Empty text (both should be visible)
       await widgetTester.enterText(searchQuery, '');
@@ -293,7 +293,7 @@ void main() {
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsOneWidget);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
     });
 
     testWidgets('Add widget dialog (widgets)', (widgetTester) async {
@@ -320,14 +320,14 @@ void main() {
         findsOneWidget,
       );
 
-      final smartDashboardTile = find.widgetWithText(
+      final telemetryTile = find.widgetWithText(
         TreeTile,
-        'SmartDashboard',
+        'Telemetry',
       );
 
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
-      await widgetTester.tap(smartDashboardTile);
+      await widgetTester.tap(telemetryTile);
       await widgetTester.pumpAndSettle();
 
       final testValueTile = find.widgetWithText(TreeTile, 'Test Value 1');
