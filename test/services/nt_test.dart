@@ -15,13 +15,13 @@ void main() {
 
     // Subscribing
     NT4Subscription subscription1 = ntConnection.subscribe(
-      '/SmartDashboard/Test Number',
+      '/Telemetry/Test Number',
     );
 
     expect(ntConnection.subscriptions.length, greaterThanOrEqualTo(1));
 
     expect(
-      ntConnection.getLastAnnouncedValue('/SmartDashboard/Test Number'),
+      ntConnection.getLastAnnouncedValue('/Telemetry/Test Number'),
       isNull,
     );
 
@@ -29,13 +29,13 @@ void main() {
     ntConnection.updateDataFromSubscription(subscription1, 3.53);
 
     expect(
-      ntConnection.getLastAnnouncedValue('/SmartDashboard/Test Number'),
+      ntConnection.getLastAnnouncedValue('/Telemetry/Test Number'),
       isNull,
     );
 
     ntConnection.updateDataFromTopic(
       NT4Topic(
-        name: '/SmartDashboard/Test Number',
+        name: '/Telemetry/Test Number',
         type: NT4Type.float(),
         properties: {},
       ),
@@ -43,14 +43,14 @@ void main() {
     );
 
     expect(
-      ntConnection.getLastAnnouncedValue('/SmartDashboard/Test Number'),
+      ntConnection.getLastAnnouncedValue('/Telemetry/Test Number'),
       3.53,
     );
 
     expect(subscription1.currentValue != null, true);
 
     NT4Subscription subscription2 = ntConnection.subscribe(
-      '/SmartDashboard/Test Number',
+      '/Telemetry/Test Number',
     );
 
     // If the subscriptions are shared
@@ -66,7 +66,7 @@ void main() {
 
     // Changing ip address
     expect(
-      ntConnection.getLastAnnouncedValue('/SmartDashboard/Test Number'),
+      ntConnection.getLastAnnouncedValue('/Telemetry/Test Number'),
       3.53,
     );
 
@@ -76,7 +76,7 @@ void main() {
 
     expect(ntConnection.announcedTopics().length, 0);
     expect(
-      ntConnection.getLastAnnouncedValue('/SmartDashboard/Test Number'),
+      ntConnection.getLastAnnouncedValue('/Telemetry/Test Number'),
       3.53,
     );
   });
