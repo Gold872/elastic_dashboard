@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -12,15 +11,16 @@ import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
+import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/driver_station_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import '../../../test_util.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final Map<String, dynamic> fmsInfoJson = {
-    'topic': 'Test/FMSInfo',
+  final Map<String, dynamic> dsInfoJson = {
+    'topic': 'Test/DSInfo',
     'period': 0.100,
   };
 
@@ -89,64 +89,64 @@ void main() {
       schemaManager: schemaManager,
       virtualTopics: [
         NT4Topic(
-          name: 'Test/FMSInfo/EventName',
+          name: 'Test/DSInfo/MatchState/EventName',
           type: NT4Type.string(),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/ControlWord',
+          name: 'Test/DSInfo/ControlWord',
           type: NT4Type.struct('ControlWord'),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/IsRedAlliance',
+          name: 'Test/DSInfo/MatchState/IsRedAlliance',
           type: NT4Type.boolean(),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/MatchNumber',
+          name: 'Test/DSInfo/MatchState/MatchNumber',
           type: NT4Type.int(),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/MatchType',
+          name: 'Test/DSInfo/MatchState/MatchType',
           type: NT4Type.int(),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/ReplayNumber',
+          name: 'Test/DSInfo/MatchState/ReplayNumber',
           type: NT4Type.int(),
           properties: {},
         ),
       ],
       virtualValues: {
-        'Test/FMSInfo/EventName': eventName,
-        'Test/FMSInfo/ControlWord': controlWord,
-        'Test/FMSInfo/IsRedAlliance': redAlliance,
-        'Test/FMSInfo/MatchNumber': matchNumber,
-        'Test/FMSInfo/MatchType': matchType,
-        'Test/FMSInfo/ReplayNumber': replayNumber,
+        'Test/DSInfo/MatchState/EventName': eventName,
+        'Test/DSInfo/ControlWord': controlWord,
+        'Test/DSInfo/MatchState/IsRedAlliance': redAlliance,
+        'Test/DSInfo/MatchState/MatchNumber': matchNumber,
+        'Test/DSInfo/MatchState/MatchType': matchType,
+        'Test/DSInfo/MatchState/ReplayNumber': replayNumber,
       },
     );
   }
 
-  Future<void> pushFMSInfoWidget(
+  Future<void> pushDSInfoWidget(
     WidgetTester widgetTester,
     NTConnection ntConnection,
   ) async {
-    NTWidgetModel fmsInfoModel = NTWidgetRegistry.buildNTModelFromJson(
+    NTWidgetModel dsInfoModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
-      'FMSInfo',
-      fmsInfoJson,
+      'DSInfo',
+      dsInfoJson,
     );
 
     return widgetTester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: ChangeNotifierProvider<NTWidgetModel>.value(
-            value: fmsInfoModel,
-            child: const FMSInfo(),
+            value: dsInfoModel,
+            child: const DriverStationInfo(),
           ),
         ),
       ),
@@ -170,33 +170,33 @@ void main() {
     );
   });
 
-  test('FMSInfo from json', () {
-    NTWidgetModel fmsInfoModel = NTWidgetRegistry.buildNTModelFromJson(
+  test('DSInfo from json', () {
+    NTWidgetModel dsInfoModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
-      'FMSInfo',
-      fmsInfoJson,
+      'DSInfo',
+      dsInfoJson,
     );
 
-    expect(fmsInfoModel.type, 'FMSInfo');
-    expect(fmsInfoModel.runtimeType, FMSInfoModel);
+    expect(dsInfoModel.type, 'DSInfo');
+    expect(dsInfoModel.runtimeType, DriverStationInfoModel);
   });
 
-  test('FMSInfo to json', () {
-    FMSInfoModel fmsInfoModel = FMSInfoModel(
+  test('DSInfo to json', () {
+    DriverStationInfoModel dsInfoModel = DriverStationInfoModel(
       ntConnection: ntConnection,
       preferences: preferences,
-      topic: 'Test/FMSInfo',
+      topic: 'Test/DSInfo',
       period: 0.100,
     );
 
-    expect(fmsInfoModel.toJson(), fmsInfoJson);
+    expect(dsInfoModel.toJson(), dsInfoJson);
   });
 
-  testWidgets('FMSInfo CMPTX E15, Teleop Enabled', (widgetTester) async {
+  testWidgets('DSInfo CMPTX E15, Teleop Enabled', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    await pushFMSInfoWidget(widgetTester, ntConnection);
+    await pushDSInfoWidget(widgetTester, ntConnection);
 
     await widgetTester.pumpAndSettle();
 
@@ -217,10 +217,10 @@ void main() {
     );
   });
 
-  testWidgets('FMSInfo NYSU Q72, Auto Enabled', (widgetTester) async {
+  testWidgets('DSInfo NYSU Q72, Auto Enabled', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    await pushFMSInfoWidget(
+    await pushDSInfoWidget(
       widgetTester,
       createNTConnection(
         eventName: 'NYSU',
@@ -254,10 +254,10 @@ void main() {
     );
   });
 
-  testWidgets('FMSInfo NYLI2 P7, Estopped', (widgetTester) async {
+  testWidgets('DSInfo NYLI2 P7, Estopped', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    await pushFMSInfoWidget(
+    await pushDSInfoWidget(
       widgetTester,
       createNTConnection(
         eventName: 'NYLI2',
@@ -291,10 +291,10 @@ void main() {
     );
   });
 
-  testWidgets('FMSInfo Unkown Match, utility enabled', (widgetTester) async {
+  testWidgets('DSInfo Unkown Match, utility enabled', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    await pushFMSInfoWidget(
+    await pushDSInfoWidget(
       widgetTester,
       createNTConnection(
         eventName: '',
@@ -329,12 +329,12 @@ void main() {
     );
   });
 
-  testWidgets('FMSInfo Unknown Match, everything disconnected', (
+  testWidgets('DSInfo Unknown Match, everything disconnected', (
     widgetTester,
   ) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    await pushFMSInfoWidget(
+    await pushDSInfoWidget(
       widgetTester,
       createNTConnection(
         eventName: '',

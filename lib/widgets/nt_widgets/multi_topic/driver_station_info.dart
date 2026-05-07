@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:flutter/material.dart';
 
 import 'package:dot_cast/dot_cast.dart';
@@ -8,19 +7,20 @@ import 'package:patterns_canvas/patterns_canvas.dart';
 import 'package:provider/provider.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-class FMSInfoModel extends MultiTopicNTWidgetModel {
+class DriverStationInfoModel extends MultiTopicNTWidgetModel {
   @override
-  String type = FMSInfo.widgetType;
+  String type = DriverStationInfo.widgetType;
 
-  String get eventNameTopic => '$topic/EventName';
+  String get eventNameTopic => '$topic/MatchState/EventName';
   String get controlWordTopic => '$topic/ControlWord';
-  String get allianceTopic => '$topic/IsRedAlliance';
-  String get matchNumberTopic => '$topic/MatchNumber';
-  String get matchTypeTopic => '$topic/MatchType';
-  String get replayNumberTopic => '$topic/ReplayNumber';
-  String get stationNumberTopic => '$topic/StationNumber';
+  String get allianceTopic => '$topic/MatchState/IsRedAlliance';
+  String get matchNumberTopic => '$topic/MatchState/MatchNumber';
+  String get matchTypeTopic => '$topic/MatchState/MatchType';
+  String get replayNumberTopic => '$topic/MatchState/ReplayNumber';
+  String get stationNumberTopic => '$topic/MatchState/StationNumber';
 
   late NT4Subscription eventNameSubscription;
   late NT4Subscription controlWordSubscription;
@@ -39,14 +39,14 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
     replayNumberSubscription,
   ];
 
-  FMSInfoModel({
+  DriverStationInfoModel({
     required super.ntConnection,
     required super.preferences,
     required super.topic,
     super.period,
   });
 
-  FMSInfoModel.fromJson({
+  DriverStationInfoModel.fromJson({
     required super.ntConnection,
     required super.preferences,
     required super.jsonData,
@@ -78,10 +78,10 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
   }
 }
 
-class FMSInfo extends NTWidget {
-  static const String widgetType = 'FMSInfo';
+class DriverStationInfo extends NTWidget {
+  static const String widgetType = 'DSInfo';
 
-  const FMSInfo({super.key}) : super();
+  const DriverStationInfo({super.key}) : super();
 
   String _getMatchTypeString(int matchType) {
     switch (matchType) {
@@ -98,7 +98,7 @@ class FMSInfo extends NTWidget {
 
   @override
   Widget build(BuildContext context) {
-    FMSInfoModel model = cast(context.watch<NTWidgetModel>());
+    DriverStationInfoModel model = cast(context.watch<NTWidgetModel>());
 
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
