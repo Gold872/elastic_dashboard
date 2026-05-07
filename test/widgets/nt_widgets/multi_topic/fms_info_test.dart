@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +27,17 @@ void main() {
   late SharedPreferences preferences;
   late NTConnection ntConnection;
 
+  final String controlWordSchema =
+      'uint64 opModeHash:56;'
+      'enum{unknown=0,autonomous=1,teleoperated=2,utility=3} uint64 robotMode:2;'
+      'bool enabled:1;bool eStop:1;bool fmsAttached:1;bool dsAttached:1;';
+
+  final SchemaManager schemaManager = SchemaManager();
+  schemaManager.processNewSchema(
+    'ControlWord',
+    utf8.encode(controlWordSchema),
+  );
+
   NTConnection createNTConnection({
     String eventName = '',
     bool redAlliance = false,
@@ -30,33 +45,48 @@ void main() {
     int matchType = 0,
     int replayNumber = 0,
     bool enabled = false,
+    bool teleop = false,
     bool auto = false,
-    bool test = false,
+    bool utility = false,
     bool estop = false,
     bool fmsAttached = false,
     bool dsAttached = false,
   }) {
-    int fmsControlData = 0;
-    if (enabled) {
-      fmsControlData |= FMSInfo.ENABLED_FLAG;
-    }
+    Uint8List controlWord = Uint8List(8);
+
+    // Robot mode: bits 56:57
+    int robotMode = 0;
     if (auto) {
-      fmsControlData |= FMSInfo.AUTO_FLAG;
+      robotMode = 1;
+    } else if (teleop) {
+      robotMode = 2;
+    } else if (utility) {
+      robotMode = 3;
     }
-    if (test) {
-      fmsControlData |= FMSInfo.TEST_FLAG;
+    controlWord[56 ~/ 8] |= ((robotMode & 0x3) << (56 % 8));
+
+    // Enabled: bit 58
+    if (enabled) {
+      controlWord[58 ~/ 8] |= (1 << (58 % 8));
     }
+
+    // Estop: bit 59
     if (estop) {
-      fmsControlData |= FMSInfo.EMERGENCY_STOP_FLAG;
+      controlWord[59 ~/ 8] |= (1 << (59 % 8));
     }
+
+    // fmsAttached: bit 60
     if (fmsAttached) {
-      fmsControlData |= FMSInfo.FMS_ATTACHED_FLAG;
+      controlWord[60 ~/ 8] |= (1 << (60 % 8));
     }
+
+    // dsAttached: bit 61
     if (dsAttached) {
-      fmsControlData |= FMSInfo.DS_ATTACHED_FLAG;
+      controlWord[61 ~/ 8] |= (1 << (61 % 8));
     }
 
     return createMockOnlineNT4(
+      schemaManager: schemaManager,
       virtualTopics: [
         NT4Topic(
           name: 'Test/FMSInfo/EventName',
@@ -64,8 +94,8 @@ void main() {
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/FMSInfo/FMSControlData',
-          type: NT4Type.int(),
+          name: 'Test/FMSInfo/ControlWord',
+          type: NT4Type.struct('ControlWord'),
           properties: {},
         ),
         NT4Topic(
@@ -91,7 +121,7 @@ void main() {
       ],
       virtualValues: {
         'Test/FMSInfo/EventName': eventName,
-        'Test/FMSInfo/FMSControlData': fmsControlData,
+        'Test/FMSInfo/ControlWord': controlWord,
         'Test/FMSInfo/IsRedAlliance': redAlliance,
         'Test/FMSInfo/MatchNumber': matchNumber,
         'Test/FMSInfo/MatchType': matchType,
@@ -134,6 +164,7 @@ void main() {
       matchType: 3,
       replayNumber: 1,
       enabled: true,
+      teleop: true,
       fmsAttached: true,
       dsAttached: true,
     );
@@ -260,7 +291,7 @@ void main() {
     );
   });
 
-  testWidgets('FMSInfo Unkown Match, test enabled', (widgetTester) async {
+  testWidgets('FMSInfo Unkown Match, utility enabled', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
     await pushFMSInfoWidget(
@@ -272,7 +303,7 @@ void main() {
         matchType: 0,
         replayNumber: 0,
         enabled: true,
-        test: true,
+        utility: true,
         fmsAttached: false,
         dsAttached: true,
       ),
@@ -286,7 +317,7 @@ void main() {
     expect(find.byIcon(Icons.check), findsNWidgets(1));
     expect(find.byIcon(Icons.clear), findsNWidgets(1));
 
-    expect(find.text('Robot State: Test'), findsOneWidget);
+    expect(find.text('Robot State: Utility'), findsOneWidget);
     expect(
       find.byWidgetPredicate(
         (widget) =>
@@ -311,6 +342,7 @@ void main() {
         matchNumber: 0,
         matchType: 0,
         replayNumber: 0,
+        teleop: false,
       ),
     );
 

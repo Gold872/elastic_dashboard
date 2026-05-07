@@ -331,6 +331,7 @@ class NTFieldSchema {
       }
 
       enumData = {};
+      // Remove optional whitespace
       String enumString = schemaString
           .substring(enumStart + 1, enumEnd)
           .split('')
@@ -378,12 +379,14 @@ class NTFieldSchema {
       subSchema = schema;
     }
 
+    // Bit width
     if (definition.contains(':')) {
       var split = definition.split(':');
       fieldName = split[0].trim();
       bitLength = int.tryParse(split[1].trim());
       isBitField = true;
     } else if (definition.contains('[')) {
+      // Array (bit-width arrays aren't supported)
       List<String> split = definition.split('[');
       String rawLength = split[1].split(']')[0].trim();
       arrayLength = int.parse(rawLength);
