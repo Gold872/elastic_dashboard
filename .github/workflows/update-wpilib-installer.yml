@@ -51,29 +51,18 @@ jobs:
         run: |
           git config user.name "Gold87"
           git config user.email "91761103+Gold872@users.noreply.github.com"
-          
-          BRANCH_NAME="update-elastic-${{ steps.vars.outputs.tag }}"
-          git checkout -b "$BRANCH_NAME"
-          
-          git add scripts/versions.gradle
 
           git diff
 
           ls -al
-          
-          # Only commit if there are actually changes to avoid exit code 1
-          if git diff --staged --quiet; then
-            echo "No changes detected. The version might already be up to date."
-          else
-            git commit -m "Update Elastic to ${{ steps.vars.outputs.tag }}"
-            git push origin "$BRANCH_NAME" --force
-          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
+          committer: Gold87 <91761103+Gold872@users.noreply.github.com>
           branch: "update-elastic-${{ steps.vars.outputs.tag }}"
           title: "Update Elastic to ${{ steps.vars.outputs.tag }}"
+          commit-message: "Update Elastic to ${{ steps.vars.outputs.tag }}"
           body: "Automated update triggered by release ${{ steps.vars.outputs.tag }} of elastic_dashboard"
           base: 2027
