@@ -23,10 +23,11 @@ jobs:
             echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Checkout Installer Repo
+      - name: Checkout Fork
         uses: actions/checkout@v4
         with:
-          repository: 'Gold872/WPILibInstaller-Avalonia' 
+          repository: Gold872/WPILibInstaller-Avalonia
+          ref: 2027
           token: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
           fetch-depth: 0
 
@@ -34,14 +35,13 @@ jobs:
         run: |
           git remote add upstream https://github.com/wpilibsuite/WPILibInstaller-Avalonia.git
           git fetch upstream
-          git reset --hard upstream/2027 
+          git reset --hard upstream/2027
 
       - name: Update versions.gradle
-        run: |
-          # Finds the elasticGitTag line and replaces the version inside the single quotes
-          sed -i "s/ext.elasticGitTag = '.*'/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
+        run: sed -i "s/ext.elasticGitTag = '.*'/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
 
-      - name: Commit and Push
+      - name: Push to Fork
+        id: push
         run: |
           git config user.name "Gold87"
           git config user.email "91761103+Gold872@users.noreply.github.com"
@@ -50,14 +50,26 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           
           git add scripts/versions.gradle
-          git commit -m "Update Elastic to ${{ steps.vars.outputs.tag }}"
-          git push origin "$BRANCH_NAME" --force
+          
+          if git diff --staged --quiet; then
+            echo "No changes detected. Skipping push and PR."
+            echo "pushed=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "Update Elastic to ${{ steps.vars.outputs.tag }}"
+            git push origin "$BRANCH_NAME" --force
+            echo "pushed=true" >> $GITHUB_OUTPUT
+          fi
+          echo "branch=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v8
-        with:
-          token: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
-          branch: "update-elastic-${{ steps.vars.outputs.tag }}"
-          title: "Update Elastic to ${{ steps.vars.outputs.tag }}"
-          body: "Automated update triggered by release ${{ steps.vars.outputs.tag }} of elastic_dashboard"
-          base: 2027
+        if: steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.WPILIB_INSTALLER_UPDATE_TOKEN }}
+        run: |
+          # Create PR from fork to upstream using GitHub CLI
+          gh pr create \
+            --repo wpilibsuite/WPILibInstaller-Avalonia \
+            --base 2027 \
+            --head Gold872:${{ steps.push.outputs.branch }} \
+            --title "Update Elastic to ${{ steps.vars.outputs.tag }}" \
+            --body "Automated update triggered by release ${{ steps.vars.outputs.tag }} of elastic_dashboard"
