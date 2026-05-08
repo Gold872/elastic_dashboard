@@ -13,7 +13,6 @@ void main() {
       expect(NT4Type.parse('raw'), NT4Type.raw());
       expect(NT4Type.parse('rpc'), NT4Type.rpc());
       expect(NT4Type.parse('msgpack'), NT4Type.msgpack());
-      expect(NT4Type.parse('protobuf'), NT4Type.protobuf());
       expect(NT4Type.parse('structschema'), NT4Type.structschema());
     });
 
@@ -54,7 +53,6 @@ void main() {
       expect(NT4Type.raw().serialize(), 'raw');
       expect(NT4Type.rpc().serialize(), 'rpc');
       expect(NT4Type.msgpack().serialize(), 'msgpack');
-      expect(NT4Type.protobuf().serialize(), 'protobuf');
       expect(NT4Type.structschema().serialize(), 'structschema');
     });
 
@@ -68,7 +66,6 @@ void main() {
       expect(NT4Type.array(NT4Type.raw()).serialize(), 'raw');
       expect(NT4Type.array(NT4Type.rpc()).serialize(), 'rpc');
       expect(NT4Type.array(NT4Type.msgpack()).serialize(), 'msgpack');
-      expect(NT4Type.array(NT4Type.protobuf()).serialize(), 'protobuf');
       expect(NT4Type.array(NT4Type.structschema()).serialize(), 'structschema');
     });
 
@@ -85,6 +82,17 @@ void main() {
       );
       expect(NT4Type.structArray('Pose2d').serialize(), 'struct:Pose2d[]');
       expect(NT4Type.struct('struct:Pose2d[]').serialize(), 'struct:Pose2d[]');
+    });
+
+    test('Struct serializing', () {
+      expect(
+        NT4Type.proto('wpi.proto.Pose2d').serialize(),
+        'proto:wpi.proto.Pose2d',
+      );
+      expect(
+        NT4Type.proto('proto:wpi.proto.Pose2d').serialize(),
+        'proto:wpi.proto.Pose2d',
+      );
     });
   });
 

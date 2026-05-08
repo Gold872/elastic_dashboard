@@ -34,6 +34,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/ultrasonic.dart
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/command_scheduler_v3.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/graph.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/large_text_display.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/match_time.dart';
@@ -418,6 +419,11 @@ class NTWidgetRegistry {
     registerWithoutModel(
       name: SingleColorView.widgetType,
       widget: SingleColorView.new,
+    );
+
+    registerWithoutModel(
+      name: CommandSchedulerV3.widgetType,
+      widget: CommandSchedulerV3.new,
     );
 
     registerWithoutModel(
