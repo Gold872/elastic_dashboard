@@ -64,7 +64,7 @@ jobs:
       - name: Create Pull Request
         if: steps.push.outputs.pushed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.WPILIB_INSTALLER_UPDATE_TOKEN }}
+          GH_TOKEN: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
         run: |
           # Create PR from fork to upstream using GitHub CLI
           gh pr create \
