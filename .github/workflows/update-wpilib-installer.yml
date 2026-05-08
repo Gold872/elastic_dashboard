@@ -42,6 +42,10 @@ jobs:
           echo "--- Content after update ---"
           grep "ext.elasticGitTag" scripts/versions.gradle
 
+          ls -al
+
+          git diff
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
@@ -50,8 +54,6 @@ jobs:
           branch: "update-elastic-${{ steps.vars.outputs.tag }}"
           title: "Update Elastic to ${{ steps.vars.outputs.tag }}"
           body: "Automated update triggered by release ${{ steps.vars.outputs.tag }} of elastic_dashboard"
-          base: 2027
           committer: Gold87 <91761103+Gold872@users.noreply.github.com>
           author: Gold87 <91761103+Gold872@users.noreply.github.com>
           commit-message: "Update Elastic to ${{ steps.vars.outputs.tag }}"
-          delete-branch: true
