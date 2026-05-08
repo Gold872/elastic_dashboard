@@ -1,4 +1,4 @@
-name: Update Installer Version
+name: Update WPILib Installer Tag
 
 on:
   release:
