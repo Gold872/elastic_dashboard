@@ -23,18 +23,13 @@ jobs:
             echo "tag=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
           fi
 
-      - name: Checkout Installer Repo
+      - name: Checkout Upstream Repo
         uses: actions/checkout@v4
         with:
-          repository: 'Gold872/WPILibInstaller-Avalonia' 
+          repository: wpilibsuite/WPILibInstaller-Avalonia
+          ref: 2027
           token: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
           fetch-depth: 0
-
-      - name: Sync with Upstream
-        run: |
-          git remote add upstream https://github.com/wpilibsuite/WPILibInstaller-Avalonia.git
-          git fetch upstream
-          git reset --hard upstream/2027 
 
       - name: Update versions.gradle
         run: |
@@ -47,22 +42,16 @@ jobs:
           echo "--- Content after update ---"
           grep "ext.elasticGitTag" scripts/versions.gradle
 
-      - name: Commit and Push
-        run: |
-          git config user.name "Gold87"
-          git config user.email "91761103+Gold872@users.noreply.github.com"
-
-          git diff
-
-          ls -al
-
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.INSTALLER_UPDATE_TOKEN }}
-          committer: Gold87 <91761103+Gold872@users.noreply.github.com>
+          push-to-fork: Gold872/WPILibInstaller-Avalonia
           branch: "update-elastic-${{ steps.vars.outputs.tag }}"
           title: "Update Elastic to ${{ steps.vars.outputs.tag }}"
-          commit-message: "Update Elastic to ${{ steps.vars.outputs.tag }}"
           body: "Automated update triggered by release ${{ steps.vars.outputs.tag }} of elastic_dashboard"
           base: 2027
+          committer: Gold87 <91761103+Gold872@users.noreply.github.com>
+          author: Gold87 <91761103+Gold872@users.noreply.github.com>
+          commit-message: "Update Elastic to ${{ steps.vars.outputs.tag }}"
+          delete-branch: true
