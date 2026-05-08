@@ -25,12 +25,10 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/network_alerts.
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/pid_controller.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/power_distribution.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/profiled_pid_controller.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/relay_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/robot_preferences.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/split_button_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/subsystem_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/three_axis_accelerometer.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/ultrasonic.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
@@ -335,15 +333,6 @@ class NTWidgetRegistry {
     );
 
     registerMultiTopic(
-      name: RelayWidget.widgetType,
-      model: RelayModel.new,
-      widget: RelayWidget.new,
-      fromJson: RelayModel.fromJson,
-      minHeight: _normalSize * 2,
-      defaultHeight: 2,
-    );
-
-    registerMultiTopic(
       name: RobotPreferences.widgetType,
       model: RobotPreferencesModel.new,
       widget: RobotPreferences.new,
@@ -376,15 +365,6 @@ class NTWidgetRegistry {
       model: ThreeAxisAccelerometerModel.new,
       widget: ThreeAxisAccelerometer.new,
       fromJson: ThreeAxisAccelerometerModel.fromJson,
-    );
-
-    registerMultiTopic(
-      name: Ultrasonic.widgetType,
-      model: UltrasonicModel.new,
-      widget: Ultrasonic.new,
-      fromJson: UltrasonicModel.fromJson,
-      minWidth: _normalSize * 2,
-      defaultWidth: 2,
     );
 
     registerMultiTopic(
