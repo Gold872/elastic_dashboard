@@ -38,8 +38,14 @@ jobs:
 
       - name: Update versions.gradle
         run: |
-          # Finds the elasticGitTag line and replaces the version inside the single quotes
-          sed -i "s/ext.elasticGitTag = '.*'/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
+          echo "--- Content before update ---"
+          grep "ext.elasticGitTag" scripts/versions.gradle || echo "Line not found in file!"
+          
+          # More robust regex: handles single/double quotes and flexible spacing
+          sed -i "s/ext.elasticGitTag[[:space:]]*=[[:space:]]*['\"].*['\"]/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
+          
+          echo "--- Content after update ---"
+          grep "ext.elasticGitTag" scripts/versions.gradle
 
       - name: Commit and Push
         run: |
@@ -50,8 +56,18 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           
           git add scripts/versions.gradle
-          git commit -m "Update Elastic to ${{ steps.vars.outputs.tag }}"
-          git push origin "$BRANCH_NAME" --force
+
+          git diff
+
+          ls -al
+          
+          # Only commit if there are actually changes to avoid exit code 1
+          if git diff --staged --quiet; then
+            echo "No changes detected. The version might already be up to date."
+          else
+            git commit -m "Update Elastic to ${{ steps.vars.outputs.tag }}"
+            git push origin "$BRANCH_NAME" --force
+          fi
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
