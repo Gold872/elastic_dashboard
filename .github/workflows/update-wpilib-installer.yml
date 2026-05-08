@@ -38,14 +38,7 @@ jobs:
           git reset --hard upstream/2027
 
       - name: Update versions.gradle
-        run: |
-          echo "--- Content before update ---"
-          grep "ext.elasticGitTag" scripts/versions.gradle || echo "Line not found in file!"
-          
-          sed -i "s/ext.elasticGitTag = '.*'/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
-
-          echo "--- Content after update ---"
-          grep "ext.elasticGitTag" scripts/versions.gradle
+        run: sed -i "s/ext.elasticGitTag = '.*'/ext.elasticGitTag = '${{ steps.vars.outputs.tag }}'/" scripts/versions.gradle
 
       - name: Push to Fork
         id: push
