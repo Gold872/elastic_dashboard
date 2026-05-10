@@ -1,4 +1,4 @@
-// ignore_for_file: constant_identifier_names
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -7,22 +7,23 @@ import 'package:patterns_canvas/patterns_canvas.dart';
 import 'package:provider/provider.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-class FMSInfoModel extends MultiTopicNTWidgetModel {
+class DriverStationInfoModel extends MultiTopicNTWidgetModel {
   @override
-  String type = FMSInfo.widgetType;
+  String type = DriverStationInfo.widgetType;
 
-  String get eventNameTopic => '$topic/EventName';
-  String get controlDataTopic => '$topic/FMSControlData';
-  String get allianceTopic => '$topic/IsRedAlliance';
-  String get matchNumberTopic => '$topic/MatchNumber';
-  String get matchTypeTopic => '$topic/MatchType';
-  String get replayNumberTopic => '$topic/ReplayNumber';
-  String get stationNumberTopic => '$topic/StationNumber';
+  String get eventNameTopic => '$topic/MatchState/EventName';
+  String get controlWordTopic => '$topic/ControlWord';
+  String get allianceTopic => '$topic/MatchState/IsRedAlliance';
+  String get matchNumberTopic => '$topic/MatchState/MatchNumber';
+  String get matchTypeTopic => '$topic/MatchState/MatchType';
+  String get replayNumberTopic => '$topic/MatchState/ReplayNumber';
+  String get stationNumberTopic => '$topic/MatchState/StationNumber';
 
   late NT4Subscription eventNameSubscription;
-  late NT4Subscription controlDataSubscription;
+  late NT4Subscription controlWordSubscription;
   late NT4Subscription allianceSubscription;
   late NT4Subscription matchNumberSubscription;
   late NT4Subscription matchTypeSubscription;
@@ -31,21 +32,21 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
   @override
   List<NT4Subscription> get subscriptions => [
     eventNameSubscription,
-    controlDataSubscription,
+    controlWordSubscription,
     allianceSubscription,
     matchNumberSubscription,
     matchTypeSubscription,
     replayNumberSubscription,
   ];
 
-  FMSInfoModel({
+  DriverStationInfoModel({
     required super.ntConnection,
     required super.preferences,
     required super.topic,
     super.period,
   });
 
-  FMSInfoModel.fromJson({
+  DriverStationInfoModel.fromJson({
     required super.ntConnection,
     required super.preferences,
     required super.jsonData,
@@ -57,8 +58,8 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
       eventNameTopic,
       super.period,
     );
-    controlDataSubscription = ntConnection.subscribe(
-      controlDataTopic,
+    controlWordSubscription = ntConnection.subscribe(
+      controlWordTopic,
       super.period,
     );
     allianceSubscription = ntConnection.subscribe(allianceTopic, super.period);
@@ -77,17 +78,10 @@ class FMSInfoModel extends MultiTopicNTWidgetModel {
   }
 }
 
-class FMSInfo extends NTWidget {
-  static const String widgetType = 'FMSInfo';
+class DriverStationInfo extends NTWidget {
+  static const String widgetType = 'DSInfo';
 
-  static const int ENABLED_FLAG = 0x01;
-  static const int AUTO_FLAG = 0x02;
-  static const int TEST_FLAG = 0x04;
-  static const int EMERGENCY_STOP_FLAG = 0x08;
-  static const int FMS_ATTACHED_FLAG = 0x10;
-  static const int DS_ATTACHED_FLAG = 0x20;
-
-  const FMSInfo({super.key}) : super();
+  const DriverStationInfo({super.key}) : super();
 
   String _getMatchTypeString(int matchType) {
     switch (matchType) {
@@ -102,17 +96,27 @@ class FMSInfo extends NTWidget {
     }
   }
 
-  bool _flagMatches(int word, int flag) => (word & flag) != 0;
-
   @override
   Widget build(BuildContext context) {
-    FMSInfoModel model = cast(context.watch<NTWidgetModel>());
+    DriverStationInfoModel model = cast(context.watch<NTWidgetModel>());
 
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, child) {
         String eventName = tryCast(model.eventNameSubscription.value) ?? '';
-        int controlData = tryCast(model.controlDataSubscription.value) ?? 32;
+        List<int> controlWordRaw =
+            tryCast(model.controlWordSubscription.value) ?? [];
+        NTStruct? controlDataStruct;
+        if (model.ntConnection.schemaManager.getSchema('ControlWord') != null) {
+          NTStructSchema controlWordSchema = model.ntConnection.schemaManager
+              .getSchema('ControlWord')!;
+          try {
+            controlDataStruct = NTStruct.parse(
+              schema: controlWordSchema,
+              data: Uint8List.fromList(controlWordRaw),
+            );
+          } catch (_) {}
+        }
         bool redAlliance = tryCast(model.allianceSubscription.value) ?? true;
         int matchNumber = tryCast(model.matchNumberSubscription.value) ?? 0;
         int matchType = tryCast(model.matchTypeSubscription.value) ?? 0;
@@ -124,19 +128,18 @@ class FMSInfo extends NTWidget {
             ? ' (replay $replayNumber)'
             : '';
 
-        bool fmsConnected = _flagMatches(controlData, FMS_ATTACHED_FLAG);
-        bool dsAttached = _flagMatches(controlData, DS_ATTACHED_FLAG);
+        bool fmsConnected = controlDataStruct?['fmsAttached'] ?? false;
+        bool dsAttached = controlDataStruct?['dsAttached'] ?? false;
 
-        bool emergencyStopped = _flagMatches(controlData, EMERGENCY_STOP_FLAG);
+        bool emergencyStopped = controlDataStruct?['eStop'] ?? false;
 
         String robotControlState = 'Disabled';
-        if (_flagMatches(controlData, ENABLED_FLAG)) {
-          if (_flagMatches(controlData, TEST_FLAG)) {
-            robotControlState = 'Test';
-          } else if (_flagMatches(controlData, AUTO_FLAG)) {
-            robotControlState = 'Autonomous';
-          } else {
-            robotControlState = 'Teleoperated';
+        if (controlDataStruct?['enabled'] ?? false) {
+          robotControlState = controlDataStruct?['robotMode'] ?? 'Unknown';
+          if (robotControlState.isNotEmpty) {
+            robotControlState =
+                robotControlState.substring(0, 1).toUpperCase() +
+                robotControlState.substring(1);
           }
         }
 
