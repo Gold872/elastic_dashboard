@@ -208,7 +208,7 @@ class VoltageView extends NTWidget {
         input.toStringAsFixed(input.truncateToDouble() == input ? 0 : 2);
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         double voltage = tryCast<num>(data)?.toDouble() ?? 0.0;
 

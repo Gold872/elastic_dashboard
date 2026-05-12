@@ -14,15 +14,15 @@ class ThreeAxisAccelerometerModel extends MultiTopicNTWidgetModel {
   String get yTopic => '$topic/Y';
   String get zTopic => '$topic/Z';
 
-  late NT4Subscription xSubscription;
-  late NT4Subscription ySubscription;
-  late NT4Subscription zSubscription;
+  NT4Subscription? xSubscription;
+  NT4Subscription? ySubscription;
+  NT4Subscription? zSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    xSubscription,
-    ySubscription,
-    zSubscription,
+    ?xSubscription,
+    ?ySubscription,
+    ?zSubscription,
   ];
 
   ThreeAxisAccelerometerModel({
@@ -40,6 +40,13 @@ class ThreeAxisAccelerometerModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      xSubscription = null;
+      ySubscription = null;
+      zSubscription = null;
+      return;
+    }
+
     xSubscription = ntConnection.subscribe(xTopic, super.period);
     ySubscription = ntConnection.subscribe(yTopic, super.period);
     zSubscription = ntConnection.subscribe(zTopic, super.period);
@@ -76,7 +83,7 @@ class ThreeAxisAccelerometer extends NTWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ValueListenableBuilder(
-                    valueListenable: model.xSubscription,
+                    valueListenable: model.xSubscription ?? ValueNotifier(null),
                     builder: (context, value, child) {
                       double xAccel = tryCast(value) ?? 0.0;
                       return Text(
@@ -113,7 +120,7 @@ class ThreeAxisAccelerometer extends NTWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ValueListenableBuilder(
-                    valueListenable: model.ySubscription,
+                    valueListenable: model.ySubscription ?? ValueNotifier(null),
                     builder: (context, value, child) {
                       double yAccel = tryCast(value) ?? 0.0;
                       return Text(
@@ -150,7 +157,7 @@ class ThreeAxisAccelerometer extends NTWidget {
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: ValueListenableBuilder(
-                    valueListenable: model.zSubscription,
+                    valueListenable: model.zSubscription ?? ValueNotifier(null),
                     builder: (context, value, child) {
                       double zAccel = tryCast(value) ?? 0.0;
                       return Text(

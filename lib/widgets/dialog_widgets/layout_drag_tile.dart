@@ -1,6 +1,8 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
+import 'package:collection/collection.dart';
+
 import 'package:elastic_dashboard/widgets/draggable_containers/models/layout_container_model.dart';
 import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';
 
@@ -67,6 +69,10 @@ class _LayoutDragTileState extends State<LayoutDragTile> {
   Widget build(BuildContext context) => InkWell(
     onTap: () {},
     child: DragListener(
+      overrideVertical: false,
+      supportedDevices: PointerDeviceKind.values
+          .whereNot((element) => element == PointerDeviceKind.trackpad)
+          .toSet(),
       onDragStart: (details) {
         if (draggingWidget != null) {
           return;

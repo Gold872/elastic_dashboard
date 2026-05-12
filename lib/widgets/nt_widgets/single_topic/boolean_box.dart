@@ -206,7 +206,7 @@ class BooleanBox extends NTWidget {
     BooleanBoxModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         bool value = tryCast(data) ?? false;
 

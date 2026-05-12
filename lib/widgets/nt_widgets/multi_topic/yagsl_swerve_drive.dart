@@ -24,23 +24,23 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
   String get robotLengthTopic => '$topic/sizeFrontBack';
   String get rotationUnitTopic => '$topic/rotationUnit';
 
-  late NT4Subscription measuredStatesSubscription;
-  late NT4Subscription desiredStatesSubscription;
-  late NT4Subscription robotRotationSubscription;
-  late NT4Subscription maxSpeedSubscription;
-  late NT4Subscription robotWidthSubscription;
-  late NT4Subscription robotLengthSubscription;
-  late NT4Subscription rotationUnitSubscription;
+  NT4Subscription? measuredStatesSubscription;
+  NT4Subscription? desiredStatesSubscription;
+  NT4Subscription? robotRotationSubscription;
+  NT4Subscription? maxSpeedSubscription;
+  NT4Subscription? robotWidthSubscription;
+  NT4Subscription? robotLengthSubscription;
+  NT4Subscription? rotationUnitSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    measuredStatesSubscription,
-    desiredStatesSubscription,
-    robotRotationSubscription,
-    maxSpeedSubscription,
-    robotWidthSubscription,
-    robotLengthSubscription,
-    rotationUnitSubscription,
+    ?measuredStatesSubscription,
+    ?desiredStatesSubscription,
+    ?robotRotationSubscription,
+    ?maxSpeedSubscription,
+    ?robotWidthSubscription,
+    ?robotLengthSubscription,
+    ?rotationUnitSubscription,
   ];
 
   bool _showRobotRotation = true;
@@ -94,6 +94,17 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      measuredStatesSubscription = null;
+      desiredStatesSubscription = null;
+      robotRotationSubscription = null;
+      maxSpeedSubscription = null;
+      robotWidthSubscription = null;
+      robotLengthSubscription = null;
+      rotationUnitSubscription = null;
+      return;
+    }
+
     measuredStatesSubscription = ntConnection.subscribe(
       measuredStatesTopic,
       super.period,
@@ -190,9 +201,9 @@ class YAGSLSwerveDrive extends NTWidget {
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
         List<Object?> measuredStatesRaw =
-            tryCast(model.measuredStatesSubscription.value) ?? [];
+            tryCast(model.measuredStatesSubscription?.value) ?? [];
         List<Object?> desiredStatesRaw =
-            tryCast(model.desiredStatesSubscription.value) ?? [];
+            tryCast(model.desiredStatesSubscription?.value) ?? [];
 
         List<double> measuredStates = measuredStatesRaw
             .whereType<double>()
@@ -201,8 +212,8 @@ class YAGSLSwerveDrive extends NTWidget {
             .whereType<double>()
             .toList();
 
-        double width = tryCast(model.robotWidthSubscription.value) ?? 1.0;
-        double length = tryCast(model.robotLengthSubscription.value) ?? width;
+        double width = tryCast(model.robotWidthSubscription?.value) ?? 1.0;
+        double length = tryCast(model.robotLengthSubscription?.value) ?? width;
 
         if (width <= 0.0) {
           width = 1.0;
@@ -215,10 +226,10 @@ class YAGSLSwerveDrive extends NTWidget {
         double lengthWidthRatio = length / width;
 
         String rotationUnit =
-            tryCast(model.rotationUnitSubscription.value) ?? 'radians';
+            tryCast(model.rotationUnitSubscription?.value) ?? 'radians';
 
         double robotAngle =
-            tryCast(model.robotRotationSubscription.value) ?? 0.0;
+            tryCast(model.robotRotationSubscription?.value) ?? 0.0;
 
         if (rotationUnit == 'degrees') {
           robotAngle = radians(robotAngle);
@@ -228,7 +239,7 @@ class YAGSLSwerveDrive extends NTWidget {
 
         robotAngle -= radians(model.angleOffset);
 
-        double maxSpeed = tryCast(model.maxSpeedSubscription.value) ?? 4.5;
+        double maxSpeed = tryCast(model.maxSpeedSubscription?.value) ?? 4.5;
 
         if (maxSpeed <= 0.0) {
           maxSpeed = 4.5;

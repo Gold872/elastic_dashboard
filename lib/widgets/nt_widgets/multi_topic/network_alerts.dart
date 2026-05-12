@@ -14,15 +14,15 @@ class NetworkAlertsModel extends MultiTopicNTWidgetModel {
   String get warningsTopicName => '$topic/warnings';
   String get infosTopicName => '$topic/infos';
 
-  late NT4Subscription errorsSubscription;
-  late NT4Subscription warningsSubscription;
-  late NT4Subscription infosSubscription;
+  NT4Subscription? errorsSubscription;
+  NT4Subscription? warningsSubscription;
+  NT4Subscription? infosSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    errorsSubscription,
-    warningsSubscription,
-    infosSubscription,
+    ?errorsSubscription,
+    ?warningsSubscription,
+    ?infosSubscription,
   ];
 
   NetworkAlertsModel({
@@ -40,6 +40,13 @@ class NetworkAlertsModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      errorsSubscription = null;
+      warningsSubscription = null;
+      infosSubscription = null;
+      return;
+    }
+
     errorsSubscription = ntConnection.subscribe(errorsTopicName, super.period);
     warningsSubscription = ntConnection.subscribe(
       warningsTopicName,
@@ -64,13 +71,13 @@ class NetworkAlerts extends NTWidget {
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, child) {
         List<Object?> errorsRaw =
-            model.errorsSubscription.value?.tryCast<List<Object?>>() ?? [];
+            model.errorsSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
         List<Object?> warningsRaw =
-            model.warningsSubscription.value?.tryCast<List<Object?>>() ?? [];
+            model.warningsSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
         List<Object?> infosRaw =
-            model.infosSubscription.value?.tryCast<List<Object?>>() ?? [];
+            model.infosSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
         List<String> errors = errorsRaw.whereType<String>().toList();
         List<String> warnings = warningsRaw.whereType<String>().toList();

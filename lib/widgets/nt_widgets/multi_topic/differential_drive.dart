@@ -16,13 +16,13 @@ class DifferentialDriveModel extends MultiTopicNTWidgetModel {
   String get leftSpeedTopicName => '$topic/Left Motor Speed';
   String get rightSpeedTopicName => '$topic/Right Motor Speed';
 
-  late NT4Subscription leftSpeedSubscription;
-  late NT4Subscription rightSpeedSubscription;
+  NT4Subscription? leftSpeedSubscription;
+  NT4Subscription? rightSpeedSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    leftSpeedSubscription,
-    rightSpeedSubscription,
+    ?leftSpeedSubscription,
+    ?rightSpeedSubscription,
   ];
 
   NT4Topic? leftSpeedTopic;
@@ -49,6 +49,11 @@ class DifferentialDriveModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      leftSpeedSubscription = null;
+      rightSpeedSubscription = null;
+      return;
+    }
     leftSpeedSubscription = ntConnection.subscribe(
       leftSpeedTopicName,
       super.period,
@@ -90,8 +95,8 @@ class DifferentialDrive extends NTWidget {
         model.rightSpeedCurrentValue,
       ]),
       builder: (context, child) {
-        double leftSpeed = tryCast(model.leftSpeedSubscription.value) ?? 0.0;
-        double rightSpeed = tryCast(model.rightSpeedSubscription.value) ?? 0.0;
+        double leftSpeed = tryCast(model.leftSpeedSubscription?.value) ?? 0.0;
+        double rightSpeed = tryCast(model.rightSpeedSubscription?.value) ?? 0.0;
 
         if (leftSpeed != model.leftSpeedPreviousValue) {
           model.leftSpeedCurrentValue.value = leftSpeed;
