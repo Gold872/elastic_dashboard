@@ -30,6 +30,7 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_la
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_dialog.dart';
 import 'package:elastic_dashboard/widgets/editable_tab_bar.dart';
+import 'package:elastic_dashboard/widgets/keybinds_dialog.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
@@ -1429,6 +1430,28 @@ void main() {
     await widgetTester.pumpAndSettle();
 
     expect(find.byType(AboutDialog), findsOneWidget);
+  });
+
+  testWidgets('Keybind Help dialog', (widgetTester) async {
+    await pumpDashboardPage(widgetTester, preferences);
+
+    final helpButton = find.widgetWithText(SubmenuButton, 'Help');
+
+    expect(helpButton, findsOneWidget);
+
+    await widgetTester.tap(helpButton);
+    await widgetTester.pumpAndSettle();
+
+    final showKeybindsDialog = find.widgetWithText(
+      MenuItemButton,
+      'Keybinds Help',
+    );
+    expect(showKeybindsDialog, findsOneWidget);
+
+    await widgetTester.tap(showKeybindsDialog);
+    await widgetTester.pumpAndSettle();
+
+    expect(find.byType(KeybindsDialog), findsOneWidget);
   });
 
   group('[Tab Manipulation]:', () {
