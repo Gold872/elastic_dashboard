@@ -12,15 +12,15 @@ import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import '../../../test_util.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  final Map<String, dynamic> comboBoxChooserJson = {
-    'topic': 'Test/Combo Box Chooser',
+  final Map<String, dynamic> dropdownChooserJson = {
+    'topic': 'Test/Dropdown Chooser',
     'period': 0.100,
     'sort_options': true,
   };
@@ -35,99 +35,99 @@ void main() {
     ntConnection = createMockOnlineNT4(
       virtualTopics: [
         NT4Topic(
-          name: 'Test/Combo Box Chooser/options',
+          name: 'Test/Dropdown Chooser/options',
           type: NT4Type.array(NT4Type.string()),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/Combo Box Chooser/active',
+          name: 'Test/Dropdown Chooser/default',
           type: NT4Type.string(),
           properties: {},
         ),
         NT4Topic(
-          name: 'Test/Combo Box Chooser/selected',
+          name: 'Test/Dropdown Chooser/selected/value',
+          type: NT4Type.string(),
+          properties: {},
+        ),
+        NT4Topic(
+          name: 'Test/Dropdown Chooser/selected/tune',
           type: NT4Type.string(),
           properties: {'retained': true},
         ),
-        NT4Topic(
-          name: 'Test/Combo Box Chooser/default',
-          type: NT4Type.string(),
-          properties: {},
-        ),
       ],
       virtualValues: {
-        'Test/Combo Box Chooser/options': ['One', 'Two', 'Three'],
-        'Test/Combo Box Chooser/active': 'Two',
-        'Test/Combo Box Chooser/default': 'Two',
-        'Test/Combo Box Chooser/selected': null,
+        'Test/Dropdown Chooser/options': ['One', 'Two', 'Three'],
+        'Test/Dropdown Chooser/default': 'Two',
+        'Test/Dropdown Chooser/selected/value': 'Two',
+        'Test/Dropdown Chooser/selected/tune': null,
       },
     );
   });
 
-  test('Combo box chooser from json', () {
-    NTWidgetModel comboBoxChooserModel = NTWidgetRegistry.buildNTModelFromJson(
+  test('Dropdown chooser from json', () {
+    NTWidgetModel dropdownChooserModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
-      'ComboBox Chooser',
-      comboBoxChooserJson,
+      'Dropdown Chooser',
+      dropdownChooserJson,
     );
 
-    expect(comboBoxChooserModel.type, 'ComboBox Chooser');
-    expect(comboBoxChooserModel.runtimeType, ComboBoxChooserModel);
+    expect(dropdownChooserModel.type, 'Dropdown Chooser');
+    expect(dropdownChooserModel.runtimeType, DropdownChooserModel);
 
-    if (comboBoxChooserModel is! ComboBoxChooserModel) {
+    if (dropdownChooserModel is! DropdownChooserModel) {
       return;
     }
 
-    expect(comboBoxChooserModel.sortOptions, isTrue);
+    expect(dropdownChooserModel.sortOptions, isTrue);
   });
 
-  test('Combo box chooser alias name', () {
-    NTWidgetModel comboBoxChooserModel = NTWidgetRegistry.buildNTModelFromJson(
+  test('Dropdown chooser alias name', () {
+    NTWidgetModel dropdownChooserModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
-      'String Chooser',
-      comboBoxChooserJson,
+      'Selectable',
+      dropdownChooserJson,
     );
 
-    expect(comboBoxChooserModel.type, 'ComboBox Chooser');
-    expect(comboBoxChooserModel.runtimeType, ComboBoxChooserModel);
+    expect(dropdownChooserModel.type, 'Dropdown Chooser');
+    expect(dropdownChooserModel.runtimeType, DropdownChooserModel);
 
-    if (comboBoxChooserModel is! ComboBoxChooserModel) {
+    if (dropdownChooserModel is! DropdownChooserModel) {
       return;
     }
 
-    expect(comboBoxChooserModel.sortOptions, isTrue);
+    expect(dropdownChooserModel.sortOptions, isTrue);
   });
 
-  test('Combo box chooser to json', () {
-    ComboBoxChooserModel comboBoxChooserModel = ComboBoxChooserModel(
+  test('Dropdown chooser to json', () {
+    DropdownChooserModel dropdownChooserModel = DropdownChooserModel(
       ntConnection: ntConnection,
       preferences: preferences,
-      topic: 'Test/Combo Box Chooser',
+      topic: 'Test/Dropdown Chooser',
       period: 0.100,
       sortOptions: true,
     );
 
-    expect(comboBoxChooserModel.toJson(), comboBoxChooserJson);
+    expect(dropdownChooserModel.toJson(), dropdownChooserJson);
   });
 
-  testWidgets('Combo box chooser widget test', (widgetTester) async {
+  testWidgets('Dropdown chooser widget test', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    NTWidgetModel comboBoxChooserModel = NTWidgetRegistry.buildNTModelFromJson(
+    NTWidgetModel dropdownChooserModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
-      'ComboBox Chooser',
-      comboBoxChooserJson,
+      'Dropdown Chooser',
+      dropdownChooserJson,
     );
 
     await widgetTester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: ChangeNotifierProvider<NTWidgetModel>.value(
-            value: comboBoxChooserModel,
-            child: const ComboBoxChooser(),
+            value: dropdownChooserModel,
+            child: const DropdownChooser(),
           ),
         ),
       ),
@@ -140,7 +140,7 @@ void main() {
     expect(find.text('Two'), findsOneWidget);
     expect(find.text('Three'), findsNothing);
     expect(
-      (comboBoxChooserModel as ComboBoxChooserModel).previousSelected,
+      (dropdownChooserModel as DropdownChooserModel).previousSelected,
       isNull,
     );
     expect(find.byIcon(Icons.check), findsOneWidget);
@@ -153,35 +153,35 @@ void main() {
     expect(find.text('Three'), findsOneWidget);
 
     await widgetTester.tap(find.text('One'));
-    comboBoxChooserModel.onChooserStateUpdate();
+    dropdownChooserModel.onChooserStateUpdate();
     await widgetTester.pumpAndSettle();
 
     expect(find.text('One'), findsOneWidget);
     expect(find.text('Two'), findsNothing);
     expect(find.text('Three'), findsNothing);
 
-    expect(comboBoxChooserModel.previousSelected, 'One');
+    expect(dropdownChooserModel.previousSelected, 'One');
     expect(find.byIcon(Icons.priority_high), findsOneWidget);
 
     ntConnection.updateDataFromTopicName(
-      comboBoxChooserModel.activeTopicName,
+      dropdownChooserModel.activeTopicName,
       'One',
     );
 
-    comboBoxChooserModel.onChooserStateUpdate();
+    dropdownChooserModel.onChooserStateUpdate();
     await widgetTester.pumpAndSettle();
 
     expect(find.byIcon(Icons.priority_high), findsNothing);
     expect(find.byIcon(Icons.check), findsOneWidget);
   });
 
-  testWidgets('Combo box chooser edit properties', (widgetTester) async {
+  testWidgets('Dropdown chooser edit properties', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    ComboBoxChooserModel comboBoxChooserModel = ComboBoxChooserModel(
+    DropdownChooserModel dropdownChooserModel = DropdownChooserModel(
       ntConnection: ntConnection,
       preferences: preferences,
-      topic: 'Test/Combo Box Chooser',
+      topic: 'Test/Dropdown Chooser',
       period: 0.100,
       sortOptions: true,
     );
@@ -190,8 +190,8 @@ void main() {
       ntConnection: ntConnection,
       preferences: preferences,
       initialPosition: Rect.zero,
-      title: 'ComboBox Chooser',
-      childModel: comboBoxChooserModel,
+      title: 'Dropdown Chooser',
+      childModel: dropdownChooserModel,
     );
 
     final key = GlobalKey();
@@ -225,12 +225,12 @@ void main() {
       find.descendant(of: sortOptions, matching: find.byType(Switch)),
     );
     await widgetTester.pumpAndSettle();
-    expect(comboBoxChooserModel.sortOptions, false);
+    expect(dropdownChooserModel.sortOptions, false);
 
     await widgetTester.tap(
       find.descendant(of: sortOptions, matching: find.byType(Switch)),
     );
     await widgetTester.pumpAndSettle();
-    expect(comboBoxChooserModel.sortOptions, true);
+    expect(dropdownChooserModel.sortOptions, true);
   });
 }

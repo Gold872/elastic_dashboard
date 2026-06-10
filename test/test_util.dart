@@ -78,12 +78,12 @@ MockNTConnection createMockOnlineNT4({
 
   virtualTopics ??= [
     NT4Topic(
-      name: '/SmartDashboard/Test Value 1',
+      name: '/Telemetry/Test Value 1',
       type: NT4Type.int(),
       properties: {},
     ),
     NT4Topic(
-      name: '/SmartDashboard/Test Value 2',
+      name: '/Telemetry/Test Value 2',
       type: NT4Type.float(),
       properties: {},
     ),

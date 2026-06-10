@@ -12,10 +12,10 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/accelerometer.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/differential_drive.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/encoder_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
@@ -194,15 +194,6 @@ class NTWidgetRegistry {
     );
 
     registerMultiTopic(
-      name: ComboBoxChooser.widgetType,
-      aliases: {'String Chooser'},
-      model: ComboBoxChooserModel.new,
-      widget: ComboBoxChooser.new,
-      fromJson: ComboBoxChooserModel.fromJson,
-      minHeight: _normalSize * 0.85,
-    );
-
-    registerMultiTopic(
       name: CommandSchedulerWidget.widgetType,
       model: CommandSchedulerModel.new,
       widget: CommandSchedulerWidget.new,
@@ -233,6 +224,15 @@ class NTWidgetRegistry {
       minHeight: _normalSize * 2,
       defaultWidth: 3,
       defaultHeight: 2,
+    );
+
+    registerMultiTopic(
+      name: DropdownChooser.widgetType,
+      aliases: {'Selectable', 'ComboBox Chooser', 'String Chooser'},
+      model: DropdownChooserModel.new,
+      widget: DropdownChooser.new,
+      fromJson: DropdownChooserModel.fromJson,
+      minHeight: _normalSize * 0.85,
     );
 
     registerMultiTopic(
