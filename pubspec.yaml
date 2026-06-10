@@ -1,7 +1,7 @@
 name: elastic_dashboard
 description: A simple and modern dashboard for FRC.
 publish_to: 'none'
-version: 2027.0.0-alpha7
+version: 2027.0.0-alpha8
 
 environment:
   sdk: '^3.8.0'
@@ -76,7 +76,8 @@ flutter:
 
   assets:
     - assets/logos/
-    - assets/fields/
+    - assets/fields/frc/
+    - assets/fields/ftc/
     - assets/third_party_licenses/
 
 import_sorter:

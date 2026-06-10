@@ -1,0 +1,21 @@
+{
+  "game": "Reefscape",
+  "program": "FRC",
+  "source_url": "https://www.chiefdelphi.com/t/4k-field-image-2025-reefscape/478797",
+  "field_image": "assets/fields/frc/2025-field.png",
+  "coordinate_system": "wall_blue",
+  "field_corners": {
+    "top_left": [
+      421,
+      91
+    ],
+    "bottom_right": [
+      3352,
+      1437
+    ]
+  },
+  "field_size": [
+    17.548,
+    8.052
+  ]
+}

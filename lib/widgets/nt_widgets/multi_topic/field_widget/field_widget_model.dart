@@ -15,6 +15,7 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dar
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 enum FieldObjectType { robot, trajectory, otherObject }
@@ -57,6 +58,8 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   String _fieldGame = _defaultGame;
   late Field _field;
 
+  CoordinateSystem? _selectedCoordinateSystem;
+
   double _robotWidthMeters = 0.85;
   double _robotLengthMeters = 0.85;
 
@@ -74,6 +77,13 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   final double _trajectoryPointSize = 0.08;
 
   double get robotWidthMeters => _robotWidthMeters;
+
+  set selectedCoordinateSystem(CoordinateSystem? value) {
+    _selectedCoordinateSystem = value;
+    refresh();
+  }
+
+  CoordinateSystem? get selectedCoordinateSystem => _selectedCoordinateSystem;
 
   set robotWidthMeters(double value) {
     _robotWidthMeters = value;
@@ -134,6 +144,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   double get trajectoryPointSize => _trajectoryPointSize;
 
   Field get field => _field;
+
+  CoordinateSystem get coordinateSystem =>
+      _selectedCoordinateSystem ?? field.coordinateSystem;
 
   final TransformationController transformController =
       TransformationController();
@@ -307,6 +320,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     required super.preferences,
     required super.topic,
     String? fieldGame,
+    CoordinateSystem? coordinateSystem,
     bool showOtherObjects = true,
     bool showTrajectories = true,
     double robotWidthMeters = 0.85,
@@ -316,7 +330,8 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     Color trajectoryColor = Colors.white,
     bool showRobotOutsideWidget = true,
     super.period,
-  }) : _showTrajectories = showTrajectories,
+  }) : _selectedCoordinateSystem = coordinateSystem,
+       _showTrajectories = showTrajectories,
        _showOtherObjects = showOtherObjects,
        _robotWidthMeters = robotWidthMeters,
        _robotLengthMeters = robotLengthMeters,
@@ -340,6 +355,11 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     required Map<String, dynamic> jsonData,
   }) : super.fromJson(jsonData: jsonData) {
     _fieldGame = tryCast(jsonData['field_game']) ?? _fieldGame;
+    if (jsonData['coordinate_system'] is String) {
+      _selectedCoordinateSystem = CoordinateSystem.fromJson(
+        jsonData['coordinate_system'],
+      );
+    }
 
     _robotWidthMeters = tryCast(jsonData['robot_width']) ?? 0.85;
     _robotLengthMeters =
@@ -424,6 +444,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'field_game': _fieldGame,
+    if (_selectedCoordinateSystem != null &&
+        _selectedCoordinateSystem != CoordinateSystem.unknown)
+      'coordinate_system': _selectedCoordinateSystem!.jsonKey,
     'robot_width': _robotWidthMeters,
     'robot_length': _robotLengthMeters,
     'show_other_objects': _showOtherObjects,
@@ -485,7 +508,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
         ),
       ),
     ),
-    DialogDropdownChooser<String?>(
+    FieldChooser(
       onSelectionChanged: (value) async {
         if (value == null) {
           return;
@@ -506,8 +529,21 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
 
         refresh();
       },
-      choices: FieldImages.fields.map((e) => e.game).toList(),
+      choices: FieldImages.fields,
       initialValue: _field.game,
+    ),
+    const SizedBox(height: 5),
+    const Text('Coordinate System'),
+    DialogDropdownChooser<CoordinateSystem>(
+      choices: CoordinateSystem.values,
+      initialValue: selectedCoordinateSystem ?? CoordinateSystem.unknown,
+      nameMap: (value) => value.displayName,
+      onSelectionChanged: (system) {
+        if (system == CoordinateSystem.unknown) {
+          system = null;
+        }
+        selectedCoordinateSystem = system;
+      },
     ),
     const SizedBox(height: 5),
     Row(

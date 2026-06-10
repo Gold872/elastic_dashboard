@@ -1,0 +1,21 @@
+{
+  "game": "Rapid React",
+  "program": "FRC",
+  "source_url": "https://www.chiefdelphi.com/t/2022-top-down-field-renders/399031",
+  "field_image": "assets/fields/frc/2022-field.png",
+  "coordinate_system": "wall_blue",
+  "field_corners": {
+    "top_left": [
+      884,
+      148
+    ],
+    "bottom_right": [
+      6160,
+      2786
+    ]
+  },
+  "field_size": [
+    16.459,
+    8.230
+  ]
+}

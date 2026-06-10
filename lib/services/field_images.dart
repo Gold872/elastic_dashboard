@@ -58,11 +58,54 @@ class FieldImages {
   }
 }
 
+enum CoordinateSystem {
+  unknown(jsonKey: 'default', displayName: 'Default'),
+
+  /// Standard WPILib coordinate system pre-2027
+  ///
+  /// Origin at blue alliance corner, positive X going towards the left of the image,
+  /// positive Y going towards the bottom of image
+  wallBlue(jsonKey: 'wall_blue', displayName: 'Blue Wall (WPILib Pre-2027)'),
+
+  /// Standard FTC coordinate system pre-2028
+  ///
+  /// Origin at center of field, positive X going along the red wall towards the bottom
+  /// of the image, positive Y going towards the right of the image, away from red wall
+  centerRotated(
+    jsonKey: 'center_rotated',
+    displayName: 'Center Rotated (FTC Pre-2028)',
+  ),
+
+  /// Standard WPILib coordinate system 2027+
+  ///
+  /// Origin at center of field, positive X going towards the blue alliance wall (right of image),
+  /// positive Y going towards the scoring table (top of image)
+  center(jsonKey: 'center', displayName: 'Center (WPILib 2027+)');
+
+  final String jsonKey;
+  final String displayName;
+
+  const CoordinateSystem({required this.jsonKey, required this.displayName});
+
+  static CoordinateSystem fromJson(String key) =>
+      CoordinateSystem.values.firstWhere(
+        (e) => e.jsonKey == key,
+        orElse: () => CoordinateSystem.center,
+      );
+}
+
 class Field {
   final Map<String, dynamic> jsonData;
 
   late String? game;
   late String? sourceURL;
+  late String? program;
+
+  late CoordinateSystem coordinateSystem;
+
+  bool get isFrc => program != null && program == 'FRC';
+
+  bool get isFtc => program != null && program == 'FTC';
 
   int? fieldImageWidth;
   int? fieldImageHeight;
@@ -103,19 +146,22 @@ class Field {
     fieldImageHeight = 1400;
 
     game = jsonData['game'];
-    sourceURL = jsonData['source-url'];
+    sourceURL = jsonData['source_url'];
+    program = jsonData['program'];
 
-    fieldWidthMeters = jsonData['field-size'][0];
-    fieldHeightMeters = jsonData['field-size'][1];
+    coordinateSystem = CoordinateSystem.fromJson(jsonData['coordinate_system']);
+
+    fieldWidthMeters = jsonData['field_size'][0];
+    fieldHeightMeters = jsonData['field_size'][1];
 
     topLeftCorner = Offset(
-      (jsonData['field-corners']['top-left'][0] as int).toDouble(),
-      (jsonData['field-corners']['top-left'][1] as int).toDouble(),
+      (jsonData['field_corners']['top_left'][0] as int).toDouble(),
+      (jsonData['field_corners']['top_left'][1] as int).toDouble(),
     );
 
     bottomRightCorner = Offset(
-      (jsonData['field-corners']['bottom-right'][0] as int).toDouble(),
-      (jsonData['field-corners']['bottom-right'][1] as int).toDouble(),
+      (jsonData['field_corners']['bottom_right'][0] as int).toDouble(),
+      (jsonData['field_corners']['bottom_right'][1] as int).toDouble(),
     );
 
     double fieldWidthPixels = bottomRightCorner.dx - topLeftCorner.dx;
@@ -127,7 +173,7 @@ class Field {
 
   void loadFieldImage() {
     logger.debug('Loading field image for $game');
-    fieldImage = Image.asset(jsonData['field-image'], fit: BoxFit.contain);
+    fieldImage = Image.asset(jsonData['field_image'], fit: BoxFit.contain);
     fieldImage.image
         .resolve(ImageConfiguration.empty)
         .addListener(
