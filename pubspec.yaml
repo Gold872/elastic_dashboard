@@ -10,6 +10,7 @@ dependencies:
   animations: ^2.1.1
   collection: ^1.19.1
   decimal: ^3.2.4
+  desktop_screen_recorder: ^0.0.1
   dot_cast: ^1.2.0
   dropdown_button2: ^2.3.9
   elegant_notification: ^2.5.1
@@ -22,6 +23,7 @@ dependencies:
   flutter_context_menu: ^0.3.0
   flutter_fancy_tree_view: ^1.6.0
   flutter_launcher_icons: ^0.14.4
+  flutter_screen_recording: ^2.0.25
   geekyants_flutter_gauges:
     git:
       url: https://github.com/Gold872/GaugesFlutter.git
@@ -39,8 +41,10 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   patterns_canvas: ^0.5.0
+  permission_handler: ^12.0.3
   popover: ^0.4.0
   provider: ^6.1.5+1
+  screen_recorder: ^0.3.0
   screen_retriever: ^0.2.0
   searchable_listview: ^2.19.3
   shared_preferences: ^2.5.3

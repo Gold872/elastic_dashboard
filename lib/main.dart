@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:desktop_screen_recorder/desktop_screen_recorder.dart';
+import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -10,6 +12,7 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:screen_recorder/screen_recorder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
@@ -282,6 +285,25 @@ class _ElasticState extends State<Elastic> {
 
   FlexTones get themeTones => themeVariant.tones(Brightness.dark);
 
+  final ScreenRecorderController recorderController =
+      ScreenRecorderController();
+
+  @override
+  void initState() {
+    super.initState();
+    final NT4Subscription enabledSubscription = widget.ntConnection.subscribe(
+      'Match/Enabled',
+    );
+
+    enabledSubscription.listen((enabled, _) {
+      if (enabled == true) {
+        recorderController.start();
+      } else {
+        recorderController.stop();
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     ThemeData theme = ThemeData(
@@ -309,7 +331,14 @@ class _ElasticState extends State<Elastic> {
       debugShowCheckedModeBanner: false,
       title: appTitle,
       theme: theme,
-      home: DashboardPage(model: dashboardViewModel),
+      home: LayoutBuilder(
+        builder: (context, constraints) => ScreenRecorder(
+          controller: recorderController,
+          width: constraints.maxWidth,
+          height: constraints.maxHeight,
+          child: DashboardPage(model: dashboardViewModel),
+        ),
+      ),
     );
   }
 }
