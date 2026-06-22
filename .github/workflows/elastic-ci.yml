@@ -262,7 +262,7 @@ jobs:
         working-directory: .github/ipk_build
         run: |
           ./build.sh
-          mv .github/ipk_build/elastic_dashboard_*.ipk .github/ipk_build/Elastic-SystemCore.ipk
+          mv elastic_dashboard_*.ipk Elastic-SystemCore.ipk
 
       - name: Upload SystemCore installer
         uses: actions/upload-artifact@v7
