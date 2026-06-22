@@ -281,11 +281,12 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: Elastic-Web
+          path: Elastic-Web
 
       - name: Upload GitHub Pages Artifact
         uses: actions/upload-pages-artifact@v5
         with:
-          path: ${{ github.workspace }}
+          path: Elastic-Web
           retention-days: 31
 
       - name: Deploy to GitHub Pages
