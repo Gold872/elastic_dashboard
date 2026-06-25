@@ -4,8 +4,9 @@ publish_to: 'none'
 version: 2026.0.0
 
 environment:
-  sdk: '^3.8.0'
-
+  sdk: '>=3.12.0 <4.0.0'
+  flutter: '>=3.16.0'
+  
 dependencies:
   flutter_quick_video_encoder: ^1.7.2
   animations: ^2.1.1
