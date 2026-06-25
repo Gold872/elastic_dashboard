@@ -7,10 +7,10 @@ environment:
   sdk: '^3.8.0'
 
 dependencies:
+  flutter_quick_video_encoder: ^1.7.2
   animations: ^2.1.1
   collection: ^1.19.1
   decimal: ^3.2.4
-  desktop_screen_recorder: ^0.0.1
   dot_cast: ^1.2.0
   dropdown_button2: ^2.3.9
   elegant_notification: ^2.5.1
@@ -37,6 +37,7 @@ dependencies:
     git:
       url: https://github.com/TheTripleV/msgpack_dart.git
       ref: fix-64-bit-ints
+  obs_websocket: ^5.7.0+4
   package_info_plus: ^9.0.0
   path: ^1.9.1
   path_provider: ^2.1.5
@@ -59,6 +60,7 @@ dependencies:
   web: ^1.1.1
   web_socket_channel: ^3.0.3
   window_manager: ^0.5.1
+  ffmpeg_kit_extended_flutter: ^0.5.8
 
 dev_dependencies:
   flutter_test:
@@ -98,3 +100,12 @@ flutter_launcher_icons:
     generate: true
   web:
     generate: true
+
+  # ffmpeg_kit_extended_config:
+  #   type: base
+  #   gpl: false
+
+ffmpeg_kit_extended_config:
+  windows: https://github.com/akashskypatel/ffmpeg-kit-builders/releases/download/v0.10.2-windows/bundle-base-windows-x86_64-shared-lgpl.zip
+  type: full
+  gpl: false

@@ -3,7 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  desktop_screen_recorder
+  ffmpeg_kit_extended_flutter
   file_selector_windows
   permission_handler_windows
   screen_retriever_windows

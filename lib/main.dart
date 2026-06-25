@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:desktop_screen_recorder/desktop_screen_recorder.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/util/screen_recorder.dart';
+import 'package:ffmpeg_kit_extended_flutter/ffmpeg_kit_extended_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,8 +13,8 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:screen_recorder/screen_recorder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/app_distributor.dart';
@@ -23,8 +24,6 @@ import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 
-import 'package:path_provider/path_provider.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/path_stub.dart';
 import 'package:screen_retriever/screen_retriever.dart'
     if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/screen_stub.dart';
 import 'package:window_manager/window_manager.dart'
@@ -42,6 +41,7 @@ void main() async {
   await logger.initialize();
 
   logger.info('Starting application: Version ${packageInfo.version}');
+  await FFmpegKitExtended.initialize();
 
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.presentError(details);
@@ -285,21 +285,25 @@ class _ElasticState extends State<Elastic> {
 
   FlexTones get themeTones => themeVariant.tones(Brightness.dark);
 
-  final ScreenRecorderController recorderController =
-      ScreenRecorderController();
-
   @override
   void initState() {
     super.initState();
     final NT4Subscription enabledSubscription = widget.ntConnection.subscribe(
-      'Match/Enabled',
+      '/Match/Enabled',
     );
 
-    enabledSubscription.listen((enabled, _) {
+    enabledSubscription.listen((enabled, _) async {
       if (enabled == true) {
-        recorderController.start();
+        print(
+          'Match enabled, starting recording !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+        );
+        ScreenRecorder.start();
       } else {
-        recorderController.stop();
+        print(
+          'Match disabled, stopping recording !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!',
+        );
+
+        ScreenRecorder.stopAndWait();
       }
     });
   }
@@ -331,14 +335,7 @@ class _ElasticState extends State<Elastic> {
       debugShowCheckedModeBanner: false,
       title: appTitle,
       theme: theme,
-      home: LayoutBuilder(
-        builder: (context, constraints) => ScreenRecorder(
-          controller: recorderController,
-          width: constraints.maxWidth,
-          height: constraints.maxHeight,
-          child: DashboardPage(model: dashboardViewModel),
-        ),
-      ),
+      home: DashboardPage(model: dashboardViewModel),
     );
   }
 }
