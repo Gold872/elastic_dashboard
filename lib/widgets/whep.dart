@@ -204,10 +204,21 @@ class WhepController extends CameraStreamController {
     _lastStatsAt = null;
   }
 
+  void _switchToNextStream() {
+    currentStreamIndex++;
+    if (currentStreamIndex >= streams.length) {
+      currentStreamIndex = 0;
+    }
+    logger.info(
+      'Switching to stream at index $currentStreamIndex: $currentStream',
+    );
+  }
+
   void _scheduleReconnect() {
     if (cycleState == StreamCycleState.disposed) return;
     _reconnectTimer?.cancel();
     _retryCount++;
+    _switchToNextStream();
     const delay = Duration(milliseconds: 500);
     logger.info(
       'WebRTC reconnection attempt in ${delay.inMilliseconds}ms for $currentStream (attempt $_retryCount)',
