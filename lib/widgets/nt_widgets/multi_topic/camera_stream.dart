@@ -492,7 +492,10 @@ class CameraStreamWidget extends NTWidget {
 
     if (createNewWhep) {
       model.controller?.dispose();
-      model.controller = WhepController(streams: whepStreams);
+      model.controller = WhepController(
+        streams: whepStreams,
+        timeout: const Duration(milliseconds: 500),
+      );
     }
 
     final whepCtrl = model.controller as WhepController;
