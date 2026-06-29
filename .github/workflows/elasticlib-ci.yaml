@@ -12,19 +12,19 @@ jobs:
     name: "Verify Formatting"
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Fetch all history and metadata
         run: |
           git checkout -b pr
           git branch -f main origin/main
-      - name: Set up Python 3.8
-        uses: actions/setup-python@v5
+      - name: Set up Python 3.14
+        uses: actions/setup-python@v6
         with:
-          python-version: 3.8
+          python-version: 3.14
       - name: Install wpiformat
-        run: pip3 install wpiformat==2024.50
+        run: pip3 install wpiformat==2026.61
       - name: Run wpiformat
         run: wpiformat -f Elastic.java elasticlib.h elasticlib.cpp elasticlib.py
         working-directory: ./elasticlib

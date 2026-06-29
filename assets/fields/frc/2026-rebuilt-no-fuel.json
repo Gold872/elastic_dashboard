@@ -1,0 +1,21 @@
+{
+  "game": "Rebuilt (No Fuel)",
+  "program": "FRC",
+  "source_url": "https://www.chiefdelphi.com/t/2026-rebuilt-high-resolution-field-image/510611",
+  "field_image": "assets/fields/frc/2026-field-no-fuel.png",
+  "coordinate_system": "wall_blue",
+  "field_corners": {
+    "top_left": [
+      524,
+      94
+    ],
+    "bottom_right": [
+      3378,
+      1490
+    ]
+  },
+  "field_size": [
+    16.535,
+    8.069
+  ]
+}
