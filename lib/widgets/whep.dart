@@ -252,7 +252,7 @@ class WhepController extends CameraStreamController {
       }
     };
     await completer.future.timeout(
-      const Duration(seconds: 2),
+      timeout,
       onTimeout: () {},
     );
     pc.onIceGatheringState = null;

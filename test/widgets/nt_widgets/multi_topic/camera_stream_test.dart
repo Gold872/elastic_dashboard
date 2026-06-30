@@ -178,14 +178,26 @@ void main() {
       'mjpg:http://10.0.0.1',
     ]);
     expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.mjpeg), [
+      'http://10.0.0.1',
+    ]);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.whep), isEmpty);
 
     ntConnection.updateDataFromTopicName('Test/Camera Stream/streams', [
       'whep:http://10.0.0.1:8889',
       'mjpg:http://10.0.0.1',
+      'whep:http://10.0.0.2:8889',
     ]);
     expect(cameraStreamModel.activeStreamType, CameraStreamType.whep);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.whep), [
+      'http://10.0.0.1:8889',
+      'http://10.0.0.2:8889',
+    ]);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.mjpeg), [
+      'http://10.0.0.1',
+    ]);
 
-    cameraStreamModel.selectedStream = 'mjpg:http://10.0.0.1';
+    cameraStreamModel.selectedStreamType = CameraStreamType.mjpeg;
     expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
   });
 
