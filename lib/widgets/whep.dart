@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart' as http;
+import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
@@ -19,12 +19,60 @@ class WhepController extends CameraStreamController {
   Object? get lastError => _lastError;
 
   bool _connecting = false;
-
-  Timer? _reconnectTimer;
   int _retryCount = 0;
 
   int _lastBytesReceived = 0;
   DateTime? _lastStatsAt;
+
+  final Set<Key> _mountedKeys = {};
+  final Set<Key> _visibleKeys = {};
+
+  bool get _inUse =>
+      cycleState != StreamCycleState.disposed && _mountedKeys.isNotEmpty;
+
+  bool get _shouldStream => _visibleKeys.isNotEmpty && _inUse;
+
+  bool isVisible(Key key) => _visibleKeys.contains(key);
+
+  void setVisible(Key key, bool value) {
+    logger.trace('Setting visibility to $value for $currentStream');
+    if (value) {
+      bool hasChanged = !_visibleKeys.contains(key);
+      _visibleKeys.add(key);
+
+      if (hasChanged) {
+        logger.trace(
+          'Visibility changed to true, notifying listeners for whep stream',
+        );
+        if (!isStreamActive && cycleState != StreamCycleState.reconnecting) {
+          changeCycleState(StreamCycleState.connecting);
+        }
+        notifyListeners();
+      }
+    } else {
+      _visibleKeys.remove(key);
+
+      if (_visibleKeys.isEmpty) {
+        Future(() {
+          if (_inUse) {
+            _lastError = null;
+          }
+        });
+        changeCycleState(StreamCycleState.idle);
+      }
+    }
+  }
+
+  bool isMounted(Key key) => _mountedKeys.contains(key);
+
+  void setMounted(Key key, bool value) {
+    logger.trace('Setting mounted to $value for $currentStream');
+    if (value) {
+      _mountedKeys.add(key);
+    } else {
+      _mountedKeys.remove(key);
+    }
+  }
 
   WhepController({
     required super.streams,
@@ -34,13 +82,63 @@ class WhepController extends CameraStreamController {
 
   RTCVideoRenderer? get renderer => _renderer;
 
-  Future<void> ensureStarted() async {
-    if (cycleState == StreamCycleState.disposed) return;
-    if (_pc != null || _connecting) return;
-    if (streams.isEmpty) return;
+  bool get isStreamActive => _pc != null;
+
+  @override
+  void changeCycleState(StreamCycleState next) {
+    if (cycleState == next || cycleState == StreamCycleState.disposed) {
+      return;
+    }
+
+    logger.debug('Transitioning from $cycleState to $next');
+    super.changeCycleState(next);
+  }
+
+  @override
+  void onCycleStateChanged() {
+    _updateCycleState();
+  }
+
+  void _updateCycleState() {
+    switch (cycleState) {
+      case StreamCycleState.idle || StreamCycleState.disposed:
+        if (isStreamActive) {
+          unawaited(_teardown());
+        }
+        break;
+      case StreamCycleState.connecting:
+        unawaited(_connect());
+        break;
+      case StreamCycleState.streaming:
+      case StreamCycleState.failed:
+        break;
+      case StreamCycleState.reconnecting:
+        if (isStreamActive) unawaited(_teardown());
+        unawaited(
+          Future.delayed(const Duration(milliseconds: 500), () {
+            // State changed during delay
+            if (cycleState != StreamCycleState.reconnecting) return;
+            _retryCount++;
+            _switchToNextStream();
+            logger.info(
+              'WebRTC reconnection attempt for $currentStream (attempt $_retryCount)',
+            );
+            changeCycleState(StreamCycleState.connecting);
+          }),
+        );
+        break;
+    }
+  }
+
+  Future<void> _connect() async {
+    if (isStreamActive ||
+        _connecting ||
+        !_shouldStream ||
+        cycleState != StreamCycleState.connecting) {
+      return;
+    }
 
     _connecting = true;
-    changeCycleState(StreamCycleState.connecting);
     notifyListeners();
 
     RTCPeerConnection? pc;
@@ -69,10 +167,8 @@ class WhepController extends CameraStreamController {
         logger.debug('WHEP peer connection state: $s for $currentStream');
         if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
             s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
-          changeCycleState(StreamCycleState.failed);
           _lastError ??= Exception('Peer connection $s');
-          notifyListeners();
-          _scheduleReconnect();
+          changeCycleState(StreamCycleState.reconnecting);
         }
       };
 
@@ -121,6 +217,11 @@ class WhepController extends CameraStreamController {
         RTCSessionDescription(response.body, 'answer'),
       );
 
+      if (!_shouldStream) {
+        await _teardown();
+        return;
+      }
+
       changeCycleState(StreamCycleState.streaming);
       _lastError = null;
       _retryCount = 0;
@@ -129,10 +230,10 @@ class WhepController extends CameraStreamController {
     } catch (error, stack) {
       logger.error('WHEP connection failed for $currentStream', error, stack);
       _lastError = error;
-      changeCycleState(StreamCycleState.failed);
       await _teardown();
+      if (!_shouldStream) return;
+      changeCycleState(StreamCycleState.reconnecting);
       notifyListeners();
-      _scheduleReconnect();
     } finally {
       _connecting = false;
     }
@@ -214,29 +315,6 @@ class WhepController extends CameraStreamController {
     );
   }
 
-  void _scheduleReconnect() {
-    if (cycleState == StreamCycleState.disposed) return;
-    _reconnectTimer?.cancel();
-    _retryCount++;
-    _switchToNextStream();
-    const delay = Duration(milliseconds: 500);
-    logger.info(
-      'WebRTC reconnection attempt in ${delay.inMilliseconds}ms for $currentStream (attempt $_retryCount)',
-    );
-    _reconnectTimer = Timer(delay, () {
-      if (cycleState == StreamCycleState.disposed) return;
-      unawaited(_restart());
-    });
-  }
-
-  Future<void> _restart() async {
-    await _teardown();
-    if (cycleState == StreamCycleState.disposed) return;
-    changeCycleState(StreamCycleState.idle);
-    notifyListeners();
-    await ensureStarted();
-  }
-
   Future<void> _teardown() async {
     stopMetricsTimer();
 
@@ -270,14 +348,13 @@ class WhepController extends CameraStreamController {
   }
 
   @override
-  void dispose() {
+  void dispose() async {
+    await _teardown();
     changeCycleState(StreamCycleState.disposed);
-    _reconnectTimer?.cancel();
-    _reconnectTimer = null;
-    unawaited(_teardown());
     super.dispose();
   }
 
+  // todo add tests
   @visibleForTesting
   void debugSetState(StreamCycleState state, {Object? lastError}) {
     changeCycleState(state);
@@ -303,80 +380,97 @@ class Whep extends StatefulWidget {
 }
 
 class _WhepState extends State<Whep> {
-  @override
-  void initState() {
-    super.initState();
-    widget.controller.addListener(_onUpdate);
-    unawaited(widget.controller.ensureStarted());
-  }
+  final streamKey = UniqueKey();
 
   @override
-  void didUpdateWidget(covariant Whep oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      oldWidget.controller.removeListener(_onUpdate);
-      widget.controller.addListener(_onUpdate);
-      unawaited(widget.controller.ensureStarted());
-    }
+  void initState() {
+    widget.controller.addListener(_onControllerUpdate);
+    super.initState();
   }
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onUpdate);
+    widget.controller.removeListener(_onControllerUpdate);
+
+    widget.controller.setMounted(streamKey, false);
+    widget.controller.setVisible(streamKey, false);
+
     super.dispose();
   }
 
-  void _onUpdate() {
+  @override
+  void didUpdateWidget(Whep oldWidget) {
+    final controller = widget.controller;
+    final oldController = oldWidget.controller;
+
+    if (oldController != controller) {
+      oldController.removeListener(_onControllerUpdate);
+      controller.addListener(_onControllerUpdate);
+
+      controller.setMounted(streamKey, oldController.isMounted(streamKey));
+      controller.setVisible(streamKey, oldController.isVisible(streamKey));
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  void _onControllerUpdate() {
     if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
+
+    controller.setMounted(streamKey, context.mounted);
+
     final renderer = controller.renderer;
+
+    late Widget streamView;
 
     if (renderer == null ||
         controller.cycleState != StreamCycleState.streaming) {
-      final errText = controller.lastError?.toString();
-      return Column(
+      streamView = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           CustomLoadingIndicator(),
           const SizedBox(height: 10),
-          Text(
-            controller.cycleState == StreamCycleState.failed
-                ? (kDebugMode && errText != null
-                      ? 'WHEP error: $errText\nReconnecting...'
-                      : 'WHEP connection lost. Reconnecting...')
-                : 'Negotiating WHEP stream...',
+          const Text(
+            'Negotiating WHEP stream...',
             textAlign: TextAlign.center,
-            style: controller.cycleState == StreamCycleState.failed
-                ? const TextStyle(color: Colors.red)
-                : null,
           ),
         ],
       );
+    } else {
+      streamView = ValueListenableBuilder(
+        valueListenable: renderer,
+        builder: (context, _, _) {
+          final hasSize = renderer.videoWidth > 0 && renderer.videoHeight > 0;
+          final aspect = hasSize
+              ? renderer.videoWidth / renderer.videoHeight
+              : 16.0 / 9.0;
+          Widget video = ExcludeSemantics(
+            child: AspectRatio(
+              aspectRatio: aspect,
+              child: RTCVideoView(renderer, objectFit: widget.objectFit),
+            ),
+          );
+          if (widget.quarterTurns != 0) {
+            video = RotatedBox(quarterTurns: widget.quarterTurns, child: video);
+          }
+          return video;
+        },
+      );
     }
 
-    return ValueListenableBuilder(
-      valueListenable: renderer,
-      builder: (context, _, _) {
-        final hasSize = renderer.videoWidth > 0 && renderer.videoHeight > 0;
-        final aspect = hasSize
-            ? renderer.videoWidth / renderer.videoHeight
-            : 16.0 / 9.0;
-        Widget video = ExcludeSemantics(
-          child: AspectRatio(
-            aspectRatio: aspect,
-            child: RTCVideoView(renderer, objectFit: widget.objectFit),
-          ),
-        );
-        if (widget.quarterTurns != 0) {
-          video = RotatedBox(quarterTurns: widget.quarterTurns, child: video);
+    return VisibilityDetector(
+      key: streamKey,
+      onVisibilityChanged: (VisibilityInfo info) {
+        if (controller.isMounted(streamKey)) {
+          controller.setVisible(streamKey, info.visibleFraction != 0);
         }
-        return video;
       },
+      child: streamView,
     );
   }
 }
