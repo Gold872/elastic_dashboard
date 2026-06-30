@@ -71,6 +71,19 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     return CameraStreamType.mjpeg;
   }
 
+  List<String> getStreamsOfType(CameraStreamType type) {
+    final live =
+        tryCast<List<Object?>>(
+          streamsSubscription.value,
+        )?.whereType<String>() ??
+        const <String>[];
+
+    return live
+        .where((url) => CameraStreamType.fromUrl(url) == type)
+        .map((url) => url.substring(type.prefix.length))
+        .toList();
+  }
+
   int get rotationTurns => _rotationTurns;
 
   set rotationTurns(int value) {
@@ -438,50 +451,20 @@ class CameraStreamWidget extends NTWidget {
         model.ntConnection.ntConnected,
       ]),
       builder: (context, child) {
-        var (preferredType, urls) = _getPreferredStream(model);
+        final activeType = model.activeStreamType;
+        final urls = model.getStreamsOfType(activeType);
 
-        if (preferredType == CameraStreamType.whep &&
+        if (activeType == CameraStreamType.whep &&
             model.ntConnection.ntConnected.value) {
           return _buildWhepStream(model, urls);
         } else {
           return _buildMjpegStream(
             model,
-            preferredType == CameraStreamType.mjpeg ? urls : [],
+            activeType == CameraStreamType.mjpeg ? urls : [],
           );
         }
       },
     );
-  }
-
-  (CameraStreamType?, List<String>) _getPreferredStream(
-    CameraStreamModel model,
-  ) {
-    List<Object?> rawStreams = tryCast(model.streamsSubscription.value) ?? [];
-    CameraStreamType? preferredType = model.selectedStreamType;
-    final urlsForPreferred = <String>[];
-
-    if (preferredType == null) {
-      for (Object? stream in rawStreams) {
-        if (stream == null || stream is! String) continue;
-        final type = CameraStreamType.fromUrl(stream);
-        if (type != null) {
-          preferredType = type;
-          break;
-        }
-      }
-    }
-
-    if (preferredType != null) {
-      for (Object? stream in rawStreams) {
-        if (stream == null || stream is! String) continue;
-        final type = CameraStreamType.fromUrl(stream);
-        if (type == preferredType && type != null) {
-          urlsForPreferred.add(stream.substring(type.prefix.length));
-        }
-      }
-    }
-
-    return (preferredType, urlsForPreferred);
   }
 
   Widget _buildWhepStream(CameraStreamModel model, List<String> whepStreams) {
