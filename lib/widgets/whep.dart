@@ -448,7 +448,7 @@ class _WhepState extends State<Whep> {
           final hasSize = renderer.videoWidth > 0 && renderer.videoHeight > 0;
           final aspect = hasSize
               ? renderer.videoWidth / renderer.videoHeight
-              : 16.0 / 9.0;
+              : 4.0 / 3.0;
           Widget video = ExcludeSemantics(
             child: AspectRatio(
               aspectRatio: aspect,
