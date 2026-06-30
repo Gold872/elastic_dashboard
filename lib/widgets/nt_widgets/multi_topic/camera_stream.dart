@@ -198,11 +198,15 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
                   ),
               ],
               onChanged: (value) {
+                CameraStreamType previousActive = activeStreamType;
                 setState(() => selectedStreamType = value);
-                // Fixed reactivity
-                notifyListeners();
-                closeClient();
-                refresh();
+
+                if (previousActive != activeStreamType) {
+                  // Fixed reactivity
+                  notifyListeners();
+                  closeClient();
+                  refresh();
+                }
               },
             ),
           ),
