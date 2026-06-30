@@ -185,7 +185,7 @@ void main() {
     ]);
     expect(cameraStreamModel.activeStreamType, CameraStreamType.whep);
 
-    cameraStreamModel.selectedStream = 'mjpg:http://10.0.0.1';
+    cameraStreamModel.selectedStreamType = CameraStreamType.mjpeg;
     expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
   });
 

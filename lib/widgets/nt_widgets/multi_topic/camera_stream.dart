@@ -22,6 +22,9 @@ enum CameraStreamType {
   final String prefix;
   final String displayName;
 
+  static CameraStreamType? fromName(String name) =>
+      values.firstWhereOrNull((e) => e.name == name);
+
   static CameraStreamType? fromUrl(String url) {
     for (final type in values) {
       if (url.startsWith(type.prefix)) {
@@ -48,14 +51,13 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   Size? resolution;
   int _rotationTurns = 0;
 
-  String? selectedStream;
+  CameraStreamType? selectedStreamType;
 
   CameraStreamController? controller;
 
   CameraStreamType get activeStreamType {
-    final selected = selectedStream;
-    if (selected != null) {
-      return CameraStreamType.fromUrl(selected) ?? CameraStreamType.mjpeg;
+    if (selectedStreamType != null) {
+      return selectedStreamType!;
     }
     final live =
         tryCast<List<Object?>>(
@@ -104,7 +106,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     this.fps,
     this.resolution,
     int rotation = 0,
-    this.selectedStream,
+    this.selectedStreamType,
     super.period,
   }) : quality = compression,
        _rotationTurns = rotation,
@@ -118,7 +120,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     quality = tryCast(jsonData['compression']);
     fps = tryCast(jsonData['fps']);
     _rotationTurns = tryCast(jsonData['rotation_turns']) ?? 0;
-    selectedStream = tryCast(jsonData['selected_stream']);
+
+    String? streamTypeString = tryCast(jsonData['stream_type']);
+    if (streamTypeString != null) {
+      selectedStreamType = CameraStreamType.fromName(streamTypeString);
+    }
 
     List<num>? resolution = tryCast<List<Object?>>(
       jsonData['resolution'],
@@ -159,62 +165,48 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'rotation_turns': rotationTurns,
-    if (quality != null) 'compression': quality,
-    if (fps != null) 'fps': fps,
+    'compression': ?quality,
+    'fps': ?fps,
     if (resolution != null)
       'resolution': [resolution!.width, resolution!.height],
-    if (selectedStream != null) 'selected_stream': selectedStream,
+    'stream_type': ?selectedStreamType?.name,
   };
 
   @override
   List<Widget> getEditProperties(BuildContext context) => [
     StatefulBuilder(
-      builder: (context, setState) => ListenableBuilder(
-        listenable: streamsSubscription,
-        builder: (context, _) {
-          final liveStreams =
-              tryCast<List<Object?>>(
-                streamsSubscription.value,
-              )?.whereType<String>().toList() ??
-              <String>[];
-          // Always include currently selected stream as option
-          final options = <String>{
-            if (selectedStream != null) selectedStream!,
-            ...liveStreams,
-          }.toList();
-          return Row(
-            children: [
-              const Text('Stream:'),
-              const SizedBox(width: 10),
-              Expanded(
-                child: DropdownButton<String?>(
-                  isExpanded: true,
-                  value: selectedStream,
-                  hint: const Text('Auto'),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Auto'),
-                    ),
-                    ...options.map(
-                      (s) => DropdownMenuItem<String?>(
-                        value: s,
-                        child: Text(s, overflow: TextOverflow.ellipsis),
-                      ),
-                    ),
-                  ],
-                  onChanged: (value) {
-                    setState(() => selectedStream = value);
-                    // Fixed reactivity
-                    notifyListeners();
-                    closeClient();
-                    refresh();
-                  },
+      builder: (context, setState) => Row(
+        children: [
+          const Text('Stream Type:'),
+          const SizedBox(width: 10),
+          Expanded(
+            child: DropdownButton<CameraStreamType?>(
+              isExpanded: true,
+              value: selectedStreamType,
+              items: [
+                const DropdownMenuItem<CameraStreamType?>(
+                  value: null,
+                  child: Text('Auto'),
                 ),
-              ),
-            ],
-          );
-        },
+                for (final type in CameraStreamType.values)
+                  DropdownMenuItem<CameraStreamType?>(
+                    value: type,
+                    child: Text(
+                      type.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (value) {
+                setState(() => selectedStreamType = value);
+                // Fixed reactivity
+                notifyListeners();
+                closeClient();
+                refresh();
+              },
+            ),
+          ),
+        ],
       ),
     ),
     const SizedBox(height: 5),
@@ -461,22 +453,30 @@ class CameraStreamWidget extends NTWidget {
     CameraStreamModel model,
   ) {
     List<Object?> rawStreams = tryCast(model.streamsSubscription.value) ?? [];
-    CameraStreamType? preferredType;
+    CameraStreamType? preferredType = model.selectedStreamType;
     final urlsForPreferred = <String>[];
-    for (Object? stream in rawStreams) {
-      if (stream == null || stream is! String) continue;
-      if (model.selectedStream != null && stream != model.selectedStream) {
-        continue;
-      }
-      final type = CameraStreamType.fromUrl(stream);
-      if (type == null) {
-        continue;
-      }
-      preferredType ??= type;
-      if (type == preferredType) {
-        urlsForPreferred.add(stream.substring(type.prefix.length));
+
+    if (preferredType == null) {
+      for (Object? stream in rawStreams) {
+        if (stream == null || stream is! String) continue;
+        final type = CameraStreamType.fromUrl(stream);
+        if (type != null) {
+          preferredType = type;
+          break;
+        }
       }
     }
+
+    if (preferredType != null) {
+      for (Object? stream in rawStreams) {
+        if (stream == null || stream is! String) continue;
+        final type = CameraStreamType.fromUrl(stream);
+        if (type == preferredType && type != null) {
+          urlsForPreferred.add(stream.substring(type.prefix.length));
+        }
+      }
+    }
+
     return (preferredType, urlsForPreferred);
   }
 
