@@ -497,7 +497,13 @@ class CameraStreamWidget extends NTWidget {
               quarterTurns: model.rotationTurns,
             ),
           ),
-          Text('[${CameraStreamType.whep.displayName}]'),
+          ListenableBuilder(
+            listenable: whepCtrl,
+            builder: (context, child) => Text(
+              '${CameraStreamType.whep.displayName}: ${model.controller!.currentStream}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
@@ -533,7 +539,6 @@ class CameraStreamWidget extends NTWidget {
     }
 
     final mjpegCtrl = model.controller as MjpegController;
-
     return IntrinsicWidth(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -547,7 +552,13 @@ class CameraStreamWidget extends NTWidget {
               quarterTurns: model.rotationTurns,
             ),
           ),
-          Text('[${CameraStreamType.mjpeg.displayName}]'),
+          ListenableBuilder(
+            listenable: mjpegCtrl,
+            builder: (context, child) => Text(
+              '${CameraStreamType.mjpeg.displayName}: ${model.controller!.currentStream}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
