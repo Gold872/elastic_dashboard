@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_webrtc/flutter_webrtc.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
@@ -23,6 +23,8 @@ class WhepController extends CameraStreamController {
   int _lastBytesReceived = 0;
   DateTime? _lastStatsAt;
 
+  Client httpClient = Client();
+
   @override
   void clearError() {
     _lastError = null;
@@ -32,6 +34,14 @@ class WhepController extends CameraStreamController {
     required super.streams,
     super.timeout = const Duration(seconds: 5),
     super.headers = const {},
+  });
+
+  @visibleForTesting
+  WhepController.withMockClient({
+    required super.streams,
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
+    required this.httpClient,
   });
 
   RTCVideoRenderer? get renderer => _renderer;
@@ -130,7 +140,7 @@ class WhepController extends CameraStreamController {
       }
 
       final endpoint = Uri.parse(currentStream);
-      final response = await http
+      final response = await httpClient
           .post(
             endpoint,
             headers: {
@@ -266,11 +276,15 @@ class WhepController extends CameraStreamController {
     _renderer = null;
 
     if (resource != null) {
+      final client = httpClient;
       unawaited(
-        http
+        client
             .delete(resource, headers: headers)
             .timeout(const Duration(seconds: 2))
-            .catchError((_) => http.Response('', 0)),
+            .whenComplete(() {
+              client.close();
+            })
+            .catchError((_) => Response('', 0)),
       );
     }
 
@@ -286,6 +300,8 @@ class WhepController extends CameraStreamController {
         await renderer.dispose();
       } catch (_) {}
     }
+
+    httpClient = Client();
   }
 
   @override
