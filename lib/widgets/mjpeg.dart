@@ -205,9 +205,7 @@ class MjpegController extends CameraStreamController {
   }
 
   @override
-  void onCycleStateChanged() => _updateCycleState();
-
-  void _updateCycleState() {
+  void onCycleStateChanged() {
     switch (cycleState) {
       case StreamCycleState.idle || StreamCycleState.disposed:
         if (isStreamActive) {
