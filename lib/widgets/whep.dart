@@ -24,54 +24,9 @@ class WhepController extends CameraStreamController {
   int _lastBytesReceived = 0;
   DateTime? _lastStatsAt;
 
-  final Set<Key> _mountedKeys = {};
-  final Set<Key> _visibleKeys = {};
-
-  bool get _inUse =>
-      cycleState != StreamCycleState.disposed && _mountedKeys.isNotEmpty;
-
-  bool get _shouldStream => _visibleKeys.isNotEmpty && _inUse;
-
-  bool isVisible(Key key) => _visibleKeys.contains(key);
-
-  void setVisible(Key key, bool value) {
-    logger.trace('Setting visibility to $value for $currentStream');
-    if (value) {
-      bool hasChanged = !_visibleKeys.contains(key);
-      _visibleKeys.add(key);
-
-      if (hasChanged) {
-        logger.trace(
-          'Visibility changed to true, notifying listeners for whep stream',
-        );
-        if (!isStreamActive && cycleState != StreamCycleState.reconnecting) {
-          changeCycleState(StreamCycleState.connecting);
-        }
-        notifyListeners();
-      }
-    } else {
-      _visibleKeys.remove(key);
-
-      if (_visibleKeys.isEmpty) {
-        Future(() {
-          if (_inUse) {
-            _lastError = null;
-          }
-        });
-        changeCycleState(StreamCycleState.idle);
-      }
-    }
-  }
-
-  bool isMounted(Key key) => _mountedKeys.contains(key);
-
-  void setMounted(Key key, bool value) {
-    logger.trace('Setting mounted to $value for $currentStream');
-    if (value) {
-      _mountedKeys.add(key);
-    } else {
-      _mountedKeys.remove(key);
-    }
+  @override
+  void clearError() {
+    _lastError = null;
   }
 
   WhepController({
@@ -82,22 +37,11 @@ class WhepController extends CameraStreamController {
 
   RTCVideoRenderer? get renderer => _renderer;
 
+  @override
   bool get isStreamActive => _pc != null;
 
   @override
-  void changeCycleState(StreamCycleState next) {
-    if (cycleState == next || cycleState == StreamCycleState.disposed) {
-      return;
-    }
-
-    logger.debug('Transitioning from $cycleState to $next');
-    super.changeCycleState(next);
-  }
-
-  @override
-  void onCycleStateChanged() {
-    _updateCycleState();
-  }
+  void onCycleStateChanged() => _updateCycleState();
 
   void _updateCycleState() {
     switch (cycleState) {
@@ -119,7 +63,7 @@ class WhepController extends CameraStreamController {
             // State changed during delay
             if (cycleState != StreamCycleState.reconnecting) return;
             _retryCount++;
-            _switchToNextStream();
+            switchToNextStream();
             logger.info(
               'WebRTC reconnection attempt for $currentStream (attempt $_retryCount)',
             );
@@ -133,7 +77,7 @@ class WhepController extends CameraStreamController {
   Future<void> _connect() async {
     if (isStreamActive ||
         _connecting ||
-        !_shouldStream ||
+        !shouldStream ||
         cycleState != StreamCycleState.connecting) {
       return;
     }
@@ -217,7 +161,7 @@ class WhepController extends CameraStreamController {
         RTCSessionDescription(response.body, 'answer'),
       );
 
-      if (!_shouldStream) {
+      if (!shouldStream) {
         await _teardown();
         return;
       }
@@ -231,7 +175,7 @@ class WhepController extends CameraStreamController {
       logger.error('WHEP connection failed for $currentStream', error, stack);
       _lastError = error;
       await _teardown();
-      if (!_shouldStream) return;
+      if (!shouldStream) return;
       changeCycleState(StreamCycleState.reconnecting);
       notifyListeners();
     } finally {
@@ -303,16 +247,6 @@ class WhepController extends CameraStreamController {
     super.stopMetricsTimer();
     _lastBytesReceived = 0;
     _lastStatsAt = null;
-  }
-
-  void _switchToNextStream() {
-    currentStreamIndex++;
-    if (currentStreamIndex >= streams.length) {
-      currentStreamIndex = 0;
-    }
-    logger.info(
-      'Switching to stream at index $currentStreamIndex: $currentStream',
-    );
   }
 
   Future<void> _teardown() async {
