@@ -19,7 +19,6 @@ class WhepController extends CameraStreamController {
   Object? get lastError => _lastError;
 
   bool _connecting = false;
-  int _retryCount = 0;
 
   int _lastBytesReceived = 0;
   DateTime? _lastStatsAt;
@@ -41,9 +40,7 @@ class WhepController extends CameraStreamController {
   bool get isStreamActive => _pc != null;
 
   @override
-  void onCycleStateChanged() => _updateCycleState();
-
-  void _updateCycleState() {
+  void onCycleStateChanged() {
     switch (cycleState) {
       case StreamCycleState.idle || StreamCycleState.disposed:
         if (isStreamActive) {
@@ -62,11 +59,10 @@ class WhepController extends CameraStreamController {
           Future.delayed(const Duration(milliseconds: 500), () {
             // State changed during delay
             if (cycleState != StreamCycleState.reconnecting) return;
-            _retryCount++;
+
             switchToNextStream();
-            logger.info(
-              'WebRTC reconnection attempt for $currentStream (attempt $_retryCount)',
-            );
+
+            logger.info('WebRTC reconnection attempt for $currentStream');
             changeCycleState(StreamCycleState.connecting);
           }),
         );
@@ -168,14 +164,16 @@ class WhepController extends CameraStreamController {
 
       changeCycleState(StreamCycleState.streaming);
       _lastError = null;
-      _retryCount = 0;
+
       startMetricsTimer();
       notifyListeners();
     } catch (error, stack) {
       logger.error('WHEP connection failed for $currentStream', error, stack);
       _lastError = error;
       await _teardown();
+
       if (!shouldStream) return;
+
       changeCycleState(StreamCycleState.reconnecting);
       notifyListeners();
     } finally {
@@ -188,6 +186,7 @@ class WhepController extends CameraStreamController {
         RTCIceGatheringState.RTCIceGatheringStateComplete) {
       return;
     }
+
     final completer = Completer<void>();
     pc.onIceGatheringState = (RTCIceGatheringState s) {
       if (s == RTCIceGatheringState.RTCIceGatheringStateComplete &&
@@ -195,6 +194,7 @@ class WhepController extends CameraStreamController {
         completer.complete();
       }
     };
+
     await completer.future.timeout(
       timeout,
       onTimeout: () {},
@@ -213,10 +213,12 @@ class WhepController extends CameraStreamController {
   Future<void> updateMetrics() async {
     final pc = _pc;
     if (pc == null) return;
+
     try {
       final reports = await pc.getStats();
       int? bytesReceived;
       int? fps;
+
       for (final report in reports) {
         if (report.type != 'inbound-rtp') continue;
         final values = report.values;
@@ -224,6 +226,7 @@ class WhepController extends CameraStreamController {
         bytesReceived ??= (values['bytesReceived'] as num?)?.toInt();
         fps ??= (values['framesPerSecond'] as num?)?.toInt();
       }
+
       final now = DateTime.now();
       if (bytesReceived != null) {
         if (_lastStatsAt != null && _lastBytesReceived > 0) {
@@ -236,6 +239,7 @@ class WhepController extends CameraStreamController {
         _lastBytesReceived = bytesReceived;
         _lastStatsAt = now;
       }
+
       if (fps != null) framesPerSecond.value = fps;
     } catch (e) {
       logger.trace('WHEP getStats failed: $e');
@@ -245,6 +249,7 @@ class WhepController extends CameraStreamController {
   @override
   void stopMetricsTimer() {
     super.stopMetricsTimer();
+
     _lastBytesReceived = 0;
     _lastStatsAt = null;
   }
@@ -253,7 +258,13 @@ class WhepController extends CameraStreamController {
     stopMetricsTimer();
 
     final resource = _resourceUri;
+    final pc = _pc;
+    final renderer = _renderer;
+
     _resourceUri = null;
+    _pc = null;
+    _renderer = null;
+
     if (resource != null) {
       unawaited(
         http
@@ -263,16 +274,12 @@ class WhepController extends CameraStreamController {
       );
     }
 
-    final pc = _pc;
-    _pc = null;
     if (pc != null) {
       try {
         await pc.close();
       } catch (_) {}
     }
 
-    final renderer = _renderer;
-    _renderer = null;
     if (renderer != null) {
       try {
         renderer.srcObject = null;
