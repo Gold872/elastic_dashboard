@@ -199,70 +199,13 @@ class MjpegController extends CameraStreamController {
 
   final MjpegPreprocessor? preprocessor;
 
-  final Set<Key> _mountedKeys = {};
-  final Set<Key> _visibleKeys = {};
-
-  bool get _inUse =>
-      cycleState != StreamCycleState.disposed && _mountedKeys.isNotEmpty;
-
-  bool get _shouldStream => _visibleKeys.isNotEmpty && _inUse;
-
-  bool isVisible(Key key) => _visibleKeys.contains(key);
-
-  void setVisible(Key key, bool value) {
-    logger.trace('Setting visibility to $value for $currentStream');
-    if (value) {
-      bool hasChanged = !_visibleKeys.contains(key);
-      _visibleKeys.add(key);
-
-      if (hasChanged) {
-        logger.trace(
-          'Visibility changed to true, notifying listeners for mjpeg stream',
-        );
-        if (!isStreamActive && cycleState != StreamCycleState.reconnecting) {
-          changeCycleState(StreamCycleState.connecting);
-        }
-        notifyListeners();
-      }
-    } else {
-      _visibleKeys.remove(key);
-
-      if (_visibleKeys.isEmpty) {
-        Future(() {
-          if (_inUse) {
-            errorState.value = null;
-          }
-        });
-        changeCycleState(StreamCycleState.idle);
-      }
-    }
-  }
-
-  bool isMounted(Key key) => _mountedKeys.contains(key);
-
-  void setMounted(Key key, bool value) {
-    logger.trace('Setting mounted to $value for $currentStream');
-    if (value) {
-      _mountedKeys.add(key);
-    } else {
-      _mountedKeys.remove(key);
-    }
+  @override
+  void clearError() {
+    errorState.value = null;
   }
 
   @override
-  void changeCycleState(StreamCycleState next) {
-    if (cycleState == next || cycleState == StreamCycleState.disposed) {
-      return;
-    }
-
-    logger.debug('Transitioning from $cycleState to $next');
-    super.changeCycleState(next);
-  }
-
-  @override
-  void onCycleStateChanged() {
-    _updateCycleState();
-  }
+  void onCycleStateChanged() => _updateCycleState();
 
   void _updateCycleState() {
     switch (cycleState) {
@@ -283,7 +226,7 @@ class MjpegController extends CameraStreamController {
           Future.delayed(const Duration(milliseconds: 100), () {
             // State changed during delay
             if (cycleState != StreamCycleState.reconnecting) return;
-            _switchToNextStream();
+            switchToNextStream();
             changeCycleState(StreamCycleState.connecting);
           }),
         );
@@ -291,6 +234,7 @@ class MjpegController extends CameraStreamController {
     }
   }
 
+  @override
   bool get isStreamActive => _rawSubscription != null;
 
   MjpegController({
@@ -337,7 +281,7 @@ class MjpegController extends CameraStreamController {
 
   Future<void> startStream() async {
     if (isStreamActive ||
-        !_shouldStream ||
+        !shouldStream ||
         cycleState != StreamCycleState.connecting) {
       return;
     }
@@ -356,7 +300,7 @@ class MjpegController extends CameraStreamController {
       if (response.statusCode >= 200 && response.statusCode < 300) {
         byteStream = response.stream;
       } else {
-        if (_inUse) {
+        if (inUse) {
           errorState.value = [
             HttpException(
               'Stream returned status code ${response.statusCode}: "${response.reasonPhrase}"',
@@ -376,14 +320,14 @@ class MjpegController extends CameraStreamController {
       } else if (!error // we ignore those errors in case play/pause is triggers
           .toString()
           .contains('Connection closed before full header was received')) {
-        if (_inUse) {
+        if (inUse) {
           errorState.value = [error, stack];
           imageStream.add(null);
         }
       }
     }
 
-    if (!_shouldStream) {
+    if (!shouldStream) {
       return;
     }
 
@@ -420,16 +364,6 @@ class MjpegController extends CameraStreamController {
 
     _bitCount = 0;
     _frameCount = 0;
-  }
-
-  void _switchToNextStream() {
-    currentStreamIndex++;
-    if (currentStreamIndex >= streams.length) {
-      currentStreamIndex = 0;
-    }
-    logger.info(
-      'Switching to stream at index $currentStreamIndex: $currentStream',
-    );
   }
 
   Future<void> stopStream() async {
