@@ -6,10 +6,34 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/mjpeg.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
+import 'package:elastic_dashboard/widgets/whep.dart';
+
+enum CameraStreamType {
+  whep('whep:', 'WebRTC'),
+  mjpeg('mjpg:', 'MJPG');
+
+  const CameraStreamType(this.prefix, this.displayName);
+
+  final String prefix;
+  final String displayName;
+
+  static CameraStreamType? fromName(String name) =>
+      values.firstWhereOrNull((e) => e.name == name);
+
+  static CameraStreamType? fromUrl(String url) {
+    for (final type in values) {
+      if (url.startsWith(type.prefix)) {
+        return type;
+      }
+    }
+    return null;
+  }
+}
 
 class CameraStreamModel extends MultiTopicNTWidgetModel {
   @override
@@ -27,7 +51,38 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   Size? resolution;
   int _rotationTurns = 0;
 
-  MjpegController? controller;
+  CameraStreamType? selectedStreamType;
+
+  CameraStreamController? controller;
+
+  CameraStreamType get activeStreamType {
+    if (selectedStreamType != null) {
+      return selectedStreamType!;
+    }
+    final live =
+        tryCast<List<Object?>>(
+          streamsSubscription.value,
+        )?.whereType<String>() ??
+        const <String>[];
+    for (final url in live) {
+      final type = CameraStreamType.fromUrl(url);
+      if (type != null) return type;
+    }
+    return CameraStreamType.mjpeg;
+  }
+
+  List<String> getStreamsOfType(CameraStreamType type) {
+    final live =
+        tryCast<List<Object?>>(
+          streamsSubscription.value,
+        )?.whereType<String>() ??
+        const <String>[];
+
+    return live
+        .where((url) => CameraStreamType.fromUrl(url) == type)
+        .map((url) => url.substring(type.prefix.length))
+        .toList();
+  }
 
   int get rotationTurns => _rotationTurns;
 
@@ -64,6 +119,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     this.fps,
     this.resolution,
     int rotation = 0,
+    this.selectedStreamType,
     super.period,
   }) : quality = compression,
        _rotationTurns = rotation,
@@ -77,6 +133,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     quality = tryCast(jsonData['compression']);
     fps = tryCast(jsonData['fps']);
     _rotationTurns = tryCast(jsonData['rotation_turns']) ?? 0;
+
+    String? streamTypeString = tryCast(jsonData['stream_type']);
+    if (streamTypeString != null) {
+      selectedStreamType = CameraStreamType.fromName(streamTypeString);
+    }
 
     List<num>? resolution = tryCast<List<Object?>>(
       jsonData['resolution'],
@@ -117,14 +178,74 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
   Map<String, dynamic> toJson() => {
     ...super.toJson(),
     'rotation_turns': rotationTurns,
-    if (quality != null) 'compression': quality,
-    if (fps != null) 'fps': fps,
+    'compression': ?quality,
+    'fps': ?fps,
     if (resolution != null)
       'resolution': [resolution!.width, resolution!.height],
+    'stream_type': ?selectedStreamType?.name,
   };
 
   @override
   List<Widget> getEditProperties(BuildContext context) => [
+    StatefulBuilder(
+      builder: (context, setState) => Row(
+        children: [
+          const Text('Stream Type:'),
+          const SizedBox(width: 10),
+          Expanded(
+            child: DropdownButton<CameraStreamType?>(
+              isExpanded: true,
+              value: selectedStreamType,
+              items: [
+                const DropdownMenuItem<CameraStreamType?>(
+                  value: null,
+                  child: Text('Auto'),
+                ),
+                for (final type in CameraStreamType.values)
+                  DropdownMenuItem<CameraStreamType?>(
+                    value: type,
+                    child: Text(
+                      type.displayName,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+              ],
+              onChanged: (value) {
+                CameraStreamType previousActive = activeStreamType;
+                setState(() => selectedStreamType = value);
+
+                if (previousActive != activeStreamType) {
+                  // Fixed reactivity
+                  notifyListeners();
+                  closeClient();
+                  refresh();
+                }
+              },
+            ),
+          ),
+        ],
+      ),
+    ),
+    const SizedBox(height: 5),
+    ListenableBuilder(
+      listenable: Listenable.merge([this, streamsSubscription]),
+      builder: (context, _) =>
+          Column(children: _editFieldsFor(activeStreamType)),
+    ),
+  ];
+
+  List<Widget> _editFieldsFor(CameraStreamType type) {
+    switch (type) {
+      case CameraStreamType.whep:
+        return _whepEditFields();
+      case CameraStreamType.mjpeg:
+        return _mjpegEditFields();
+    }
+  }
+
+  List<Widget> _whepEditFields() => _rotationFields();
+
+  List<Widget> _mjpegEditFields() => [
     StatefulBuilder(
       builder: (context, setState) => Row(
         children: [
@@ -234,6 +355,10 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
       onPressed: () => refresh(),
       child: const Text('Apply Quality Settings'),
     ),
+    ..._rotationFields(),
+  ];
+
+  List<Widget> _rotationFields() => [
     const SizedBox(height: 5),
     Row(
       mainAxisAlignment: MainAxisAlignment.center,
@@ -299,6 +424,9 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
       closeClient();
     } else {
       controller?.changeCycleState(StreamCycleState.idle);
+      // Just tear down.
+      controller?.dispose();
+      controller = null;
     }
   }
 
@@ -323,100 +451,162 @@ class CameraStreamWidget extends NTWidget {
         model.ntConnection.ntConnected,
       ]),
       builder: (context, child) {
-        List<Object?> rawStreams =
-            tryCast(model.streamsSubscription.value) ?? [];
+        final activeType = model.activeStreamType;
+        final urls = model.getStreamsOfType(activeType);
 
-        List<String> streams = [];
-        for (Object? stream in rawStreams) {
-          if (stream == null ||
-              stream is! String ||
-              !stream.startsWith('mjpg:')) {
-            continue;
-          }
-
-          streams.add(stream.substring('mjpg:'.length));
-        }
-
-        if (streams.isEmpty || !model.ntConnection.ntConnected.value) {
-          return Stack(
-            fit: StackFit.expand,
-            children: [
-              if (model.controller?.previousImage != null)
-                Opacity(
-                  opacity: 0.35,
-                  child: Image.memory(
-                    Uint8List.fromList(model.controller!.previousImage!),
-                    fit: BoxFit.contain,
-                  ),
-                ),
-              Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  CustomLoadingIndicator(),
-                  const SizedBox(height: 10),
-                  Text(
-                    (model.ntConnection.isNT4Connected)
-                        ? 'Waiting for Camera Stream connection...'
-                        : 'Waiting for Network Tables connection...',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ],
+        if (activeType == CameraStreamType.whep &&
+            model.ntConnection.ntConnected.value) {
+          return _buildWhepStream(model, urls);
+        } else {
+          return _buildMjpegStream(
+            model,
+            activeType == CameraStreamType.mjpeg ? urls : [],
           );
         }
-
-        bool createNewWidget = model.controller == null;
-
-        List<String> streamUrls = streams
-            .map((stream) => model.getUrlWithParameters(stream))
-            .toList();
-
-        createNewWidget =
-            createNewWidget ||
-            !(model.controller?.streams.equals(streamUrls) ?? false);
-
-        if (createNewWidget) {
-          model.controller?.dispose();
-
-          model.controller = MjpegController(
-            streams: streamUrls,
-            timeout: const Duration(milliseconds: 500),
-          );
-        }
-
-        return IntrinsicWidth(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Row(
-                children: [
-                  ValueListenableBuilder(
-                    valueListenable: model.controller!.framesPerSecond,
-                    builder: (context, value, child) => Text('FPS: $value'),
-                  ),
-                  const Spacer(),
-                  ValueListenableBuilder(
-                    valueListenable: model.controller!.bandwidth,
-                    builder: (context, value, child) =>
-                        Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
-                  ),
-                ],
-              ),
-              Flexible(
-                child: Mjpeg(
-                  controller: model.controller!,
-                  fit: BoxFit.contain,
-                  expandToFit: true,
-                  quarterTurns: model.rotationTurns,
-                ),
-              ),
-              const Text(''),
-            ],
-          ),
-        );
       },
     );
   }
+
+  Widget _buildWhepStream(CameraStreamModel model, List<String> whepStreams) {
+    if (model.controller is MjpegController) {
+      model.controller!.dispose();
+      model.controller = null;
+    }
+
+    bool createNewWhep =
+        model.controller is! WhepController ||
+        !model.controller!.streams.equals(whepStreams);
+
+    if (createNewWhep) {
+      model.controller?.dispose();
+      model.controller = WhepController(
+        streams: whepStreams,
+        timeout: const Duration(milliseconds: 500),
+      );
+    }
+
+    final whepCtrl = model.controller as WhepController;
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMetricsRow(whepCtrl),
+          Flexible(
+            child: Whep(
+              controller: whepCtrl,
+              quarterTurns: model.rotationTurns,
+            ),
+          ),
+          ListenableBuilder(
+            listenable: whepCtrl,
+            builder: (context, child) => Text(
+              '${CameraStreamType.whep.displayName}: ${model.controller!.currentStream}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMjpegStream(CameraStreamModel model, List<String> mjpegStreams) {
+    if (model.controller is WhepController) {
+      model.controller!.dispose();
+      model.controller = null;
+    }
+
+    if (mjpegStreams.isEmpty || !model.ntConnection.ntConnected.value) {
+      return _buildWaitingScreen(model);
+    }
+
+    bool createNewWidget = model.controller is! MjpegController;
+
+    List<String> streamUrls = mjpegStreams
+        .map((stream) => model.getUrlWithParameters(stream))
+        .toList();
+
+    createNewWidget =
+        createNewWidget ||
+        !(model.controller?.streams.equals(streamUrls) ?? false);
+
+    if (createNewWidget) {
+      model.controller?.dispose();
+
+      model.controller = MjpegController(
+        streams: streamUrls,
+        timeout: const Duration(milliseconds: 500),
+      );
+    }
+
+    final mjpegCtrl = model.controller as MjpegController;
+    return IntrinsicWidth(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _buildMetricsRow(mjpegCtrl),
+          Flexible(
+            child: Mjpeg(
+              controller: mjpegCtrl,
+              fit: BoxFit.contain,
+              expandToFit: true,
+              quarterTurns: model.rotationTurns,
+            ),
+          ),
+          ListenableBuilder(
+            listenable: mjpegCtrl,
+            builder: (context, child) => Text(
+              '${CameraStreamType.mjpeg.displayName}: ${model.controller!.currentStream}',
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWaitingScreen(CameraStreamModel model) => Stack(
+    fit: StackFit.expand,
+    children: [
+      if (model.controller is MjpegController &&
+          (model.controller as MjpegController).previousImage != null)
+        Opacity(
+          opacity: 0.35,
+          child: Image.memory(
+            Uint8List.fromList(
+              (model.controller as MjpegController).previousImage!,
+            ),
+            fit: BoxFit.contain,
+          ),
+        ),
+      Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CustomLoadingIndicator(),
+          const SizedBox(height: 10),
+          Text(
+            (model.ntConnection.isNT4Connected)
+                ? 'Waiting for Camera Stream connection...'
+                : 'Waiting for Network Tables connection...',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    ],
+  );
+
+  Widget _buildMetricsRow(CameraStreamController controller) => Row(
+    children: [
+      ValueListenableBuilder(
+        valueListenable: controller.framesPerSecond,
+        builder: (context, value, child) => Text('FPS: $value'),
+      ),
+      const Spacer(),
+      ValueListenableBuilder(
+        valueListenable: controller.bandwidth,
+        builder: (context, value, child) =>
+            Text('Bandwidth: ${value.toStringAsFixed(2)} Mbps'),
+      ),
+    ],
+  );
 }

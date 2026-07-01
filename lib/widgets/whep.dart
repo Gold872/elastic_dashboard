@@ -1,0 +1,433 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import 'package:flutter_webrtc/flutter_webrtc.dart';
+import 'package:http/http.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+
+import 'package:elastic_dashboard/services/log.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
+import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
+
+class WhepController extends CameraStreamController {
+  RTCPeerConnection? _pc;
+  RTCVideoRenderer? _renderer;
+  Uri? _resourceUri;
+
+  Object? _lastError;
+  Object? get lastError => _lastError;
+
+  bool _connecting = false;
+
+  int _lastBytesReceived = 0;
+  DateTime? _lastStatsAt;
+
+  Client httpClient = Client();
+
+  @override
+  void clearError() {
+    _lastError = null;
+  }
+
+  WhepController({
+    required super.streams,
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
+  });
+
+  @visibleForTesting
+  WhepController.withMockClient({
+    required super.streams,
+    super.timeout = const Duration(seconds: 5),
+    super.headers = const {},
+    required this.httpClient,
+  });
+
+  RTCVideoRenderer? get renderer => _renderer;
+
+  @override
+  bool get isStreamActive => _pc != null;
+
+  @override
+  void onCycleStateChanged() {
+    switch (cycleState) {
+      case StreamCycleState.idle || StreamCycleState.disposed:
+        if (isStreamActive) {
+          unawaited(_teardown());
+        }
+        break;
+      case StreamCycleState.connecting:
+        unawaited(_connect());
+        break;
+      case StreamCycleState.streaming:
+      case StreamCycleState.failed:
+        break;
+      case StreamCycleState.reconnecting:
+        if (isStreamActive) unawaited(_teardown());
+        unawaited(
+          Future.delayed(const Duration(milliseconds: 500), () {
+            // State changed during delay
+            if (cycleState != StreamCycleState.reconnecting) return;
+
+            switchToNextStream();
+
+            logger.info('WebRTC reconnection attempt for $currentStream');
+            changeCycleState(StreamCycleState.connecting);
+          }),
+        );
+        break;
+    }
+  }
+
+  Future<void> _connect() async {
+    if (isStreamActive ||
+        _connecting ||
+        !shouldStream ||
+        cycleState != StreamCycleState.connecting) {
+      return;
+    }
+
+    _connecting = true;
+    notifyListeners();
+
+    RTCPeerConnection? pc;
+    try {
+      final renderer = RTCVideoRenderer();
+      await renderer.initialize();
+      _renderer = renderer;
+
+      pc = await createPeerConnection({
+        'iceServers': const [],
+        'sdpSemantics': 'unified-plan',
+      });
+      _pc = pc;
+      final sessionPc = pc;
+
+      pc.onTrack = (RTCTrackEvent event) {
+        if (!identical(_pc, sessionPc)) return;
+        if (event.streams.isNotEmpty) {
+          _renderer?.srcObject = event.streams.first;
+          notifyListeners();
+        }
+      };
+
+      pc.onConnectionState = (RTCPeerConnectionState s) {
+        if (!identical(_pc, sessionPc)) return;
+        logger.debug('WHEP peer connection state: $s for $currentStream');
+        if (s == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
+            s == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected) {
+          _lastError ??= Exception('Peer connection $s');
+          changeCycleState(StreamCycleState.reconnecting);
+        }
+      };
+
+      await pc.addTransceiver(
+        kind: RTCRtpMediaType.RTCRtpMediaTypeVideo,
+        init: RTCRtpTransceiverInit(
+          direction: TransceiverDirection.RecvOnly,
+        ),
+      );
+
+      final offer = await pc.createOffer({});
+      await pc.setLocalDescription(offer);
+      await _waitForIceGathering(pc);
+
+      final localDesc = await pc.getLocalDescription();
+      final offerSdp = localDesc?.sdp;
+      if (offerSdp == null) {
+        throw Exception('WHEP: failed to generate local SDP offer');
+      }
+
+      final endpoint = Uri.parse(currentStream);
+      final response = await httpClient
+          .post(
+            endpoint,
+            headers: {
+              'Content-Type': 'application/sdp',
+              'Accept': 'application/sdp',
+              ...headers,
+            },
+            body: offerSdp,
+          )
+          .timeout(timeout);
+
+      if (response.statusCode != 201 && response.statusCode != 200) {
+        throw Exception(
+          'WHEP endpoint returned ${response.statusCode}: ${response.body}',
+        );
+      }
+
+      final location = response.headers['location'];
+      if (location != null && location.isNotEmpty) {
+        _resourceUri = endpoint.resolve(location);
+      }
+
+      await pc.setRemoteDescription(
+        RTCSessionDescription(response.body, 'answer'),
+      );
+
+      if (!shouldStream) {
+        await _teardown();
+        return;
+      }
+
+      changeCycleState(StreamCycleState.streaming);
+      _lastError = null;
+
+      startMetricsTimer();
+      notifyListeners();
+    } catch (error, stack) {
+      logger.error('WHEP connection failed for $currentStream', error, stack);
+      _lastError = error;
+      await _teardown();
+
+      if (!shouldStream) return;
+
+      changeCycleState(StreamCycleState.reconnecting);
+      notifyListeners();
+    } finally {
+      _connecting = false;
+    }
+  }
+
+  Future<void> _waitForIceGathering(RTCPeerConnection pc) async {
+    if (pc.iceGatheringState ==
+        RTCIceGatheringState.RTCIceGatheringStateComplete) {
+      return;
+    }
+
+    final completer = Completer<void>();
+    pc.onIceGatheringState = (RTCIceGatheringState s) {
+      if (s == RTCIceGatheringState.RTCIceGatheringStateComplete &&
+          !completer.isCompleted) {
+        completer.complete();
+      }
+    };
+
+    await completer.future.timeout(
+      timeout,
+      onTimeout: () {},
+    );
+    pc.onIceGatheringState = null;
+  }
+
+  @override
+  void startMetricsTimer() {
+    _lastBytesReceived = 0;
+    _lastStatsAt = null;
+    super.startMetricsTimer();
+  }
+
+  @override
+  Future<void> updateMetrics() async {
+    final pc = _pc;
+    if (pc == null) return;
+
+    try {
+      final reports = await pc.getStats();
+      int? bytesReceived;
+      int? fps;
+
+      for (final report in reports) {
+        if (report.type != 'inbound-rtp') continue;
+        final values = report.values;
+        if (values['kind'] != 'video') continue;
+        bytesReceived ??= (values['bytesReceived'] as num?)?.toInt();
+        fps ??= (values['framesPerSecond'] as num?)?.toInt();
+      }
+
+      final now = DateTime.now();
+      if (bytesReceived != null) {
+        if (_lastStatsAt != null && _lastBytesReceived > 0) {
+          final dt = now.difference(_lastStatsAt!).inMilliseconds / 1000.0;
+          final delta = bytesReceived - _lastBytesReceived;
+          if (dt > 0 && delta >= 0) {
+            bandwidth.value = (delta * 8) / 1e6 / dt;
+          }
+        }
+        _lastBytesReceived = bytesReceived;
+        _lastStatsAt = now;
+      }
+
+      if (fps != null) framesPerSecond.value = fps;
+    } catch (e) {
+      logger.trace('WHEP getStats failed: $e');
+    }
+  }
+
+  @override
+  void stopMetricsTimer() {
+    super.stopMetricsTimer();
+
+    _lastBytesReceived = 0;
+    _lastStatsAt = null;
+  }
+
+  Future<void> _teardown() async {
+    stopMetricsTimer();
+
+    final resource = _resourceUri;
+    final pc = _pc;
+    final renderer = _renderer;
+
+    _resourceUri = null;
+    _pc = null;
+    _renderer = null;
+
+    if (resource != null) {
+      final client = httpClient;
+      unawaited(
+        client
+            .delete(resource, headers: headers)
+            .timeout(const Duration(seconds: 2))
+            .whenComplete(() {
+              client.close();
+            })
+            .catchError((_) => Response('', 0)),
+      );
+    }
+
+    if (pc != null) {
+      try {
+        await pc.close();
+      } catch (_) {}
+    }
+
+    if (renderer != null) {
+      try {
+        renderer.srcObject = null;
+        await renderer.dispose();
+      } catch (_) {}
+    }
+
+    httpClient = Client();
+  }
+
+  @override
+  void dispose() async {
+    await _teardown();
+    changeCycleState(StreamCycleState.disposed);
+    super.dispose();
+  }
+
+  // todo add tests
+  @visibleForTesting
+  void debugSetState(StreamCycleState state, {Object? lastError}) {
+    changeCycleState(state);
+    _lastError = lastError;
+    notifyListeners();
+  }
+}
+
+class Whep extends StatefulWidget {
+  final WhepController controller;
+  final RTCVideoViewObjectFit objectFit;
+  final int quarterTurns;
+
+  const Whep({
+    required this.controller,
+    this.objectFit = RTCVideoViewObjectFit.RTCVideoViewObjectFitContain,
+    this.quarterTurns = 0,
+    super.key,
+  });
+
+  @override
+  State<Whep> createState() => _WhepState();
+}
+
+class _WhepState extends State<Whep> {
+  final streamKey = UniqueKey();
+
+  @override
+  void initState() {
+    widget.controller.addListener(_onControllerUpdate);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerUpdate);
+
+    widget.controller.setMounted(streamKey, false);
+    widget.controller.setVisible(streamKey, false);
+
+    super.dispose();
+  }
+
+  @override
+  void didUpdateWidget(Whep oldWidget) {
+    final controller = widget.controller;
+    final oldController = oldWidget.controller;
+
+    if (oldController != controller) {
+      oldController.removeListener(_onControllerUpdate);
+      controller.addListener(_onControllerUpdate);
+
+      controller.setMounted(streamKey, oldController.isMounted(streamKey));
+      controller.setVisible(streamKey, oldController.isVisible(streamKey));
+    }
+    super.didUpdateWidget(oldWidget);
+  }
+
+  void _onControllerUpdate() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = widget.controller;
+
+    controller.setMounted(streamKey, context.mounted);
+
+    final renderer = controller.renderer;
+
+    late Widget streamView;
+
+    if (renderer == null ||
+        controller.cycleState != StreamCycleState.streaming) {
+      streamView = Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          CustomLoadingIndicator(),
+          const SizedBox(height: 10),
+          const Text(
+            'Negotiating WHEP stream...',
+            textAlign: TextAlign.center,
+          ),
+        ],
+      );
+    } else {
+      streamView = ValueListenableBuilder(
+        valueListenable: renderer,
+        builder: (context, _, _) {
+          final hasSize = renderer.videoWidth > 0 && renderer.videoHeight > 0;
+          final aspect = hasSize
+              ? renderer.videoWidth / renderer.videoHeight
+              : 4.0 / 3.0;
+          Widget video = ExcludeSemantics(
+            child: AspectRatio(
+              aspectRatio: aspect,
+              child: RTCVideoView(renderer, objectFit: widget.objectFit),
+            ),
+          );
+          if (widget.quarterTurns != 0) {
+            video = RotatedBox(quarterTurns: widget.quarterTurns, child: video);
+          }
+          return video;
+        },
+      );
+    }
+
+    return VisibilityDetector(
+      key: streamKey,
+      onVisibilityChanged: (VisibilityInfo info) {
+        if (controller.isMounted(streamKey)) {
+          controller.setVisible(streamKey, info.visibleFraction != 0);
+        }
+      },
+      child: streamView,
+    );
+  }
+}
