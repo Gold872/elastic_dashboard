@@ -286,9 +286,14 @@ class _ElasticState extends State<Elastic> {
 
   FlexTones get themeTones => themeVariant.tones(Brightness.dark);
 
+  bool _hasGameEnded = false;
+  bool _isRobotConnected = true;
   Timer? _stopRecordingTimer;
-  Timer? _stopRecordingOnDisconnectTimer;
+  Timer? _hasGameEndedTimer;
   final Duration _recordingStopDelay = const Duration(seconds: 5);
+  final Duration _matchDuration = const Duration(
+    seconds: 15,
+  ); // 2 minutes and 40 seconds
 
   @override
   void initState() {
@@ -304,13 +309,15 @@ class _ElasticState extends State<Elastic> {
 
         if (!ScreenRecorder.isRecording) {
           ScreenRecorder.start();
+          _hasGameEnded = false;
+          _hasGameEndedTimer = Timer(_matchDuration, () {
+            _hasGameEnded = true;
+            _closeStream(false);
+          });
         }
       } else {
-        _stopRecordingTimer?.cancel();
-        _stopRecordingTimer = Timer(_recordingStopDelay, () {
-          ScreenRecorder.stopAndWait();
-          _stopRecordingTimer = null;
-        });
+        // disable
+        _closeStream(true);
       }
     });
 
@@ -318,23 +325,37 @@ class _ElasticState extends State<Elastic> {
     widget.ntConnection.addConnectedListener(_onRobotConnected);
   }
 
+  void _closeStream(bool force) {
+    if (force) {
+      debugPrint("requested close with force: true");
+    } else {
+      debugPrint("requested close with force: false");
+    }
+    if (_hasGameEnded && !_isRobotConnected || force) {
+      debugPrint("Stopping recording waiting for timer");
+      _stopRecordingTimer?.cancel();
+      _stopRecordingTimer = Timer(_recordingStopDelay, () {
+        debugPrint("Stopped recording");
+        ScreenRecorder.stop();
+        _stopRecordingTimer = null;
+      });
+    }
+  }
+
   void _onRobotDisconnected() {
-    _stopRecordingOnDisconnectTimer?.cancel();
-    _stopRecordingOnDisconnectTimer = Timer(_recordingStopDelay, () {
-      ScreenRecorder.stopAndWait();
-      _stopRecordingOnDisconnectTimer = null;
-    });
+    _isRobotConnected = false;
+    _closeStream(false);
   }
 
   void _onRobotConnected() {
-    _stopRecordingOnDisconnectTimer?.cancel();
-    _stopRecordingOnDisconnectTimer = null;
+    _isRobotConnected = true;
+    _stopRecordingTimer?.cancel();
+    _stopRecordingTimer = null;
   }
 
   @override
   void dispose() {
     _stopRecordingTimer?.cancel();
-    _stopRecordingOnDisconnectTimer?.cancel();
     widget.ntConnection.removeDisconnectedListener(_onRobotDisconnected);
     widget.ntConnection.removeConnectedListener(_onRobotConnected);
     super.dispose();

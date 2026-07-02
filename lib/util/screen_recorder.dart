@@ -10,7 +10,7 @@ class ScreenRecorder {
     await FFmpegKit.executeAsync(ffmpegCommand);
   }
 
-  static void stopAndWait() {
+  static void stop() {
     isRecording = false;
     Future<void>.delayed(const Duration(seconds: 1), () {
       FFmpegKitExtended.cancelAllSessions();
