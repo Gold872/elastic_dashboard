@@ -15,13 +15,15 @@ class ToggleButton extends NTWidget {
     SingleTopicNTWidgetModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         bool value = tryCast(data) ?? false;
 
-        String buttonText = model.topic.substring(
-          model.topic.lastIndexOf('/') + 1,
-        );
+        String buttonText = (model.topic != null)
+            ? model.topic!.substring(
+                model.topic!.lastIndexOf('/') + 1,
+              )
+            : '';
 
         Size buttonSize = MediaQuery.of(context).size;
 

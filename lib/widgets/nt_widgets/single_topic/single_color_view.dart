@@ -15,7 +15,7 @@ class SingleColorView extends NTWidget {
     SingleTopicNTWidgetModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         String hexString = tryCast(data) ?? '';
 

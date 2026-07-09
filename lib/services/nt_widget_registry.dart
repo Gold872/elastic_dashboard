@@ -58,7 +58,7 @@ typedef NTModelProvider<T extends NTWidgetModel> =
     T Function({
       required NTConnection ntConnection,
       required SharedPreferences preferences,
-      required String topic,
+      required String? topic,
       NT4Type? dataType,
       double? period,
       NT4StructMeta? ntStructMeta,
@@ -68,13 +68,15 @@ typedef MultiTopicNTModelProvider<T extends MultiTopicNTWidgetModel> =
     T Function({
       required NTConnection ntConnection,
       required SharedPreferences preferences,
-      required String topic,
+      required String? topic,
       double? period,
     });
 
 typedef NTWidgetProvider<T extends NTWidget> = T Function({Key? key});
 
 class NTWidgetRegistry {
+  static final List<String> _registeredNames = [];
+
   static final Map<String, NTWidgetProvider> _widgetNameBuildMap = {};
 
   static final Map<String, NTModelProvider> _modelNameBuildMap = {};
@@ -88,6 +90,9 @@ class NTWidgetRegistry {
   static final Map<String, double> _defaultHeightMap = {};
 
   static const double _normalSize = 128.0;
+
+  static List<String> get registeredWidgetNames =>
+      _registeredNames.toList(growable: false);
 
   NTWidgetRegistry._();
 
@@ -442,7 +447,7 @@ class NTWidgetRegistry {
     SharedPreferences preferences,
     NT4StructMeta? ntStructMeta,
     String type,
-    String topic, {
+    String? topic, {
     NT4Type? dataType,
     double? period,
   }) {
@@ -617,7 +622,7 @@ class NTWidgetRegistry {
         ({
           required NTConnection ntConnection,
           required SharedPreferences preferences,
-          required String topic,
+          required String? topic,
           double? period,
           NT4Type? dataType,
           NT4StructMeta? ntStructMeta,
@@ -649,7 +654,7 @@ class NTWidgetRegistry {
         ({
           required NTConnection ntConnection,
           required SharedPreferences preferences,
-          required String topic,
+          required String? topic,
           double? period,
           NT4Type? dataType,
           NT4StructMeta? ntStructMeta,
@@ -719,6 +724,7 @@ class NTWidgetRegistry {
     required double? defaultWidth,
     required double? defaultHeight,
   }) {
+    _registeredNames.add(names.first);
     for (String name in names) {
       register(
         name: name,

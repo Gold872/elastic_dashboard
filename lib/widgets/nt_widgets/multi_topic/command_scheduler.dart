@@ -19,15 +19,15 @@ class CommandSchedulerModel extends MultiTopicNTWidgetModel {
   String get idsTopicName => '$topic/Ids';
   String get cancelTopicName => '$topic/Cancel';
 
-  late NT4Subscription namesSubscription;
-  late NT4Subscription idsSubscription;
-  late NT4Subscription cancelSubscription;
+  NT4Subscription? namesSubscription;
+  NT4Subscription? idsSubscription;
+  NT4Subscription? cancelSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    namesSubscription,
-    idsSubscription,
-    cancelSubscription,
+    ?namesSubscription,
+    ?idsSubscription,
+    ?cancelSubscription,
   ];
 
   CommandSchedulerModel({
@@ -45,6 +45,13 @@ class CommandSchedulerModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      namesSubscription = null;
+      idsSubscription = null;
+      cancelSubscription = null;
+      return;
+    }
+
     namesSubscription = ntConnection.subscribe(namesTopicName, super.period);
     idsSubscription = ntConnection.subscribe(idsTopicName, super.period);
     cancelSubscription = ntConnection.subscribe(cancelTopicName, super.period);
@@ -59,7 +66,7 @@ class CommandSchedulerModel extends MultiTopicNTWidgetModel {
 
   void cancelCommand(int id) {
     List<Object?> currentCancellationsRaw =
-        cancelSubscription.value?.tryCast<List<Object?>>() ?? [];
+        cancelSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
     List<int> currentCancellations = currentCancellationsRaw
         .whereType<int>()
@@ -93,10 +100,10 @@ class CommandSchedulerWidget extends NTWidget {
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, child) {
         List<Object?> rawNames =
-            model.namesSubscription.value?.tryCast<List<Object?>>() ?? [];
+            model.namesSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
         List<Object?> rawIds =
-            model.idsSubscription.value?.tryCast<List<Object?>>() ?? [];
+            model.idsSubscription?.value?.tryCast<List<Object?>>() ?? [];
 
         List<String> names = rawNames.whereType<String>().toList();
         List<int> ids = rawIds.whereType<int>().toList();

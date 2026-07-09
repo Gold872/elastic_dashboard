@@ -204,11 +204,12 @@ class NTWidgetContainerModel extends WidgetContainerModel {
         Flexible(
           child: DialogTextInput(
             onSubmit: (value) {
-              childModel.topic = value;
+              childModel.topic = value.isNotEmpty ? value : null;
               childModel.resetSubscription();
             },
             label: 'Topic',
             initialText: childModel.topic,
+            allowEmptySubmission: true,
           ),
         ),
         const SizedBox(width: 5),

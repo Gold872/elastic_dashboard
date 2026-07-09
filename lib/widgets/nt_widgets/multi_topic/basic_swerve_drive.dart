@@ -32,28 +32,28 @@ class BasicSwerveModel extends MultiTopicNTWidgetModel {
 
   String get robotAngleTopic => '$topic/Robot Angle';
 
-  late NT4Subscription frontLeftAngleSubscription;
-  late NT4Subscription frontLeftVelocitySubscription;
-  late NT4Subscription frontRightAngleSubscription;
-  late NT4Subscription frontRightVelocitySubscription;
-  late NT4Subscription backLeftAngleSubscription;
-  late NT4Subscription backLeftVelocitySubscription;
-  late NT4Subscription backRightAngleSubscription;
-  late NT4Subscription backRightVelocitySubscription;
+  NT4Subscription? frontLeftAngleSubscription;
+  NT4Subscription? frontLeftVelocitySubscription;
+  NT4Subscription? frontRightAngleSubscription;
+  NT4Subscription? frontRightVelocitySubscription;
+  NT4Subscription? backLeftAngleSubscription;
+  NT4Subscription? backLeftVelocitySubscription;
+  NT4Subscription? backRightAngleSubscription;
+  NT4Subscription? backRightVelocitySubscription;
 
-  late NT4Subscription robotAngleSubscription;
+  NT4Subscription? robotAngleSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    frontLeftAngleSubscription,
-    frontLeftVelocitySubscription,
-    frontRightAngleSubscription,
-    frontRightVelocitySubscription,
-    backLeftAngleSubscription,
-    backLeftVelocitySubscription,
-    backRightAngleSubscription,
-    backRightVelocitySubscription,
-    robotAngleSubscription,
+    ?frontLeftAngleSubscription,
+    ?frontLeftVelocitySubscription,
+    ?frontRightAngleSubscription,
+    ?frontRightVelocitySubscription,
+    ?backLeftAngleSubscription,
+    ?backLeftVelocitySubscription,
+    ?backRightAngleSubscription,
+    ?backRightVelocitySubscription,
+    ?robotAngleSubscription,
   ];
 
   bool _showRobotRotation = true;
@@ -88,6 +88,20 @@ class BasicSwerveModel extends MultiTopicNTWidgetModel {
   }
 
   void initSubscriptions() {
+    if (topic == null) {
+      frontLeftAngleSubscription = null;
+      frontLeftVelocitySubscription = null;
+      frontRightAngleSubscription = null;
+      frontRightVelocitySubscription = null;
+      backLeftAngleSubscription = null;
+      backLeftVelocitySubscription = null;
+      backRightAngleSubscription = null;
+      backRightVelocitySubscription = null;
+
+      robotAngleSubscription = null;
+      return;
+    }
+
     frontLeftAngleSubscription = ntConnection.subscribe(
       frontLeftAngleTopic,
       super.period,
@@ -218,26 +232,26 @@ class SwerveDriveWidget extends NTWidget {
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, child) {
         double frontLeftAngle =
-            tryCast(model.frontLeftAngleSubscription.value) ?? 0.0;
+            tryCast(model.frontLeftAngleSubscription?.value) ?? 0.0;
         double frontLeftVelocity =
-            tryCast(model.frontLeftVelocitySubscription.value) ?? 0.0;
+            tryCast(model.frontLeftVelocitySubscription?.value) ?? 0.0;
 
         double frontRightAngle =
-            tryCast(model.frontRightAngleSubscription.value) ?? 0.0;
+            tryCast(model.frontRightAngleSubscription?.value) ?? 0.0;
         double frontRightVelocity =
-            tryCast(model.frontRightVelocitySubscription.value) ?? 0.0;
+            tryCast(model.frontRightVelocitySubscription?.value) ?? 0.0;
 
         double backLeftAngle =
-            tryCast(model.backLeftAngleSubscription.value) ?? 0.0;
+            tryCast(model.backLeftAngleSubscription?.value) ?? 0.0;
         double backLeftVelocity =
-            tryCast(model.backLeftVelocitySubscription.value) ?? 0.0;
+            tryCast(model.backLeftVelocitySubscription?.value) ?? 0.0;
 
         double backRightAngle =
-            tryCast(model.backRightAngleSubscription.value) ?? 0.0;
+            tryCast(model.backRightAngleSubscription?.value) ?? 0.0;
         double backRightVelocity =
-            tryCast(model.backRightVelocitySubscription.value) ?? 0.0;
+            tryCast(model.backRightVelocitySubscription?.value) ?? 0.0;
 
-        double robotAngle = tryCast(model.robotAngleSubscription.value) ?? 0.0;
+        double robotAngle = tryCast(model.robotAngleSubscription?.value) ?? 0.0;
 
         if (model.rotationUnit == 'Degrees') {
           frontLeftAngle = radians(frontLeftAngle);

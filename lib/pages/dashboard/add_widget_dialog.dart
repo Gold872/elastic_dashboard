@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 
+import 'package:collection/collection.dart';
 import 'package:popover/popover.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
+import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/layout_drag_tile.dart';
+import 'package:elastic_dashboard/widgets/dialog_widgets/nt_widget_drag_tile.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/layout_container_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_dialog.dart';
@@ -94,7 +97,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
               const TabBar(
                 tabs: [
                   Tab(text: 'Network Tables'),
-                  Tab(text: 'Layouts'),
+                  Tab(text: 'Widgets'),
                 ],
               ),
               const SizedBox(height: 5),
@@ -114,6 +117,23 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                     ),
                     ListView(
                       children: [
+                        ExpansionTile(
+                          title: const Text('Network Tables Widgets'),
+                          children: NTWidgetRegistry.registeredWidgetNames
+                              .sorted((a, b) => a.compareTo(b))
+                              .map(
+                                (widgetName) => NTWidgetDragTile(
+                                  ntConnection: widget.ntConnection,
+                                  preferences: widget.preferences,
+                                  gridIndex: widget.gridIndex,
+                                  widgetName: widgetName,
+                                  onDragUpdate: widget.onNTDragUpdate,
+                                  onDragEnd: widget.onNTDragEnd,
+                                  onRemoveWidget: () => onRemove(widget.grid),
+                                ),
+                              )
+                              .toList(),
+                        ),
                         LayoutDragTile(
                           gridIndex: widget.gridIndex,
                           title: 'List Layout',

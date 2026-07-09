@@ -10,13 +10,13 @@ class AccelerometerModel extends MultiTopicNTWidgetModel {
   @override
   String type = AccelerometerWidget.widgetType;
 
-  late NT4Subscription _valueSubscription;
-  NT4Subscription get valueSubscription => _valueSubscription;
+  NT4Subscription? _valueSubscription;
+  NT4Subscription? get valueSubscription => _valueSubscription;
 
   String get valueTopic => '$topic/Value';
 
   @override
-  List<NT4Subscription> get subscriptions => [_valueSubscription];
+  List<NT4Subscription> get subscriptions => [?_valueSubscription];
 
   AccelerometerModel({
     required super.ntConnection,
@@ -33,6 +33,11 @@ class AccelerometerModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      _valueSubscription = null;
+      return;
+    }
+
     _valueSubscription = ntConnection.subscribe(valueTopic, super.period);
   }
 }
@@ -47,7 +52,7 @@ class AccelerometerWidget extends NTWidget {
     AccelerometerModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.valueSubscription,
+      valueListenable: model.valueSubscription ?? ValueNotifier(null),
       builder: (context, data, child) {
         double value = tryCast(data) ?? 0.0;
 

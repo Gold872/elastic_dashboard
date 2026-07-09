@@ -21,17 +21,17 @@ class ProfiledPIDControllerModel extends MultiTopicNTWidgetModel {
   NT4Topic? _kdTopic;
   NT4Topic? _goalTopic;
 
-  late NT4Subscription kpSubscription;
-  late NT4Subscription kiSubscription;
-  late NT4Subscription kdSubscription;
-  late NT4Subscription goalSubscription;
+  NT4Subscription? kpSubscription;
+  NT4Subscription? kiSubscription;
+  NT4Subscription? kdSubscription;
+  NT4Subscription? goalSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
-    kpSubscription,
-    kiSubscription,
-    kdSubscription,
-    goalSubscription,
+    ?kpSubscription,
+    ?kiSubscription,
+    ?kdSubscription,
+    ?goalSubscription,
   ];
 
   TextEditingController? kpTextController;
@@ -59,6 +59,14 @@ class ProfiledPIDControllerModel extends MultiTopicNTWidgetModel {
 
   @override
   void initializeSubscriptions() {
+    if (topic == null) {
+      kpSubscription = null;
+      kiSubscription = null;
+      kdSubscription = null;
+      goalSubscription = null;
+      return;
+    }
+
     kpSubscription = ntConnection.subscribe(kpTopicName, super.period);
     kiSubscription = ntConnection.subscribe(kiTopicName, super.period);
     kdSubscription = ntConnection.subscribe(kdTopicName, super.period);
@@ -166,10 +174,10 @@ class ProfiledPIDControllerWidget extends NTWidget {
         model.goalTextController,
       ]),
       builder: (context, child) {
-        double kP = tryCast(model.kpSubscription.value) ?? 0.0;
-        double kI = tryCast(model.kiSubscription.value) ?? 0.0;
-        double kD = tryCast(model.kdSubscription.value) ?? 0.0;
-        double goal = tryCast(model.goalSubscription.value) ?? 0.0;
+        double kP = tryCast(model.kpSubscription?.value) ?? 0.0;
+        double kI = tryCast(model.kiSubscription?.value) ?? 0.0;
+        double kD = tryCast(model.kdSubscription?.value) ?? 0.0;
+        double goal = tryCast(model.goalSubscription?.value) ?? 0.0;
 
         // Creates the text editing controllers if they are null
         bool wasNull =

@@ -15,7 +15,7 @@ class LargeTextDisplay extends NTWidget {
     SingleTopicNTWidgetModel model = cast(context.watch<NTWidgetModel>());
 
     return ValueListenableBuilder(
-      valueListenable: model.subscription!,
+      valueListenable: model.subscription ?? ValueNotifier(null),
       builder: (context, value, _) {
         String data = value?.toString() ?? '';
 
