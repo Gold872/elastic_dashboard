@@ -6,7 +6,7 @@ Priority: optional
 Maintainer: Elastic
 Architecture: all
 Source: local
-X-Port: 5806
+X-Port: 5803
 X-Display-Name: Elastic
 X-Has-UI: true
 X-Auto-Start: true
