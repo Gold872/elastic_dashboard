@@ -288,12 +288,14 @@ class _ElasticState extends State<Elastic> {
 
   bool _hasGameEnded = false;
   bool _isRobotConnected = true;
+  bool _isFMSConnected = false;
+  bool _isEnabled = false;
   Timer? _stopRecordingTimer;
   Timer? _hasGameEndedTimer;
   final Duration _recordingStopDelay = const Duration(seconds: 5);
   final Duration _matchDuration = const Duration(
-    seconds: 15,
-  ); // 2 minutes and 40 seconds
+    seconds: 160,
+  );
 
   @override
   void initState() {
@@ -302,22 +304,34 @@ class _ElasticState extends State<Elastic> {
       '/Match/Enabled',
     );
 
+    final NT4Subscription fmsConnectedSubscription = widget.ntConnection
+        .subscribe(
+          '/Match/FMSConnected',
+        );
+    fmsConnectedSubscription.listen((fmsConnected, _) {
+      _isFMSConnected = fmsConnected == true;
+    });
+
     enabledSubscription.listen((enabled, _) async {
+      _isEnabled = enabled == true;
       if (enabled == true) {
+        //enable
         _stopRecordingTimer?.cancel();
         _stopRecordingTimer = null;
+        _hasGameEndedTimer?.cancel();
+        _hasGameEndedTimer = null;
 
         if (!ScreenRecorder.isRecording) {
           ScreenRecorder.start();
           _hasGameEnded = false;
           _hasGameEndedTimer = Timer(_matchDuration, () {
             _hasGameEnded = true;
-            _closeStream(false);
+            _closeStream();
           });
         }
       } else {
         // disable
-        _closeStream(true);
+        _closeStream();
       }
     });
 
@@ -325,32 +339,26 @@ class _ElasticState extends State<Elastic> {
     widget.ntConnection.addConnectedListener(_onRobotConnected);
   }
 
-  void _closeStream(bool force) {
-    if (force) {
-      debugPrint("requested close with force: true");
-    } else {
-      debugPrint("requested close with force: false");
-    }
-    if (_hasGameEnded && !_isRobotConnected || force) {
-      debugPrint("Stopping recording waiting for timer");
-      _stopRecordingTimer?.cancel();
-      _stopRecordingTimer = Timer(_recordingStopDelay, () {
-        debugPrint("Stopped recording");
+  void _closeStream() {
+    debugPrint('Stopping recording waiting for timer');
+    _stopRecordingTimer?.cancel();
+    _stopRecordingTimer = Timer(_recordingStopDelay, () {
+      if ((_hasGameEnded || !_isFMSConnected) &&
+          (!_isRobotConnected || !_isEnabled)) {
+        debugPrint('Stopped recording');
         ScreenRecorder.stop();
         _stopRecordingTimer = null;
-      });
-    }
+      }
+    });
   }
 
   void _onRobotDisconnected() {
     _isRobotConnected = false;
-    _closeStream(false);
+    _closeStream();
   }
 
   void _onRobotConnected() {
     _isRobotConnected = true;
-    _stopRecordingTimer?.cancel();
-    _stopRecordingTimer = null;
   }
 
   @override
