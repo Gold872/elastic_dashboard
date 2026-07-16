@@ -98,6 +98,10 @@ public final class Elastic {
     @JsonProperty("height")
     private double height;
 
+    private static final int DEFAULT_DISPLAY_TIME = 3000;
+    private static final double DEFAULT_WIDTH = 350;
+    private static final double AUTO_HEIGHT = -1;
+
     /**
      * Creates a new Notification with all default parameters. This constructor is intended to be
      * used with the chainable decorator methods
@@ -141,7 +145,7 @@ public final class Elastic {
      * @param description the descriptive text of the notification
      */
     public Notification(NotificationLevel level, String title, String description) {
-      this(level, title, description, 3000, 350, -1);
+      this(level, title, description, DEFAULT_DISPLAY_TIME, DEFAULT_WIDTH, AUTO_HEIGHT);
     }
 
     /**
@@ -154,7 +158,7 @@ public final class Elastic {
      */
     public Notification(
         NotificationLevel level, String title, String description, int displayTimeMillis) {
-      this(level, title, description, displayTimeMillis, 350, -1);
+      this(level, title, description, displayTimeMillis, DEFAULT_WIDTH, AUTO_HEIGHT);
     }
 
     /**
@@ -169,7 +173,7 @@ public final class Elastic {
      */
     public Notification(
         NotificationLevel level, String title, String description, double width, double height) {
-      this(level, title, description, 3000, width, height);
+      this(level, title, description, DEFAULT_DISPLAY_TIME, width, height);
     }
 
     /**
