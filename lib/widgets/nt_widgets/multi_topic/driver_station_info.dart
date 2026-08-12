@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:patterns_canvas/patterns_canvas.dart';
