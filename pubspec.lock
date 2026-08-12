@@ -505,14 +505,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.5.4"
-  import_sorter:
-    dependency: "direct main"
-    description:
-      name: import_sorter
-      sha256: eb15738ccead84e62c31e0208ea4e3104415efcd4972b86906ca64a1187d0836
-      url: "https://pub.dev"
-    source: hosted
-    version: "4.6.0"
   intl:
     dependency: "direct main"
     description:
@@ -1023,6 +1015,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.7.12"
+  tidy_imports:
+    dependency: "direct dev"
+    description:
+      name: tidy_imports
+      sha256: b0a1dd187db8e31e56fbed8eb1406f6d530db9c6e96ee9a0bbf531db18cbbdc1
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   tint:
     dependency: transitive
     description:

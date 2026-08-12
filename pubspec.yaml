@@ -14,6 +14,7 @@ dependencies:
   dropdown_button2: ^2.3.9
   elegant_notification: ^2.5.1
   file_selector: ^1.0.4
+  fl_chart: ^1.1.1
   flex_seed_scheme: ^3.6.1
   flutter:
     sdk: flutter
@@ -28,7 +29,6 @@ dependencies:
       ref: elastic-version
   github: ^9.25.0
   http: ^1.6.0
-  import_sorter: ^4.6.0
   intl: ^0.20.2
   logger: ^2.6.2
   material_ui: any
@@ -45,7 +45,6 @@ dependencies:
   screen_retriever: ^0.2.0
   searchable_listview: ^2.19.3
   shared_preferences: ^2.5.3
-  fl_chart: ^1.1.1
   titlebar_buttons: ^1.0.0
   transitioned_indexed_stack: ^1.0.2
   url_launcher: ^6.3.2
@@ -58,11 +57,12 @@ dependencies:
   window_manager: ^0.5.1
 
 dev_dependencies:
+  build_runner: ^2.10.4
+  flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  flutter_lints: ^6.0.0
   mockito: ^5.5.1
-  build_runner: ^2.10.4
+  tidy_imports: ^1.2.0
 
 flutter:
   uses-material-design: true
@@ -81,10 +81,13 @@ flutter:
     - assets/fields/ftc/
     - assets/third_party_licenses/
 
-import_sorter:
+tidy_imports:
   comments: false
   ignored_files:
     - /*.mocks.dart
+  tiers:
+    - name: "Material UI:"
+      pattern: "package:material_ui"
 
 flutter_launcher_icons:
   image_path: "assets/logos/logo.png"

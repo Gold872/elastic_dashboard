@@ -1,10 +1,10 @@
 import 'dart:typed_data';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:patterns_canvas/patterns_canvas.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
