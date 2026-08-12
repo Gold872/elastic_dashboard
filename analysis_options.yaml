@@ -7,3 +7,13 @@ linter:
   rules:
     prefer_single_quotes: true
     prefer_expression_function_bodies: true
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**

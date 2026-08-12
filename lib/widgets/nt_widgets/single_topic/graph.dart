@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:math' show ln10, log, max, min, pow;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:fl_chart/fl_chart.dart';

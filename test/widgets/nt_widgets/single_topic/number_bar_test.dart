@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geekyants_flutter_gauges/geekyants_flutter_gauges.dart';

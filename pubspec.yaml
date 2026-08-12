@@ -31,6 +31,7 @@ dependencies:
   import_sorter: ^4.6.0
   intl: ^0.20.2
   logger: ^2.6.2
+  material_ui: any
   msgpack_dart:
     git:
       url: https://github.com/TheTripleV/msgpack_dart.git
