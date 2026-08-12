@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:collection/collection.dart';
 import 'package:flutter_box_transform/flutter_box_transform.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 class DraggableDialog extends StatefulWidget {
   final Widget dialog;

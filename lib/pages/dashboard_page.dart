@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'package:collection/collection.dart';
@@ -13,6 +12,8 @@ import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard/add_widget_dialog.dart';
 import 'package:elastic_dashboard/pages/dashboard/dashboard_page_footer.dart';

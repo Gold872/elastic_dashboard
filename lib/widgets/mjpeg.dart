@@ -2,10 +2,11 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
 
 import 'package:http/http.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';

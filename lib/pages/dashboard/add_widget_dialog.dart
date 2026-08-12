@@ -1,7 +1,7 @@
-import 'package:material_ui/material_ui.dart';
-
 import 'package:popover/popover.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/widgets/camera_stream_list.dart';

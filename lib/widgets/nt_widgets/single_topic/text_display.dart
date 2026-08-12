@@ -1,8 +1,8 @@
-import 'package:material_ui/material_ui.dart';
-
 import 'package:decimal/decimal.dart';
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/settings.dart';

@@ -1,6 +1,6 @@
-import 'package:material_ui/material_ui.dart';
-
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/settings.dart';

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'package:elegant_notification/elegant_notification.dart';
@@ -11,6 +10,8 @@ import 'package:http/http.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:titlebar_buttons/titlebar_buttons.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/elastic_layout_downloader.dart';

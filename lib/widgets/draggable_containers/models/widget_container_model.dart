@@ -1,8 +1,8 @@
-import 'package:material_ui/material_ui.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';

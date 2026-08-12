@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' show radians;
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';

@@ -1,9 +1,9 @@
 import 'dart:io';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/main.dart';
 import 'package:elastic_dashboard/services/field_images.dart';

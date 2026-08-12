@@ -2,13 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'package:collection/collection.dart';
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';

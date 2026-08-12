@@ -1,8 +1,8 @@
 import 'dart:ui';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:collection/collection.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 class ContextMenuListener extends StatefulWidget {
   final HitTestBehavior? behavior;

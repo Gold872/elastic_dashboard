@@ -1,9 +1,10 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:geekyants_flutter_gauges/geekyants_flutter_gauges.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
