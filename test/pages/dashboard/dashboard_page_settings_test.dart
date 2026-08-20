@@ -9,6 +9,7 @@ import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
+
 import '../../test_util.dart';
 import '../../test_util.mocks.dart';
 

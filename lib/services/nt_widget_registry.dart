@@ -47,22 +47,20 @@ import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/toggle_button.
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/voltage_view.dart';
 
-typedef NTModelJsonProvider<T extends NTWidgetModel> =
-    T Function({
-      required Map<String, dynamic> jsonData,
-      required NTConnection ntConnection,
-      required SharedPreferences preferences,
-    });
+typedef NTModelJsonProvider<T extends NTWidgetModel> = T Function({
+  required Map<String, dynamic> jsonData,
+  required NTConnection ntConnection,
+  required SharedPreferences preferences,
+});
 
-typedef NTModelProvider<T extends NTWidgetModel> =
-    T Function({
-      required NTConnection ntConnection,
-      required SharedPreferences preferences,
-      required String topic,
-      NT4Type? dataType,
-      double? period,
-      NT4StructMeta? ntStructMeta,
-    });
+typedef NTModelProvider<T extends NTWidgetModel> = T Function({
+  required NTConnection ntConnection,
+  required SharedPreferences preferences,
+  required String topic,
+  NT4Type? dataType,
+  double? period,
+  NT4StructMeta? ntStructMeta,
+});
 
 typedef MultiTopicNTModelProvider<T extends MultiTopicNTWidgetModel> =
     T Function({

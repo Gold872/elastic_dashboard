@@ -241,8 +241,7 @@ class SplitButtonChooser extends NTWidget {
         const SizedBox(width: 5),
         (showWarning)
             ? const Tooltip(
-                message:
-                    'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
+                message: 'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
                 child: Icon(Icons.priority_high, color: Colors.red),
               )
             : const Icon(Icons.check, color: Colors.green),

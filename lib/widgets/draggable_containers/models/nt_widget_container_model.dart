@@ -11,9 +11,9 @@ import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/empty_nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
-import 'widget_container_model.dart';
 
 class NTWidgetContainerModel extends WidgetContainerModel {
   final NTConnection ntConnection;

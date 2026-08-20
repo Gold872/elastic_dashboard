@@ -443,8 +443,7 @@ mixin DashboardPageLayouts on DashboardPageViewModel {
     if (layoutsResponse.data.isEmpty) {
       showErrorNotification(
         title: 'Failed to Retrieve Layout List',
-        message:
-            'No layouts were found, ensure a valid layout json file is placed in the root directory of your deploy directory.',
+        message: 'No layouts were found, ensure a valid layout json file is placed in the root directory of your deploy directory.',
         width: 400,
       );
       return;

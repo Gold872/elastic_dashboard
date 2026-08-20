@@ -38,6 +38,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
 import 'package:elastic_dashboard/widgets/tab_grid.dart';
+
 import '../services/elastic_layout_downloader_test.dart';
 import '../test_util.dart';
 import '../test_util.mocks.dart';
@@ -1665,8 +1666,7 @@ void main() {
       expect(
         editableTabBarWidget().currentIndex,
         1,
-        reason:
-            'Tab index should not change since index is equal to number of tabs',
+        reason: 'Tab index should not change since index is equal to number of tabs',
       );
 
       await widgetTester.tap(tabLeftButton);
@@ -1714,8 +1714,7 @@ void main() {
       expect(
         editableTabBarWidget().currentIndex,
         1,
-        reason:
-            'Tab index should not change since index is equal to number of tabs',
+        reason: 'Tab index should not change since index is equal to number of tabs',
       );
 
       await widgetTester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);

@@ -15,6 +15,7 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
+
 import '../test_util.dart';
 
 class FakeSettingsMethods extends Mock {

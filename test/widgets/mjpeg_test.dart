@@ -9,6 +9,7 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
 import 'package:elastic_dashboard/widgets/mjpeg.dart';
+
 import '../test_util.dart';
 import '../test_util.mocks.dart';
 
