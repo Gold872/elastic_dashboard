@@ -45,13 +45,11 @@ import 'package:window_manager/window_manager.dart'
 enum LayoutDownloadMode {
   overwrite(
     name: 'Overwrite',
-    description:
-        'Keeps existing tabs that are not defined in the remote layout. Any tabs that are defined in the remote layout will be overwritten locally.',
+    description: 'Keeps existing tabs that are not defined in the remote layout. Any tabs that are defined in the remote layout will be overwritten locally.',
   ),
   merge(
     name: 'Merge',
-    description:
-        'Merge the downloaded layout with the existing one. If a new widget cannot be properly placed, it will not be added.',
+    description: 'Merge the downloaded layout with the existing one. If a new widget cannot be properly placed, it will not be added.',
   ),
   reload(
     name: 'Full Reload',

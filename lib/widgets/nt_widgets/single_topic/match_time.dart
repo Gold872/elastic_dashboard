@@ -100,8 +100,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
           children: [
             Flexible(
               child: Tooltip(
-                message:
-                    'The time (in seconds) where time will begin to display in red',
+                message: 'The time (in seconds) where time will begin to display in red',
                 waitDuration: const Duration(milliseconds: 750),
                 child: DialogTextInput(
                   label: 'Red Start Time',
@@ -121,8 +120,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
             ),
             Flexible(
               child: Tooltip(
-                message:
-                    'The time (in seconds) where time will begin to display in yellow',
+                message: 'The time (in seconds) where time will begin to display in yellow',
                 waitDuration: const Duration(milliseconds: 750),
                 child: DialogTextInput(
                   label: 'Yellow Start Time',

@@ -4,6 +4,7 @@ import 'package:mockito/mockito.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
+
 import '../../test_util.dart';
 
 class MockColorCallback extends Mock {

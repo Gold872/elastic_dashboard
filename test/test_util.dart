@@ -11,6 +11,7 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:elastic_dashboard/services/update_checker.dart';
+
 import 'test_util.mocks.dart';
 
 @GenerateNiceMocks([

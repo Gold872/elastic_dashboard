@@ -45,8 +45,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
 
   bool _showRobotRotation = true;
   bool _showDesiredStates = true;
-  double _angleOffset =
-      0; // Modifiable angle offset to allow all kinds of swerve libraries setups
+  double _angleOffset = 0; // Modifiable angle offset to allow all kinds of swerve libraries setups
 
   bool get showRobotRotation => _showRobotRotation;
 

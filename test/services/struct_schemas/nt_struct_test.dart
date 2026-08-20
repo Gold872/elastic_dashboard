@@ -401,8 +401,7 @@ void main() {
     test('Decoding all possible primitive types', () {
       final schema = NTStructSchema.parse(
         name: 'TestStruct',
-        schema:
-            'bool val1; char val2; int8 val3; int16 val4; int32 val5; int64 val6; uint8 val7; uint16 val8; uint32 val9; uint64 val10; float val11; double val12',
+        schema: 'bool val1; char val2; int8 val3; int16 val4; int32 val5; int64 val6; uint8 val7; uint16 val8; uint32 val9; uint64 val10; float val11; double val12',
       );
 
       List<dynamic> expectedData = [

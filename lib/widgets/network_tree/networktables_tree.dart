@@ -16,11 +16,10 @@ import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_con
 import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree_row.dart';
 
-typedef ListLayoutBuilder =
-    ListLayoutModel Function({
-      required String title,
-      required List<NTWidgetContainerModel> children,
-    });
+typedef ListLayoutBuilder = ListLayoutModel Function({
+  required String title,
+  required List<NTWidgetContainerModel> children,
+});
 
 class NetworkTableTree extends StatefulWidget {
   final NTConnection ntConnection;

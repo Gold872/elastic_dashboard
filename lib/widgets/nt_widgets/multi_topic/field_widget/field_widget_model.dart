@@ -696,8 +696,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
       children: [
         Tooltip(
           waitDuration: const Duration(milliseconds: 100),
-          message:
-              'If turned on, the robot will be able to drive off the field and remain visible.\nIf turned off, a circular indicator will be visible when the robot goes off the field.',
+          message: 'If turned on, the robot will be able to drive off the field and remain visible.\nIf turned off, a circular indicator will be visible when the robot goes off the field.',
           child: Icon(Icons.help),
         ),
         const SizedBox(width: 5),
