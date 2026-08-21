@@ -19,8 +19,8 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.d
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/driver_station_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/pid_controller.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/power_distribution.dart';
@@ -102,7 +102,7 @@ void main() async {
     expect(find.bySubtype<BooleanBox>(), findsNWidgets(2));
     expect(find.bySubtype<FieldWidget>(), findsOneWidget);
     expect(find.bySubtype<PowerDistribution>(), findsOneWidget);
-    expect(find.bySubtype<FMSInfo>(), findsOneWidget);
+    expect(find.bySubtype<DriverStationInfo>(), findsOneWidget);
     expect(find.bySubtype<Gyro>(), findsOneWidget);
     expect(find.bySubtype<CameraStreamWidget>(), findsOneWidget);
     expect(find.bySubtype<MatchTimeWidget>(), findsOneWidget);
