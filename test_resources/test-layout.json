@@ -150,14 +150,14 @@
             }
           },
           {
-            "title": "FMSInfo",
+            "title": "DSInfo",
             "x": 256.0,
             "y": 256.0,
             "width": 384.0,
             "height": 128.0,
-            "type": "FMSInfo",
+            "type": "DSInfo",
             "properties": {
-              "topic": "/FMSInfo",
+              "topic": "/DriverStation",
               "period": 0.033
             }
           },
