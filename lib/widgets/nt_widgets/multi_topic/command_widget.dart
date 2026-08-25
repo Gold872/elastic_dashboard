@@ -47,12 +47,10 @@ class CommandModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool showType = true,
-    bool maximizeButtonSpace = false,
+    this._showType = true,
+    this._maximizeButtonSpace = false,
     super.period,
-  }) : _showType = showType,
-       _maximizeButtonSpace = maximizeButtonSpace,
-       super();
+  }) : super();
 
   CommandModel.fromJson({
     required super.ntConnection,

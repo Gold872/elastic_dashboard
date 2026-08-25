@@ -56,18 +56,14 @@ class BooleanBoxModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    Color trueColor = Colors.green,
-    Color falseColor = Colors.red,
-    String trueIcon = 'None',
-    String falseIcon = 'None',
+    this._trueColor = Colors.green,
+    this._falseColor = Colors.red,
+    this._trueIcon = 'None',
+    this._falseIcon = 'None',
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _falseColor = falseColor,
-       _trueColor = trueColor,
-       _trueIcon = trueIcon,
-       _falseIcon = falseIcon,
-       super();
+  }) : super();
 
   BooleanBoxModel.fromJson({
     required super.ntConnection,

@@ -72,14 +72,11 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool showRobotRotation = true,
-    bool showDesiredStates = true,
-    double angleOffset = 0.0,
+    this._showRobotRotation = true,
+    this._showDesiredStates = true,
+    this._angleOffset = 0.0,
     super.period,
-  }) : _showDesiredStates = showDesiredStates,
-       _showRobotRotation = showRobotRotation,
-       _angleOffset = angleOffset,
-       super();
+  }) : super();
 
   YAGSLSwerveDriveModel.fromJson({
     required super.ntConnection,
