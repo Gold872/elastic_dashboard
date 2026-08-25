@@ -15,7 +15,7 @@ dependencies:
   elegant_notification: ^2.5.1
   file_selector: ^1.0.4
   fl_chart: ^1.1.1
-  flex_seed_scheme: ^3.6.1
+  flex_seed_scheme: ^5.0.0
   flutter:
     sdk: flutter
   flutter_box_transform: ^0.4.7

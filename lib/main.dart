@@ -314,6 +314,9 @@ class _ElasticState extends State<Elastic> {
       debugShowCheckedModeBanner: false,
       title: appTitle,
       theme: theme,
+      builder: (BuildContext context, Widget? child) =>
+          // ignore: deprecated_member_use
+          MaterialUiCompatibilityBridge(child: child!),
       home: DashboardPage(model: dashboardViewModel),
     );
   }
