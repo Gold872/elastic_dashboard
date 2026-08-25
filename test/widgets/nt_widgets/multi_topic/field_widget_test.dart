@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart' as legacy;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -562,6 +564,10 @@ void main() {
 
     await widgetTester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => legacy.Material(
+          // ignore: deprecated_member_use
+          child: MaterialUiCompatibilityBridge(child: child!),
+        ),
         home: Scaffold(
           body: ChangeNotifierProvider<NTWidgetContainerModel>.value(
             key: key,

@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart' as legacy;
+
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
@@ -125,6 +127,10 @@ void main() {
 
     await widgetTester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => legacy.Material(
+          // ignore: deprecated_member_use
+          child: MaterialUiCompatibilityBridge(child: child!),
+        ),
         home: Scaffold(
           body: ChangeNotifierProvider<NTWidgetModel>.value(
             value: comboBoxChooserModel,
