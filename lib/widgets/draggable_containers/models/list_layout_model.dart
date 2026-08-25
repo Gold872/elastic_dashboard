@@ -265,7 +265,7 @@ class ListLayoutModel extends LayoutContainerModel {
                             ),
                           )
                           .toList(),
-                      onReorder: (oldIndex, newIndex) {
+                      onReorderItem: (oldIndex, newIndex) {
                         setState(() {
                           if (newIndex > oldIndex) {
                             newIndex--;
