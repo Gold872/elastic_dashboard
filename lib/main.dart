@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' as legacy;
 import 'package:flutter/services.dart';
 
 import 'package:collection/collection.dart';
@@ -316,7 +317,7 @@ class _ElasticState extends State<Elastic> {
       theme: theme,
       builder: (BuildContext context, Widget? child) =>
           // ignore: deprecated_member_use
-          MaterialUiCompatibilityBridge(child: child!),
+          legacy.Material(child: MaterialUiCompatibilityBridge(child: child!)),
       home: DashboardPage(model: dashboardViewModel),
     );
   }

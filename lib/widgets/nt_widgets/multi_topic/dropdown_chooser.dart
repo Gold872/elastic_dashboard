@@ -297,82 +297,79 @@ class _StringChooserDropdown extends StatelessWidget {
       message: selected ?? '',
       waitDuration: const Duration(milliseconds: 250),
       child: LayoutBuilder(
-        builder: (context, constraints) => Material(
-          type: MaterialType.transparency,
-          child: DropdownButton2<String>(
-            isExpanded: true,
-            value: selected,
-            selectedItemBuilder: (context) => [
-              ...options.map(
-                (String option) => Container(
-                  alignment: AlignmentDirectional.centerStart,
+        builder: (context, constraints) => DropdownButton2<String>(
+          isExpanded: true,
+          value: selected,
+          selectedItemBuilder: (context) => [
+            ...options.map(
+              (String option) => Container(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text(
+                  option,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+          ],
+          dropdownStyleData: DropdownStyleData(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15.0),
+            ),
+            maxHeight: 250,
+            width: max(constraints.maxWidth, 250),
+          ),
+          dropdownSearchData: DropdownSearchData(
+            searchController: textController,
+            searchMatchFn: (item, searchValue) =>
+                item.value.toString().toLowerCase().contains(
+                  searchValue.toLowerCase(),
+                ),
+            searchInnerWidgetHeight: 50,
+            searchInnerWidget: Container(
+              color: Theme.of(context).colorScheme.surface,
+              height: 50,
+              padding: const EdgeInsets.only(
+                top: 8,
+                bottom: 4,
+                right: 8,
+                left: 8,
+              ),
+              child: TextFormField(
+                expands: true,
+                maxLines: null,
+                controller: textController,
+                decoration: InputDecoration(
+                  isDense: true,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  label: const Text('Search'),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          items: options
+              .map(
+                (String option) => DropdownMenuItem(
+                  value: option,
                   child: Text(
                     option,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ),
-              ),
-            ],
-            dropdownStyleData: DropdownStyleData(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15.0),
-              ),
-              maxHeight: 250,
-              width: max(constraints.maxWidth, 250),
-            ),
-            dropdownSearchData: DropdownSearchData(
-              searchController: textController,
-              searchMatchFn: (item, searchValue) =>
-                  item.value.toString().toLowerCase().contains(
-                    searchValue.toLowerCase(),
-                  ),
-              searchInnerWidgetHeight: 50,
-              searchInnerWidget: Container(
-                color: Theme.of(context).colorScheme.surface,
-                height: 50,
-                padding: const EdgeInsets.only(
-                  top: 8,
-                  bottom: 4,
-                  right: 8,
-                  left: 8,
-                ),
-                child: TextFormField(
-                  expands: true,
-                  maxLines: null,
-                  controller: textController,
-                  decoration: InputDecoration(
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 8,
-                    ),
-                    label: const Text('Search'),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            items: options
-                .map(
-                  (String option) => DropdownMenuItem(
-                    value: option,
-                    child: Text(
-                      option,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                )
-                .toList(),
-            onMenuStateChange: (isOpen) {
-              if (!isOpen) {
-                textController.clear();
-              }
-            },
-            onChanged: onValueChanged,
-          ),
+              )
+              .toList(),
+          onMenuStateChange: (isOpen) {
+            if (!isOpen) {
+              textController.clear();
+            }
+          },
+          onChanged: onValueChanged,
         ),
       ),
     ),
