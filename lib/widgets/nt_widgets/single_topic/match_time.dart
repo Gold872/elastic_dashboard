@@ -48,16 +48,13 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    String timeDisplayMode = 'Minutes and Seconds',
-    int redStartTime = 20,
-    int yellowStartTime = 30,
+    this._timeDisplayMode = 'Minutes and Seconds',
+    this._redStartTime = 20,
+    this._yellowStartTime = 30,
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _timeDisplayMode = timeDisplayMode,
-       _yellowStartTime = yellowStartTime,
-       _redStartTime = redStartTime,
-       super();
+  }) : super();
 
   MatchTimeModel.fromJson({
     required super.ntConnection,

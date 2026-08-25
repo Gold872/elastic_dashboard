@@ -64,12 +64,10 @@ class BasicSwerveModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool showRobotRotation = true,
-    String rotationUnit = 'Radians',
+    this._showRobotRotation = true,
+    this._rotationUnit = 'Radians',
     super.period,
-  }) : _rotationUnit = rotationUnit,
-       _showRobotRotation = showRobotRotation,
-       super();
+  }) : super();
 
   BasicSwerveModel.fromJson({
     required super.ntConnection,

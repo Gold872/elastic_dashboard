@@ -46,9 +46,9 @@ sealed class NTWidgetModel extends ChangeNotifier {
   NTWidgetModel({
     required this.ntConnection,
     required this.preferences,
-    required String topic,
+    required this._topic,
     double? period,
-  }) : _topic = topic {
+  }) {
     this.period =
         period ??
         preferences.getDouble(PrefKeys.defaultPeriod) ??

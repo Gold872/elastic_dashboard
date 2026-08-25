@@ -58,10 +58,9 @@ class DropdownChooserModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool sortOptions = false,
+    this._sortOptions = false,
     super.period,
-  }) : _sortOptions = sortOptions,
-       super();
+  }) : super();
 
   DropdownChooserModel.fromJson({
     required super.ntConnection,

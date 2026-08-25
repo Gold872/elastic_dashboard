@@ -34,10 +34,9 @@ class GyroModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool counterClockwisePositive = false,
+    this._counterClockwisePositive = false,
     super.period,
-  }) : _counterClockwisePositive = counterClockwisePositive,
-       super();
+  }) : super();
 
   GyroModel.fromJson({
     required super.ntConnection,

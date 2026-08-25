@@ -62,20 +62,15 @@ class NumberBarModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    double minValue = -1.0,
-    double maxValue = 1.0,
-    int divisions = 5,
-    bool inverted = false,
-    String orientation = 'horizontal',
+    this._minValue = -1.0,
+    this._maxValue = 1.0,
+    this._divisions = 5,
+    this._inverted = false,
+    this._orientation = 'horizontal',
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _orientation = orientation,
-       _divisions = divisions,
-       _inverted = inverted,
-       _maxValue = maxValue,
-       _minValue = minValue,
-       super();
+  }) : super();
 
   NumberBarModel.fromJson({
     required super.ntConnection,
