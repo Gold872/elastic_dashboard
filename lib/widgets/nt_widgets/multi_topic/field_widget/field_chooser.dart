@@ -99,7 +99,7 @@ class _FieldChooserState extends State<FieldChooser> {
               onChanged: (value) {
                 setState(() {
                   selectedValue = value;
-            
+
                   widget.onSelectionChanged.call(value);
                 });
               },
