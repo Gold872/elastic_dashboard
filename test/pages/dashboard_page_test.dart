@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:elegant_notification/elegant_notification.dart';
@@ -11,6 +10,8 @@ import 'package:http/http.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:titlebar_buttons/titlebar_buttons.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/elastic_layout_downloader.dart';
@@ -36,6 +37,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
 import 'package:elastic_dashboard/widgets/tab_grid.dart';
+
 import '../services/elastic_layout_downloader_test.dart';
 import '../test_util.dart';
 import '../test_util.mocks.dart';
@@ -1600,8 +1602,7 @@ void main() {
       expect(
         editableTabBarWidget().currentIndex,
         1,
-        reason:
-            'Tab index should not change since index is equal to number of tabs',
+        reason: 'Tab index should not change since index is equal to number of tabs',
       );
 
       await widgetTester.tap(tabLeftButton);
@@ -1649,8 +1650,7 @@ void main() {
       expect(
         editableTabBarWidget().currentIndex,
         1,
-        reason:
-            'Tab index should not change since index is equal to number of tabs',
+        reason: 'Tab index should not change since index is equal to number of tabs',
       );
 
       await widgetTester.sendKeyDownEvent(LogicalKeyboardKey.arrowLeft);

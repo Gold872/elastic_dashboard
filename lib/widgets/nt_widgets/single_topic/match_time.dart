@@ -1,8 +1,9 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
@@ -47,16 +48,13 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    String timeDisplayMode = 'Minutes and Seconds',
-    int redStartTime = 20,
-    int yellowStartTime = 30,
+    this._timeDisplayMode = 'Minutes and Seconds',
+    this._redStartTime = 20,
+    this._yellowStartTime = 30,
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _timeDisplayMode = timeDisplayMode,
-       _yellowStartTime = yellowStartTime,
-       _redStartTime = redStartTime,
-       super();
+  }) : super();
 
   MatchTimeModel.fromJson({
     required super.ntConnection,
@@ -99,8 +97,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
           children: [
             Flexible(
               child: Tooltip(
-                message:
-                    'The time (in seconds) where time will begin to display in red',
+                message: 'The time (in seconds) where time will begin to display in red',
                 waitDuration: const Duration(milliseconds: 750),
                 child: DialogTextInput(
                   label: 'Red Start Time',
@@ -120,8 +117,7 @@ class MatchTimeModel extends SingleTopicNTWidgetModel {
             ),
             Flexible(
               child: Tooltip(
-                message:
-                    'The time (in seconds) where time will begin to display in yellow',
+                message: 'The time (in seconds) where time will begin to display in yellow',
                 waitDuration: const Duration(milliseconds: 750),
                 child: DialogTextInput(
                   label: 'Yellow Start Time',

@@ -1,12 +1,12 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:flutter_box_transform/flutter_box_transform.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
@@ -14,11 +14,11 @@ import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_layout.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/layout_container_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/list_layout_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/gesture/context_menu_listener.dart';
-import 'draggable_containers/models/layout_container_model.dart';
-import 'draggable_containers/models/list_layout_model.dart';
-import 'draggable_containers/models/nt_widget_container_model.dart';
-import 'draggable_containers/models/widget_container_model.dart';
 
 // Used to refresh the tab grid when a widget is added or removed
 // This doesn't use a stateful widget since everything has to be rendered at program startup or data will be lost
@@ -960,9 +960,12 @@ class TabGrid extends StatelessWidget {
               routeOptions: MenuRouteOptions(
                 transitionDuration: const Duration(milliseconds: 100),
                 reverseTransitionDuration: Duration.zero,
-                transitionsBuilder:
-                    (context, animation, secondaryAnimation, child) =>
-                        FadeTransition(opacity: animation, child: child),
+                transitionsBuilder: (
+                  context,
+                  animation,
+                  secondaryAnimation,
+                  child,
+                ) => FadeTransition(opacity: animation, child: child),
               ),
             );
           },
@@ -1089,9 +1092,12 @@ class TabGrid extends StatelessWidget {
           routeOptions: MenuRouteOptions(
             transitionDuration: const Duration(milliseconds: 100),
             reverseTransitionDuration: Duration.zero,
-            transitionsBuilder:
-                (context, animation, secondaryAnimation, child) =>
-                    FadeTransition(opacity: animation, child: child),
+            transitionsBuilder: (
+              context,
+              animation,
+              secondaryAnimation,
+              child,
+            ) => FadeTransition(opacity: animation, child: child),
           ),
         );
       },

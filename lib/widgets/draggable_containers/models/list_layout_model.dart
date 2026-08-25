@@ -1,21 +1,21 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-
 import 'package:collection/collection.dart';
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/layout_container_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
-import 'nt_widget_container_model.dart';
-import 'widget_container_model.dart';
 
 typedef DragOutFunctions = ({
   bool Function(WidgetContainerModel widget) dragOutEnd,
@@ -265,7 +265,7 @@ class ListLayoutModel extends LayoutContainerModel {
                             ),
                           )
                           .toList(),
-                      onReorder: (oldIndex, newIndex) {
+                      onReorderItem: (oldIndex, newIndex) {
                         setState(() {
                           if (newIndex > oldIndex) {
                             newIndex--;

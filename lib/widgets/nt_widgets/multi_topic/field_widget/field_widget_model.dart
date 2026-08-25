@@ -1,11 +1,12 @@
 import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:vector_math/vector_math_64.dart' show radians;
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/field_images.dart';
 import 'package:elastic_dashboard/services/nt4_client.dart';
@@ -321,24 +322,16 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     required super.topic,
     String? fieldGame,
     CoordinateSystem? coordinateSystem,
-    bool showOtherObjects = true,
-    bool showTrajectories = true,
-    double robotWidthMeters = 0.85,
-    double robotLengthMeters = 0.85,
-    double fieldRotation = 0.0,
-    Color robotColor = Colors.red,
-    Color trajectoryColor = Colors.white,
-    bool showRobotOutsideWidget = true,
+    this._showOtherObjects = true,
+    this._showTrajectories = true,
+    this._robotWidthMeters = 0.85,
+    this._robotLengthMeters = 0.85,
+    this._fieldRotation = 0.0,
+    this._robotColor = Colors.red,
+    this._trajectoryColor = Colors.white,
+    this._showRobotOutsideWidget = true,
     super.period,
   }) : _selectedCoordinateSystem = coordinateSystem,
-       _showTrajectories = showTrajectories,
-       _showOtherObjects = showOtherObjects,
-       _robotWidthMeters = robotWidthMeters,
-       _robotLengthMeters = robotLengthMeters,
-       _fieldRotation = fieldRotation,
-       _robotColor = robotColor,
-       _trajectoryColor = trajectoryColor,
-       _showRobotOutsideWidget = showRobotOutsideWidget,
        super() {
     _fieldGame = fieldGame ?? _fieldGame;
 
@@ -695,8 +688,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
       children: [
         Tooltip(
           waitDuration: const Duration(milliseconds: 100),
-          message:
-              'If turned on, the robot will be able to drive off the field and remain visible.\nIf turned off, a circular indicator will be visible when the robot goes off the field.',
+          message: 'If turned on, the robot will be able to drive off the field and remain visible.\nIf turned off, a circular indicator will be visible when the robot goes off the field.',
           child: Icon(Icons.help),
         ),
         const SizedBox(width: 5),

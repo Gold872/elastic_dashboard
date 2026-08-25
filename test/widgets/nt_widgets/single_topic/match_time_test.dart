@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
@@ -14,6 +14,7 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widg
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/match_time.dart';
+
 import '../../../test_util.dart';
 
 void main() {
@@ -163,14 +164,12 @@ void main() {
   testWidgets('Match time edit properties', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    MatchTimeModel matchTimeModel =
-        NTWidgetRegistry.buildNTModelFromJson(
-              ntConnection,
-              preferences,
-              'Match Time',
-              matchTimeJson,
-            )
-            as MatchTimeModel;
+    MatchTimeModel matchTimeModel = NTWidgetRegistry.buildNTModelFromJson(
+      ntConnection,
+      preferences,
+      'Match Time',
+      matchTimeJson,
+    ) as MatchTimeModel;
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
       ntConnection: ntConnection,

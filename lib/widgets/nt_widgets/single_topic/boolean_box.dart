@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_color_picker.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
@@ -56,18 +56,14 @@ class BooleanBoxModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    Color trueColor = Colors.green,
-    Color falseColor = Colors.red,
-    String trueIcon = 'None',
-    String falseIcon = 'None',
+    this._trueColor = Colors.green,
+    this._falseColor = Colors.red,
+    this._trueIcon = 'None',
+    this._falseIcon = 'None',
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _falseColor = falseColor,
-       _trueColor = trueColor,
-       _trueIcon = trueIcon,
-       _falseIcon = falseIcon,
-       super();
+  }) : super();
 
   BooleanBoxModel.fromJson({
     required super.ntConnection,

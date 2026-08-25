@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:geekyants_flutter_gauges/geekyants_flutter_gauges.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
@@ -49,16 +50,13 @@ class NumberSliderModel extends SingleTopicNTWidgetModel {
     required super.preferences,
     required super.topic,
     super.ntStructMeta,
-    double minValue = -1.0,
-    double maxValue = 1.0,
-    int divisions = 5,
+    this._minValue = -1.0,
+    this._maxValue = 1.0,
+    this._divisions = 5,
     this.updateContinuously = false,
     super.dataType,
     super.period,
-  }) : _divisions = divisions,
-       _minValue = minValue,
-       _maxValue = maxValue,
-       super();
+  }) : super();
 
   NumberSliderModel.fromJson({
     required super.ntConnection,

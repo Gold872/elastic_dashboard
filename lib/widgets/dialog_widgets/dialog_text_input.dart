@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 class DialogTextInput extends StatefulWidget {
   final Function(String value) onSubmit;

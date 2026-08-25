@@ -1,11 +1,11 @@
-import 'package:flutter/material.dart';
-
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:logger/logger.dart';
 import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/ip_address_util.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
@@ -15,6 +15,7 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
+
 import '../test_util.dart';
 
 class FakeSettingsMethods extends Mock {

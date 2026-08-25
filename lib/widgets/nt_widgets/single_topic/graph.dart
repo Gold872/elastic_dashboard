@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math' show ln10, log, max, min, pow;
 
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
@@ -72,20 +72,15 @@ class GraphModel extends SingleTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    double timeDisplayed = 5.0,
-    double? minValue,
-    double? maxValue,
-    Color mainColor = Colors.cyan,
-    double lineWidth = 2.0,
+    this._timeDisplayed = 5.0,
+    this._minValue,
+    this._maxValue,
+    this._mainColor = Colors.cyan,
+    this._lineWidth = 2.0,
     super.ntStructMeta,
     super.dataType,
     super.period,
-  }) : _timeDisplayed = timeDisplayed,
-       _minValue = minValue,
-       _maxValue = maxValue,
-       _mainColor = mainColor,
-       _lineWidth = lineWidth,
-       super();
+  }) : super();
 
   GraphModel.fromJson({
     required super.ntConnection,

@@ -19,7 +19,7 @@ on:
         required: false
 
 env:
-  FLUTTER_VERSION: 3.38.6
+  FLUTTER_VERSION: 3.47.0
 
 permissions:
   contents: write
@@ -52,7 +52,7 @@ jobs:
         run: dart run build_runner build
 
       - name: Verify import sorting
-        run: dart run import_sorter:main --exit-if-changed
+        run: dart run tidy_imports --exit-if-changed
 
       - name: Analyze project source
         run: flutter analyze --fatal-infos

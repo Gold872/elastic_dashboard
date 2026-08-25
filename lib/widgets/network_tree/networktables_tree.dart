@@ -1,10 +1,10 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-
 import 'package:collection/collection.dart';
 import 'package:flutter_fancy_tree_view/flutter_fancy_tree_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
@@ -16,11 +16,10 @@ import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_con
 import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree_row.dart';
 
-typedef ListLayoutBuilder =
-    ListLayoutModel Function({
-      required String title,
-      required List<NTWidgetContainerModel> children,
-    });
+typedef ListLayoutBuilder = ListLayoutModel Function({
+  required String title,
+  required List<NTWidgetContainerModel> children,
+});
 
 class NetworkTableTree extends StatefulWidget {
   final NTConnection ntConnection;

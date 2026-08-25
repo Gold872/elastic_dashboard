@@ -1,9 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as legacy;
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/nt4_type.dart';
@@ -14,6 +16,7 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widg
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
+
 import '../../../test_util.dart';
 
 void main() {
@@ -124,6 +127,10 @@ void main() {
 
     await widgetTester.pumpWidget(
       MaterialApp(
+        builder: (context, child) => legacy.Material(
+          // ignore: deprecated_member_use
+          child: MaterialUiCompatibilityBridge(child: child!),
+        ),
         home: Scaffold(
           body: ChangeNotifierProvider<NTWidgetModel>.value(
             value: comboBoxChooserModel,

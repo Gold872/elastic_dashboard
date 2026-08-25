@@ -1,5 +1,6 @@
 import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/widgets/draggable_containers/models/layout_container_model.dart';
 import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';

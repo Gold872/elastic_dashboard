@@ -1,10 +1,10 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
 import 'package:vector_math/vector_math_64.dart' show radians;
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
@@ -45,8 +45,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
 
   bool _showRobotRotation = true;
   bool _showDesiredStates = true;
-  double _angleOffset =
-      0; // Modifiable angle offset to allow all kinds of swerve libraries setups
+  double _angleOffset = 0; // Modifiable angle offset to allow all kinds of swerve libraries setups
 
   bool get showRobotRotation => _showRobotRotation;
 
@@ -73,14 +72,11 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool showRobotRotation = true,
-    bool showDesiredStates = true,
-    double angleOffset = 0.0,
+    this._showRobotRotation = true,
+    this._showDesiredStates = true,
+    this._angleOffset = 0.0,
     super.period,
-  }) : _showDesiredStates = showDesiredStates,
-       _showRobotRotation = showRobotRotation,
-       _angleOffset = angleOffset,
-       super();
+  }) : super();
 
   YAGSLSwerveDriveModel.fromJson({
     required super.ntConnection,
