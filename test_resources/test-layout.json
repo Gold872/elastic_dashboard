@@ -25,7 +25,7 @@
                 "height": 256.0,
                 "type": "DifferentialDrive",
                 "properties": {
-                  "topic": "/SmartDashboard/Differential Drive",
+                  "topic": "/Telemetry/Differential Drive",
                   "period": 0.033
                 }
               },
@@ -37,7 +37,7 @@
                 "height": 128.0,
                 "type": "Boolean Box",
                 "properties": {
-                  "topic": "/SmartDashboard/Test Boolean",
+                  "topic": "/Telemetry/Test Boolean",
                   "period": 0.033,
                   "true_color": 4283215696,
                   "false_color": 4294198070,
@@ -57,7 +57,7 @@
             "height": 128.0,
             "type": "Text Display",
             "properties": {
-              "topic": "/SmartDashboard/Testing",
+              "topic": "/Telemetry/Testing",
               "period": 0.033,
               "show_submit_button": false
             }
@@ -70,7 +70,7 @@
             "height": 128.0,
             "type": "Boolean Box",
             "properties": {
-              "topic": "/SmartDashboard/Test Boolean",
+              "topic": "/Telemetry/Test Boolean",
               "period": 0.033,
               "true_color": 4283215696,
               "false_color": 4294198070,
@@ -86,7 +86,7 @@
             "height": 256.0,
             "type": "Field",
             "properties": {
-              "topic": "/SmartDashboard/Field",
+              "topic": "/Telemetry/Field",
               "period": 0.033,
               "field_game": "Rebuilt",
               "robot_width": 0.82,
@@ -107,7 +107,7 @@
             "height": 256.0,
             "type": "Gyro",
             "properties": {
-              "topic": "/SmartDashboard/Test Gyro",
+              "topic": "/Telemetry/Test Gyro",
               "period": 0.033,
               "counter_clockwise_positive": false
             }
@@ -120,7 +120,7 @@
             "height": 512.0,
             "type": "PowerDistribution",
             "properties": {
-              "topic": "/SmartDashboard/Test Distribution",
+              "topic": "/Telemetry/Test Distribution",
               "period": 0.033
             }
           },
@@ -132,7 +132,7 @@
             "height": 384.0,
             "type": "PIDController",
             "properties": {
-              "topic": "/SmartDashboard/Test PID Controller",
+              "topic": "/Telemetry/Test PID Controller",
               "period": 0.033
             }
           },
@@ -169,7 +169,7 @@
             "height": 128.0,
             "type": "Match Time",
             "properties": {
-              "topic": "/SmartDashboard/Match Time",
+              "topic": "/Telemetry/Match Time",
               "period": 0.033,
               "time_display_mode": "Minutes and Seconds",
               "red_start_time": 15,
@@ -184,7 +184,7 @@
             "height": 256.0,
             "type": "SwerveDrive",
             "properties": {
-              "topic": "/SmartDashboard/Swerve Drive",
+              "topic": "/Telemetry/Swerve Drive",
               "period": 0.033,
               "show_robot_rotation": true,
               "rotation_unit": "Degrees"
@@ -204,9 +204,9 @@
             "y": 0.0,
             "width": 256.0,
             "height": 128.0,
-            "type": "ComboBox Chooser",
+            "type": "Dropdown Chooser",
             "properties": {
-              "topic": "/SmartDashboard/Test Chooser",
+              "topic": "/Telemetry/Test Chooser",
               "period": 0.033,
               "sort_options": false
             }
@@ -219,7 +219,7 @@
             "height": 384.0,
             "type": "Scheduler",
             "properties": {
-              "topic": "/SmartDashboard/Command Scheduler",
+              "topic": "/Telemetry/Command Scheduler",
               "period": 0.033
             }
           },
@@ -231,7 +231,7 @@
             "height": 128.0,
             "type": "Subsystem",
             "properties": {
-              "topic": "/SmartDashboard/Drive System",
+              "topic": "/Telemetry/Drive System",
               "period": 0.033
             }
           },
@@ -243,7 +243,7 @@
             "height": 128.0,
             "type": "Multi Color View",
             "properties": {
-              "topic": "/SmartDashboard/Rainbow Color Array",
+              "topic": "/Telemetry/Rainbow Color Array",
               "period": 0.033
             }
           },
@@ -255,7 +255,7 @@
             "height": 128.0,
             "type": "Voltage View",
             "properties": {
-              "topic": "/SmartDashboard/Voltage",
+              "topic": "/Telemetry/Voltage",
               "period": 0.033,
               "min_value": 4.0,
               "max_value": 13.0,
@@ -272,7 +272,7 @@
             "height": 128.0,
             "type": "Command",
             "properties": {
-              "topic": "/SmartDashboard/Auto Path",
+              "topic": "/Telemetry/Auto Path",
               "period": 0.033,
               "show_type": true,
               "maximize_button_space": true
@@ -286,7 +286,7 @@
             "height": 128.0,
             "type": "Toggle Switch",
             "properties": {
-              "topic": "/SmartDashboard/Test Boolean",
+              "topic": "/Telemetry/Test Boolean",
               "period": 0.033
             }
           },
@@ -298,7 +298,7 @@
             "height": 128.0,
             "type": "Toggle Button",
             "properties": {
-              "topic": "/SmartDashboard/Test Boolean",
+              "topic": "/Telemetry/Test Boolean",
               "period": 0.033
             }
           },
@@ -322,7 +322,7 @@
             "height": 128.0,
             "type": "Split Button Chooser",
             "properties": {
-              "topic": "/SmartDashboard/Auto Chooser",
+              "topic": "/Telemetry/Auto Chooser",
               "period": 0.033
             }
           },
@@ -334,7 +334,7 @@
             "height": 128.0,
             "type": "Single Color View",
             "properties": {
-              "topic": "/SmartDashboard/Rainbow Color",
+              "topic": "/Telemetry/Rainbow Color",
               "period": 0.033
             }
           },
@@ -346,7 +346,7 @@
             "height": 128.0,
             "type": "Number Bar",
             "properties": {
-              "topic": "/SmartDashboard/Test Number",
+              "topic": "/Telemetry/Test Number",
               "period": 0.033,
               "min_value": -1.0,
               "max_value": 1.0,
@@ -363,7 +363,7 @@
             "height": 128.0,
             "type": "Number Slider",
             "properties": {
-              "topic": "/SmartDashboard/Test Number",
+              "topic": "/Telemetry/Test Number",
               "period": 0.033,
               "min_value": -1.0,
               "max_value": 1.0,
@@ -379,7 +379,7 @@
             "height": 128.0,
             "type": "Graph",
             "properties": {
-              "topic": "/SmartDashboard/Voltage",
+              "topic": "/Telemetry/Voltage",
               "period": 0.033,
               "time_displayed": 5.0,
               "color": 4278238420,
