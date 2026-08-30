@@ -331,7 +331,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
               value: quality?.toDouble() ?? -5.0,
               min: -5.0,
               max: 100.0,
-              divisions: 104,
+              divisions: 105,
               label: '${quality ?? -1}',
               onChanged: (value) {
                 setState(() {
