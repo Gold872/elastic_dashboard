@@ -182,8 +182,6 @@ class MjpegController extends CameraStreamController {
   static const _soi = 0xD8;
   static const _eoi = 0xD9;
 
-  final bool isLive;
-
   Client httpClient = Client();
 
   StreamSubscription<List<int>>? _rawSubscription;
@@ -237,7 +235,6 @@ class MjpegController extends CameraStreamController {
 
   MjpegController({
     required super.streams,
-    this.isLive = true,
     super.timeout = const Duration(seconds: 5),
     super.headers = const {},
     this.preprocessor,
@@ -248,7 +245,6 @@ class MjpegController extends CameraStreamController {
   @visibleForTesting
   MjpegController.withMockClient({
     required super.streams,
-    this.isLive = true,
     super.timeout = const Duration(seconds: 5),
     super.headers = const {},
     this.preprocessor,
@@ -391,9 +387,6 @@ class MjpegController extends CameraStreamController {
       if (data.first == _eoi) {
         _buffer.add(data.first);
         _handleNewPacket();
-        if (!isLive) {
-          dispose();
-        }
       }
     }
     for (var i = 0; i < data.length - 1; i++) {
@@ -408,9 +401,6 @@ class MjpegController extends CameraStreamController {
         _buffer.add(d1);
 
         _handleNewPacket();
-        if (!isLive) {
-          dispose();
-        }
       } else if (_buffer.isNotEmpty) {
         _buffer.add(d);
         if (i == data.length - 2) {
