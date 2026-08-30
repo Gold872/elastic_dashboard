@@ -16,11 +16,11 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widg
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/driver_station_info.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/field_widget.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/fms_info.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/pid_controller.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/power_distribution.dart';
@@ -102,7 +102,7 @@ void main() async {
     expect(find.bySubtype<BooleanBox>(), findsNWidgets(2));
     expect(find.bySubtype<FieldWidget>(), findsOneWidget);
     expect(find.bySubtype<PowerDistribution>(), findsOneWidget);
-    expect(find.bySubtype<FMSInfo>(), findsOneWidget);
+    expect(find.bySubtype<DriverStationInfo>(), findsOneWidget);
     expect(find.bySubtype<Gyro>(), findsOneWidget);
     expect(find.bySubtype<CameraStreamWidget>(), findsOneWidget);
     expect(find.bySubtype<MatchTimeWidget>(), findsOneWidget);
@@ -148,7 +148,7 @@ void main() async {
 
     expect(find.bySubtype<ToggleButton>(), findsOneWidget);
     expect(find.bySubtype<ToggleSwitch>(), findsOneWidget);
-    expect(find.bySubtype<ComboBoxChooser>(), findsOneWidget);
+    expect(find.bySubtype<DropdownChooser>(), findsOneWidget);
     expect(find.bySubtype<SplitButtonChooser>(), findsOneWidget);
     expect(find.bySubtype<SingleColorView>(), findsOneWidget);
     expect(find.bySubtype<MultiColorView>(), findsOneWidget);

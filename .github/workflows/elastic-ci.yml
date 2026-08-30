@@ -7,9 +7,9 @@ name: Elastic
 
 on:
   push:
-    branches: ["main", "2027"]
+    branches: ["main"]
   pull_request:
-    branches: ["main", "2027"]
+    branches: ["main"]
   workflow_dispatch:
     inputs:
       upload-release:
@@ -85,7 +85,7 @@ jobs:
         run: flutter test --coverage --file-reporter json:reports/test-report.json
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           files: coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -160,7 +160,7 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Install flutter build dependencies
-        if: ${{ matrix.platform == 'linux' }}
+        if: matrix.platform == 'linux'
         run: |
           sudo apt-get update -y
           sudo apt-get install -y libglu1-mesa ninja-build libgtk-3-dev liblzma-dev
@@ -173,65 +173,65 @@ jobs:
           is_wpilib: ${{ matrix.wpilib }}
 
       - name: Copy runtime files
-        if: ${{ matrix.platform == 'windows' }}
+        if: matrix.platform == 'windows'
         run: ./.github/CopyRuntime.ps1 -OutputPath ${{ matrix.build-path }}
 
       - name: Zip Windows Executable
-        if: ${{ matrix.platform == 'windows' }}
+        if: matrix.platform == 'windows'
         working-directory: ${{ matrix.build-path }}
         run: Compress-Archive -Path * -DestinationPath ${{ github.workspace }}/${{ matrix.artifact-file }}
 
       - name: Zip Linux Executable
-        if: ${{ matrix.platform == 'linux' }}
+        if: matrix.platform == 'linux'
         working-directory: ${{ matrix.build-path }}
         run: zip -r ${{ github.workspace }}/${{ matrix.artifact-file }} . --symlinks
 
       - name: Zip MacOS Release
-        if: ${{ matrix.platform == 'macos' && matrix.wpilib == false }}
+        if: matrix.platform == 'macos' && !matrix.wpilib
         working-directory: ${{ matrix.build-path }}
         run: zip -r ${{ github.workspace }}/${{ matrix.artifact-file }} elastic_dashboard.app --symlinks
 
       - name: Zip MacOS Release (WPILib)
-        if: ${{ matrix.platform == 'macos' && matrix.wpilib }}
+        if: matrix.platform == 'macos' && matrix.wpilib
         working-directory: ${{ matrix.build-path }}
         run: tar -zcvf ${{ github.workspace }}/${{ matrix.artifact-file }} elastic_dashboard.app
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact-name }}
+          archive: false
           path: ${{ matrix.artifact-file }}
           if-no-files-found: error
 
       - name: Create macOS installer
-        if: ${{ matrix.platform == 'macos' && matrix.wpilib == false }}
-        uses: L-Super/create-dmg-actions@v1.0.3
+        if: matrix.platform == 'macos' && !matrix.wpilib
+        uses: L-Super/create-dmg-actions@v1.1.0
         with:
           dmg_name: ${{ matrix.build-path }}/elastic-setup-macos
           src_dir: ${{ matrix.build-path }}/elastic_dashboard.app
 
       - name: Upload macOS installer
-        if: ${{ matrix.platform == 'macos' && matrix.wpilib == false }}
-        uses: actions/upload-artifact@v4
+        if: matrix.platform == 'macos' && !matrix.wpilib
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact-name }}_installer
+          archive: false
           path: ${{ matrix.build-path }}/elastic-setup-macos.dmg
           if-no-files-found: error
 
       - name: Install Inno Setup
-        if: ${{ matrix.platform == 'windows' && matrix.wpilib == false }}
+        if: matrix.platform == 'windows' && !matrix.wpilib
         run: choco install innosetup -y
 
       - name: Create windows installer
-        if: ${{ matrix.platform == 'windows' && matrix.wpilib == false }}
+        if: matrix.platform == 'windows' && !matrix.wpilib
         run: |
           & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_setup_script.iss
 
       - name: Upload windows installer
-        if: ${{ matrix.platform == 'windows' && matrix.wpilib == false }}
-        uses: actions/upload-artifact@v4
+        if: matrix.platform == 'windows' && matrix.wpilib == false
+        uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.artifact-name }}_installer
+          archive: false
           path: build/windows/x64/installer
           if-no-files-found: error
 
@@ -251,74 +251,67 @@ jobs:
           platform: web
           is_wpilib: false
 
-      - name: Zip Artifact
-        working-directory: build/web
-        run: zip -r ${{ github.workspace }}/Elastic-Web.zip . --symlinks
-
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Elastic-Web
-          path: Elastic-Web.zip
+          path: build/web
           if-no-files-found: error
 
       - name: Create SystemCore installer
         working-directory: .github/ipk_build
         run: |
-          chmod +x ./build.sh
           ./build.sh
+          mv elastic_dashboard_*.ipk Elastic-SystemCore.ipk
 
       - name: Upload SystemCore installer
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: Elastic-SystemCore
-          path: .github/ipk_build/elastic_dashboard_*.ipk
+          archive: false
+          path: .github/ipk_build/Elastic-SystemCore.ipk
           if-no-files-found: error
 
   github-pages:
     name: "Upload to GitHub Pages"
     runs-on: ubuntu-22.04
-    if: ${{ github.repository == 'Gold872/elastic_dashboard' && github.ref == 'refs/heads/main' }}
+    if: github.repository == 'Gold872/elastic_dashboard' && github.ref == 'refs/heads/main'
     needs: [build-web]
     steps:
       - name: Download Web Build
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: Elastic-Web
 
-      - name: Extract Web Build
-        run: unzip Elastic-Web.zip -d Elastic-Web
-
       - name: Upload GitHub Pages Artifact
-        uses: actions/upload-pages-artifact@v3.0.0
+        uses: actions/upload-pages-artifact@v5
         with:
-          path: Elastic-Web
+          path: ${{ github.workspace }}
           retention-days: 31
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4.0.2
+        uses: actions/deploy-pages@v5
 
   upload-release:
     name: Upload to Release
     runs-on: ubuntu-22.04
     needs: [build, build-web]
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.upload-release }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.upload-release
     steps:
       - run: mkdir -p artifacts
 
       - name: Download Artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           pattern: Elastic-*
           merge-multiple: true
+          skip-decompress: true
 
       - name: Rename Files
         working-directory: artifacts
         run: |
           ls -al
           mv Elastic-Windows.zip Elastic-Windows_portable.zip
-          mv elastic_dashboard_*.ipk Elastic-SystemCore.ipk
 
       - name: Get Draft Release Info
         id: release_info

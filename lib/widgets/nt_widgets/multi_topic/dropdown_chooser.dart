@@ -11,13 +11,13 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
+class DropdownChooserModel extends MultiTopicNTWidgetModel {
   @override
-  String type = ComboBoxChooser.widgetType;
+  String type = DropdownChooser.widgetType;
 
   String get optionsTopicName => '$topic/options';
-  String get selectedTopicName => '$topic/selected';
-  String get activeTopicName => '$topic/active';
+  String get selectedTopicName => '$topic/selected/tune';
+  String get activeTopicName => '$topic/selected/value';
   String get defaultTopicName => '$topic/default';
 
   late NT4Subscription optionsSubscription;
@@ -54,7 +54,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
-  ComboBoxChooserModel({
+  DropdownChooserModel({
     required super.ntConnection,
     required super.preferences,
     required super.topic,
@@ -63,7 +63,7 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }) : _sortOptions = sortOptions,
        super();
 
-  ComboBoxChooserModel.fromJson({
+  DropdownChooserModel.fromJson({
     required super.ntConnection,
     required super.preferences,
     required Map<String, dynamic> jsonData,
@@ -237,14 +237,14 @@ class ComboBoxChooserModel extends MultiTopicNTWidgetModel {
   }
 }
 
-class ComboBoxChooser extends NTWidget {
-  static const String widgetType = 'ComboBox Chooser';
+class DropdownChooser extends NTWidget {
+  static const String widgetType = 'Dropdown Chooser';
 
-  const ComboBoxChooser({super.key}) : super();
+  const DropdownChooser({super.key}) : super();
 
   @override
   Widget build(BuildContext context) {
-    ComboBoxChooserModel model = cast(context.watch<NTWidgetModel>());
+    DropdownChooserModel model = cast(context.watch<NTWidgetModel>());
 
     String? preview = model.previousSelected ?? model.previousDefault;
 
