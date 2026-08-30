@@ -234,14 +234,10 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     ),
   ];
 
-  List<Widget> _editFieldsFor(CameraStreamType type) {
-    switch (type) {
-      case CameraStreamType.whep:
-        return _whepEditFields();
-      case CameraStreamType.mjpeg:
-        return _mjpegEditFields();
-    }
-  }
+  List<Widget> _editFieldsFor(CameraStreamType type) => switch (type) {
+    CameraStreamType.whep => _whepEditFields(),
+    CameraStreamType.mjpeg => _mjpegEditFields(),
+  };
 
   List<Widget> _whepEditFields() => _rotationFields();
 
