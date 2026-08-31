@@ -4,6 +4,7 @@ import 'package:popover/popover.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_list.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/layout_drag_tile.dart';
@@ -82,7 +83,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
       child: Card(
         margin: const EdgeInsets.all(10.0),
         child: DefaultTabController(
-          length: 2,
+          length: 3,
           child: Column(
             children: [
               const Icon(Icons.drag_handle, color: Colors.grey),
@@ -94,6 +95,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
               const TabBar(
                 tabs: [
                   Tab(text: 'Network Tables'),
+                  Tab(text: 'Cameras'),
                   Tab(text: 'Layouts'),
                 ],
               ),
@@ -107,6 +109,14 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                       searchQuery: _searchQuery,
                       listLayoutBuilder: widget.grid.createListLayout,
                       hideMetadata: _hideMetadata,
+                      gridIndex: widget.gridIndex,
+                      onDragUpdate: widget.onNTDragUpdate,
+                      onDragEnd: widget.onNTDragEnd,
+                      onRemoveWidget: () => onRemove(widget.grid),
+                    ),
+                    CameraStreamList(
+                      ntConnection: widget.ntConnection,
+                      preferences: widget.preferences,
                       gridIndex: widget.gridIndex,
                       onDragUpdate: widget.onNTDragUpdate,
                       onDragEnd: widget.onNTDragEnd,
