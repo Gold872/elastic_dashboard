@@ -146,7 +146,15 @@
             "properties": {
               "topic": "/CameraPublisher/USB Camera 0",
               "period": 0.033,
-              "rotation_turns": 0
+              "rotation_turns": 0,
+              "crosshair_enabled": true,
+              "crosshair_width": 25,
+              "crosshair_height": 35,
+              "crosshair_thickness": 3,
+              "crosshair_x": 15,
+              "crosshair_y": 15,
+              "crosshair_color": 4294198070,
+              "crosshair_centered": false
             }
           },
           {
