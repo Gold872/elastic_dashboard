@@ -5,3 +5,6 @@
 windows/ text=auto eol=crlf
 *.ps1 text eol=crlf
 installer_setup_script.iss text eol=crlf
+
+# Generated protobuf files
+lib/generated/**/* linguist-generated
