@@ -56,4 +56,43 @@ void main() {
     expect(find.text('Camera 2'), findsOneWidget);
     expect(find.text('SomeOtherTopic'), findsNothing);
   });
+
+  testWidgets('Camera Stream List with Search', (widgetTester) async {
+    NTConnection ntConnection = createMockOnlineNT4(
+      virtualTopics: [
+        NT4Topic(
+          name: '/CameraPublisher/Camera 1/streams',
+          type: NT4Type.array(NT4Type.string()),
+          properties: {},
+        ),
+        NT4Topic(
+          name: 'CameraPublisher/Camera 2/streams',
+          type: NT4Type.array(NT4Type.string()),
+          properties: {},
+        ),
+        NT4Topic(
+          name: '/SomeOtherTopic',
+          type: NT4Type.int(),
+          properties: {},
+        ),
+      ],
+    );
+
+    await widgetTester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: CameraStreamList(
+            ntConnection: ntConnection,
+            preferences: preferences,
+            searchQuery: '2',
+          ),
+        ),
+      ),
+    );
+    await widgetTester.pumpAndSettle();
+
+    expect(find.text('Camera 1'), findsNothing);
+    expect(find.text('Camera 2'), findsOneWidget);
+    expect(find.text('SomeOtherTopic'), findsNothing);
+  });
 }

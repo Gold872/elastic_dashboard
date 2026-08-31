@@ -27,6 +27,8 @@ class CameraStreamList extends StatefulWidget {
   final void Function(WidgetContainerModel widget)? onDragEnd;
   final void Function()? onRemoveWidget;
 
+  final String searchQuery;
+
   const CameraStreamList({
     super.key,
     required this.ntConnection,
@@ -35,6 +37,7 @@ class CameraStreamList extends StatefulWidget {
     this.onDragUpdate,
     this.onDragEnd,
     this.onRemoveWidget,
+    this.searchQuery = '',
   });
 
   @override
@@ -118,7 +121,9 @@ class _CameraStreamListState extends State<CameraStreamList> {
 
     return ListView(
       children: [
-        for (final entry in cameraNames.sorted())
+        for (final entry in cameraNames.sorted().where(
+          (e) => e.toLowerCase().contains(widget.searchQuery.toLowerCase()),
+        ))
           CameraTile(
             gridIndex: widget.gridIndex,
             ntConnection: widget.ntConnection,

@@ -122,6 +122,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                       onDragUpdate: widget.onNTDragUpdate,
                       onDragEnd: widget.onNTDragEnd,
                       onRemoveWidget: () => onRemove(widget.grid),
+                      searchQuery: _searchQuery,
                     ),
                     ListView(
                       children: [
