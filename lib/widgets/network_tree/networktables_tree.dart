@@ -335,11 +335,9 @@ class TreeTile extends StatelessWidget {
               supportedDevices: PointerDeviceKind.values
                   .whereNot((element) => element == PointerDeviceKind.trackpad)
                   .toSet(),
-              onDragCreate: () async {
-                return await entry.node.toWidgetContainerModel(
-                  listLayoutBuilder: listLayoutBuilder,
-                );
-              },
+              onDragCreate: () => entry.node.toWidgetContainerModel(
+                listLayoutBuilder: listLayoutBuilder,
+              ),
               onDragUpdate: onDragUpdate,
               onDragEnd: onDragEnd,
               onRemoveWidget: onRemoveWidget,
