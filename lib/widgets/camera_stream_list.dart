@@ -10,7 +10,7 @@ import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
-import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';
+import 'package:elastic_dashboard/widgets/gesture/drag_container_listener.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
@@ -132,7 +132,7 @@ class _CameraStreamListState extends State<CameraStreamList> {
   }
 }
 
-class CameraTile extends StatefulWidget {
+class CameraTile extends StatelessWidget {
   final int gridIndex;
 
   final NTConnection ntConnection;
@@ -155,47 +155,11 @@ class CameraTile extends StatefulWidget {
     this.onRemoveWidget,
   });
 
-  @override
-  State<CameraTile> createState() => _CameraTileState();
-}
-
-class _CameraTileState extends State<CameraTile> {
-  WidgetContainerModel? draggingWidget;
-  bool dragging = false;
-
-  void cancelDrag() {
-    if (draggingWidget != null) {
-      draggingWidget!.unSubscribe();
-      draggingWidget!.softDispose(deleting: true);
-      draggingWidget!.dispose();
-
-      widget.onRemoveWidget?.call();
-
-      draggingWidget = null;
-    }
-    dragging = false;
-  }
-
-  @override
-  void didUpdateWidget(CameraTile oldWidget) {
-    if (widget.gridIndex != oldWidget.gridIndex) {
-      cancelDrag();
-    }
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    cancelDrag();
-
-    super.dispose();
-  }
-
   WidgetContainerModel? createCameraWidget() {
     NTWidgetModel ntWidgetModel = CameraStreamModel(
-      ntConnection: widget.ntConnection,
-      preferences: widget.preferences,
-      topic: '$cameraPublisherRoot/${widget.entry}',
+      ntConnection: ntConnection,
+      preferences: preferences,
+      topic: '$cameraPublisherRoot/$entry',
     );
 
     NTWidget? ntWidget = NTWidgetRegistry.buildNTWidgetFromModel(ntWidgetModel);
@@ -211,10 +175,10 @@ class _CameraTileState extends State<CameraTile> {
     double height = NTWidgetRegistry.getDefaultHeight(ntWidgetModel);
 
     return NTWidgetContainerModel(
-      ntConnection: widget.ntConnection,
-      preferences: widget.preferences,
+      ntConnection: ntConnection,
+      preferences: preferences,
       initialPosition: Rect.fromLTWH(0.0, 0.0, width, height),
-      title: widget.entry,
+      title: entry,
       childModel: ntWidgetModel,
     );
   }
@@ -226,48 +190,22 @@ class _CameraTileState extends State<CameraTile> {
     children: [
       InkWell(
         onTap: () {},
-        child: DragListener(
+        child: DragContainerListener<WidgetContainerModel>(
+          gridIndex: gridIndex,
           overrideVertical: false,
           supportedDevices: PointerDeviceKind.values
               .whereNot((element) => element == PointerDeviceKind.trackpad)
               .toSet(),
-          onDragStart: (details) async {
-            if (draggingWidget != null) {
-              return;
-            }
-            dragging = true;
-            draggingWidget = createCameraWidget();
-          },
-          onDragUpdate: (details) {
-            if (draggingWidget == null) {
-              return;
-            }
-
-            draggingWidget!.cursorGlobalLocation = details.globalPosition;
-
-            widget.onDragUpdate?.call(
-              details.globalPosition,
-              draggingWidget!,
-            );
-          },
-          onDragEnd: (details) {
-            if (draggingWidget == null) {
-              dragging = false;
-              return;
-            }
-
-            widget.onDragEnd?.call(draggingWidget!);
-
-            draggingWidget = null;
-
-            dragging = false;
-          },
+          onDragCreate: createCameraWidget,
+          onDragUpdate: onDragUpdate,
+          onDragEnd: onDragEnd,
+          onRemoveWidget: onRemoveWidget,
           child: Padding(
-            padding: EdgeInsetsDirectional.only(start: 16.0),
+            padding: const EdgeInsetsDirectional.only(start: 16.0),
             child: ListTile(
               dense: true,
               style: ListTileStyle.drawer,
-              title: Text(widget.entry),
+              title: Text(entry),
             ),
           ),
         ),
