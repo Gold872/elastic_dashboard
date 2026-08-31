@@ -57,7 +57,7 @@ void main() {
     expect(find.text('SomeOtherTopic'), findsNothing);
   });
 
-  testWidgets('Camera Stream List with Search', (widgetTester) async {
+  testWidgets('Camera Stream List with search', (widgetTester) async {
     NTConnection ntConnection = createMockOnlineNT4(
       virtualTopics: [
         NT4Topic(
