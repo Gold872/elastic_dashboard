@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/widgets/custom_loading_indicator.dart';
@@ -138,6 +140,65 @@ void main() {
     );
 
     expect(cameraStreamModel.toJson(), cameraStreamJson);
+  });
+
+  test('CameraStreamType fromUrl parsing', () {
+    expect(
+      CameraStreamType.fromUrl('whep:http://10.20.53.2:8889'),
+      CameraStreamType.whep,
+    );
+    expect(
+      CameraStreamType.fromUrl('mjpg:http://10.20.53.2:1181/?action=stream'),
+      CameraStreamType.mjpeg,
+    );
+    expect(CameraStreamType.fromUrl('unknown://test'), isNull);
+  });
+
+  test('Camera stream activeStreamType and selection with mixed streams', () {
+    ntConnection = createMockOnlineNT4(
+      virtualTopics: [
+        NT4Topic(
+          name: 'Test/Camera Stream/streams',
+          type: NT4Type.string(),
+          properties: {},
+        ),
+      ],
+    );
+
+    CameraStreamModel cameraStreamModel = CameraStreamModel(
+      ntConnection: ntConnection,
+      preferences: preferences,
+      topic: 'Test/Camera Stream',
+      period: 0.100,
+    );
+
+    expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
+
+    ntConnection.updateDataFromTopicName('Test/Camera Stream/streams', [
+      'mjpg:http://10.0.0.1',
+    ]);
+    expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.mjpeg), [
+      'http://10.0.0.1',
+    ]);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.whep), isEmpty);
+
+    ntConnection.updateDataFromTopicName('Test/Camera Stream/streams', [
+      'whep:http://10.0.0.1:8889',
+      'mjpg:http://10.0.0.1',
+      'whep:http://10.0.0.2:8889',
+    ]);
+    expect(cameraStreamModel.activeStreamType, CameraStreamType.whep);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.whep), [
+      'http://10.0.0.1:8889',
+      'http://10.0.0.2:8889',
+    ]);
+    expect(cameraStreamModel.getStreamsOfType(CameraStreamType.mjpeg), [
+      'http://10.0.0.1',
+    ]);
+
+    cameraStreamModel.selectedStreamType = CameraStreamType.mjpeg;
+    expect(cameraStreamModel.activeStreamType, CameraStreamType.mjpeg);
   });
 
   testWidgets('Camera stream online widget test', (widgetTester) async {
