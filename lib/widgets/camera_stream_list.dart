@@ -104,7 +104,8 @@ class _CameraStreamListState extends State<CameraStreamList> {
     List<NT4Topic> cameraTopics = [];
 
     for (NT4Topic topic in widget.ntConnection.announcedTopics().values) {
-      if (!topic.name.startsWith(cameraPublisherRoot)) {
+      if (!topic.name.startsWith(cameraPublisherRoot) &&
+          !topic.name.startsWith(cameraPublisherRoot.substring(1))) {
         continue;
       }
 
