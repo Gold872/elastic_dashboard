@@ -93,6 +93,7 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const TabBar(
+                labelPadding: EdgeInsets.symmetric(horizontal: 12),
                 tabs: [
                   Tab(text: 'Network Tables'),
                   Tab(text: 'Cameras'),
