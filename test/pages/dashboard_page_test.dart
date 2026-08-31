@@ -22,6 +22,7 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/services/update_checker.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_list.dart';
 import 'package:elastic_dashboard/widgets/custom_appbar.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
@@ -556,6 +557,69 @@ void main() {
       await widgetTester.pumpAndSettle();
 
       expect(nonRegistered, findsOneWidget);
+    });
+
+    testWidgets('Add widget dialog (cameras)', (widgetTester) async {
+      await pumpDashboardPage(
+        widgetTester,
+        preferences,
+        ntConnection: createMockOnlineNT4(
+          virtualTopics: [
+            NT4Topic(
+              name: '/CameraPublisher/Camera 1/streams',
+              type: NT4Type.array(NT4Type.string()),
+              properties: {},
+            ),
+          ],
+        ),
+      );
+
+      final addWidget = find.widgetWithText(MenuItemButton, 'Add Widget');
+
+      expect(addWidget, findsOneWidget);
+      expect(find.widgetWithText(DraggableDialog, 'Add Widget'), findsNothing);
+
+      MenuItemButton addWidgetButton =
+          addWidget.evaluate().first.widget as MenuItemButton;
+
+      addWidgetButton.onPressed?.call();
+
+      await widgetTester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(DraggableDialog, 'Add Widget'),
+        findsOneWidget,
+      );
+
+      final camerasTab = find.text('Cameras');
+      expect(camerasTab, findsOneWidget);
+
+      await widgetTester.tap(camerasTab);
+      await widgetTester.pumpAndSettle();
+
+      final cameraContainer = find.widgetWithText(WidgetContainer, 'Camera 1');
+      expect(cameraContainer, findsNothing);
+
+      final cameraTile = find.widgetWithText(CameraTile, 'Camera 1');
+      expect(cameraTile, findsOneWidget);
+
+      await widgetTester.drag(
+        cameraTile,
+        const Offset(100, 100),
+        kind: PointerDeviceKind.mouse,
+      );
+      await widgetTester.pumpAndSettle();
+
+      expect(cameraContainer, findsNothing);
+
+      await widgetTester.drag(
+        cameraTile,
+        const Offset(300, -150),
+        kind: PointerDeviceKind.mouse,
+      );
+      await widgetTester.pumpAndSettle();
+
+      expect(cameraContainer, findsOneWidget);
     });
 
     testWidgets('List Layouts', (widgetTester) async {
