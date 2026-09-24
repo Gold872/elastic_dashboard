@@ -22,6 +22,7 @@ import 'package:elastic_dashboard/services/nt4_type.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/services/update_checker.dart';
+import 'package:elastic_dashboard/widgets/camera_stream_list.dart';
 import 'package:elastic_dashboard/widgets/custom_appbar.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
@@ -31,7 +32,7 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_
 import 'package:elastic_dashboard/widgets/draggable_dialog.dart';
 import 'package:elastic_dashboard/widgets/editable_tab_bar.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/combo_box_chooser.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/gyro.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
 import 'package:elastic_dashboard/widgets/settings_dialog.dart';
@@ -227,14 +228,14 @@ void main() {
         findsOneWidget,
       );
 
-      final smartDashboardTile = find.widgetWithText(
+      final telemetryTile = find.widgetWithText(
         TreeTile,
-        'SmartDashboard',
+        'Telemetry',
       );
 
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
-      await widgetTester.tap(smartDashboardTile);
+      await widgetTester.tap(telemetryTile);
       await widgetTester.pumpAndSettle();
 
       final searchQuery = find.widgetWithText(DialogTextInput, 'Search');
@@ -263,7 +264,7 @@ void main() {
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsNothing);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
       // No matches
       await widgetTester.enterText(searchQuery, 'no match');
@@ -273,17 +274,17 @@ void main() {
 
       expect(testValueOne, findsNothing);
       expect(testValueTwo, findsNothing);
-      expect(smartDashboardTile, findsNothing);
+      expect(telemetryTile, findsNothing);
 
-      // Match only smart dashboard tile (all should show)
-      await widgetTester.enterText(searchQuery, 'Smart');
+      // Match only telemetry tile (all should show)
+      await widgetTester.enterText(searchQuery, 'Telem');
       await widgetTester.testTextInput.receiveAction(TextInputAction.done);
 
       await widgetTester.pumpAndSettle();
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsOneWidget);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
       // Empty text (both should be visible)
       await widgetTester.enterText(searchQuery, '');
@@ -293,7 +294,7 @@ void main() {
 
       expect(testValueOne, findsOneWidget);
       expect(testValueTwo, findsOneWidget);
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
     });
 
     testWidgets('Add widget dialog (widgets)', (widgetTester) async {
@@ -320,14 +321,14 @@ void main() {
         findsOneWidget,
       );
 
-      final smartDashboardTile = find.widgetWithText(
+      final telemetryTile = find.widgetWithText(
         TreeTile,
-        'SmartDashboard',
+        'Telemetry',
       );
 
-      expect(smartDashboardTile, findsOneWidget);
+      expect(telemetryTile, findsOneWidget);
 
-      await widgetTester.tap(smartDashboardTile);
+      await widgetTester.tap(telemetryTile);
       await widgetTester.pumpAndSettle();
 
       final testValueTile = find.widgetWithText(TreeTile, 'Test Value 1');
@@ -556,6 +557,69 @@ void main() {
       await widgetTester.pumpAndSettle();
 
       expect(nonRegistered, findsOneWidget);
+    });
+
+    testWidgets('Add widget dialog (cameras)', (widgetTester) async {
+      await pumpDashboardPage(
+        widgetTester,
+        preferences,
+        ntConnection: createMockOnlineNT4(
+          virtualTopics: [
+            NT4Topic(
+              name: '/CameraPublisher/Camera 1/streams',
+              type: NT4Type.array(NT4Type.string()),
+              properties: {},
+            ),
+          ],
+        ),
+      );
+
+      final addWidget = find.widgetWithText(MenuItemButton, 'Add Widget');
+
+      expect(addWidget, findsOneWidget);
+      expect(find.widgetWithText(DraggableDialog, 'Add Widget'), findsNothing);
+
+      MenuItemButton addWidgetButton =
+          addWidget.evaluate().first.widget as MenuItemButton;
+
+      addWidgetButton.onPressed?.call();
+
+      await widgetTester.pumpAndSettle();
+
+      expect(
+        find.widgetWithText(DraggableDialog, 'Add Widget'),
+        findsOneWidget,
+      );
+
+      final camerasTab = find.text('Cameras');
+      expect(camerasTab, findsOneWidget);
+
+      await widgetTester.tap(camerasTab);
+      await widgetTester.pumpAndSettle();
+
+      final cameraContainer = find.widgetWithText(WidgetContainer, 'Camera 1');
+      expect(cameraContainer, findsNothing);
+
+      final cameraTile = find.widgetWithText(CameraTile, 'Camera 1');
+      expect(cameraTile, findsOneWidget);
+
+      await widgetTester.drag(
+        cameraTile,
+        const Offset(100, 100),
+        kind: PointerDeviceKind.mouse,
+      );
+      await widgetTester.pumpAndSettle();
+
+      expect(cameraContainer, findsNothing);
+
+      await widgetTester.drag(
+        cameraTile,
+        const Offset(300, -150),
+        kind: PointerDeviceKind.mouse,
+      );
+      await widgetTester.pumpAndSettle();
+
+      expect(cameraContainer, findsOneWidget);
     });
 
     testWidgets('List Layouts', (widgetTester) async {
@@ -1435,7 +1499,7 @@ void main() {
     testWidgets('Changing tabs', (widgetTester) async {
       await pumpDashboardPage(widgetTester, preferences);
 
-      expect(find.byType(ComboBoxChooser), findsNothing);
+      expect(find.byType(DropdownChooser), findsNothing);
 
       expect(find.byType(EditableTabBar), findsOneWidget);
 
@@ -1449,7 +1513,7 @@ void main() {
       await widgetTester.tap(autonomousTab);
       await widgetTester.pumpAndSettle();
 
-      expect(find.byType(ComboBoxChooser), findsOneWidget);
+      expect(find.byType(DropdownChooser), findsOneWidget);
     });
 
     testWidgets('Creating new tab', (widgetTester) async {

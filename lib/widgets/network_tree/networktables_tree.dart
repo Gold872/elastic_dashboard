@@ -13,7 +13,7 @@ import 'package:elastic_dashboard/services/struct_schemas/nt_struct.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/list_layout_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
-import 'package:elastic_dashboard/widgets/gesture/drag_listener.dart';
+import 'package:elastic_dashboard/widgets/gesture/drag_container_listener.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree_row.dart';
 
 typedef ListLayoutBuilder =
@@ -291,7 +291,7 @@ class TreeTopicEntry {
   }
 }
 
-class TreeTile extends StatefulWidget {
+class TreeTile extends StatelessWidget {
   final int gridIndex;
 
   final SharedPreferences preferences;
@@ -318,42 +318,6 @@ class TreeTile extends StatefulWidget {
   });
 
   @override
-  State<TreeTile> createState() => _TreeTileState();
-}
-
-class _TreeTileState extends State<TreeTile> {
-  WidgetContainerModel? draggingWidget;
-  bool dragging = false;
-
-  void cancelDrag() {
-    if (draggingWidget != null) {
-      draggingWidget!.unSubscribe();
-      draggingWidget!.softDispose(deleting: true);
-      draggingWidget!.dispose();
-
-      widget.onRemoveWidget?.call();
-
-      draggingWidget = null;
-    }
-    dragging = false;
-  }
-
-  @override
-  void didUpdateWidget(TreeTile oldWidget) {
-    if (widget.gridIndex != oldWidget.gridIndex) {
-      cancelDrag();
-    }
-    super.didUpdateWidget(oldWidget);
-  }
-
-  @override
-  void dispose() {
-    cancelDrag();
-
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     TextStyle trailingStyle = Theme.of(
       context,
@@ -364,55 +328,22 @@ class _TreeTileState extends State<TreeTile> {
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
-            onTap: widget.onTap,
-            child: DragListener(
+            onTap: onTap,
+            child: DragContainerListener<WidgetContainerModel>(
+              gridIndex: gridIndex,
               overrideVertical: false,
               supportedDevices: PointerDeviceKind.values
                   .whereNot((element) => element == PointerDeviceKind.trackpad)
                   .toSet(),
-              onDragStart: (details) async {
-                if (draggingWidget != null) {
-                  return;
-                }
-                dragging = true;
-                draggingWidget = await widget.entry.node.toWidgetContainerModel(
-                  listLayoutBuilder: widget.listLayoutBuilder,
-                );
-                if (!dragging) {
-                  draggingWidget?.unSubscribe();
-                  draggingWidget?.softDispose(deleting: true);
-                  draggingWidget?.dispose();
-
-                  draggingWidget = null;
-                }
-              },
-              onDragUpdate: (details) {
-                if (draggingWidget == null) {
-                  return;
-                }
-
-                draggingWidget!.cursorGlobalLocation = details.globalPosition;
-
-                widget.onDragUpdate?.call(
-                  details.globalPosition,
-                  draggingWidget!,
-                );
-              },
-              onDragEnd: (details) {
-                if (draggingWidget == null) {
-                  dragging = false;
-                  return;
-                }
-
-                widget.onDragEnd?.call(draggingWidget!);
-
-                draggingWidget = null;
-
-                dragging = false;
-              },
+              onDragCreate: () => entry.node.toWidgetContainerModel(
+                listLayoutBuilder: listLayoutBuilder,
+              ),
+              onDragUpdate: onDragUpdate,
+              onDragEnd: onDragEnd,
+              onRemoveWidget: onRemoveWidget,
               child: Padding(
                 padding: EdgeInsetsDirectional.only(
-                  start: widget.entry.level * 16.0,
+                  start: entry.level * 16.0,
                 ),
                 child: Column(
                   children: [
@@ -420,24 +351,20 @@ class _TreeTileState extends State<TreeTile> {
                       dense: true,
                       contentPadding: const EdgeInsets.only(right: 20.0),
                       leading:
-                          (widget.entry.hasChildren ||
-                              widget.entry.node.containsOnlyMetadata())
+                          (entry.hasChildren ||
+                              entry.node.containsOnlyMetadata())
                           ? FolderButton(
                               openedIcon: const Icon(Icons.arrow_drop_down),
                               closedIcon: const Icon(Icons.arrow_right),
                               iconSize: 24,
-                              isOpen:
-                                  widget.entry.hasChildren &&
-                                  widget.entry.isExpanded,
-                              onPressed: widget.entry.hasChildren
-                                  ? widget.onTap
-                                  : null,
+                              isOpen: entry.hasChildren && entry.isExpanded,
+                              onPressed: entry.hasChildren ? onTap : null,
                             )
                           : const SizedBox(width: 8.0),
-                      title: Text(widget.entry.node.rowName),
-                      trailing: (widget.entry.node.entry != null)
+                      title: Text(entry.node.rowName),
+                      trailing: (entry.node.entry != null)
                           ? Text(
-                              widget.entry.node.entry!.type.serialize(),
+                              entry.node.entry!.type.serialize(),
                               style: trailingStyle,
                             )
                           : null,

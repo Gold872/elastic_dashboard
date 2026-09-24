@@ -7,7 +7,7 @@
 
 #include <string>
 
-#include <units/time.h>
+#include <wpi/units/time.hpp>
 
 namespace elastic {
 
@@ -21,7 +21,7 @@ enum class NotificationLevel { INFO, WARNING, ERROR };
  */
 struct Notification {
   /// Set the display time to this value to disable the auto-dismiss behavior.
-  static constexpr units::millisecond_t NO_AUTO_DISMISS{0_s};
+  static constexpr wpi::units::millisecond_t NO_AUTO_DISMISS{0_s};
 
   // Set the height to this value to have the dashboard automatically determine
   // the height.
@@ -37,7 +37,7 @@ struct Notification {
   std::string description;
 
   /// Display time.
-  units::millisecond_t displayTime{3_s};
+  wpi::units::millisecond_t displayTime{3_s};
 
   /// Display width in pixels.
   int width = 350;

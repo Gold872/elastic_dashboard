@@ -24,16 +24,6 @@ View the online documentation [here](https://frc-elastic.gitbook.io/docs)
 ## Building and Contributing
 View the instructions for building code and making contributions to the project in the [CONTRIBUTING.md](CONTRIBUTING.md) file
 
-## Special Thanks
-
-This dashboard wouldn't have been made without the help and inspiration from the following people
-
-* [Michael Jansen](https://github.com/mjansen4857) from Team 3015
-* [Jonah](https://github.com/jwbonner) from Team 6328
-* [Oh yes 10 FPS](https://github.com/oh-yes-0-fps) from Team 3173
-* [Jason](https://github.com/jasondaming) and [Peter](https://github.com/PeterJohnson) from WPILib
-* All mentors and advisors of Team 353, the POBots
-
 ## Contributors
 
 <a href="https://github.com/Gold872/elastic_dashboard/graphs/contributors">
