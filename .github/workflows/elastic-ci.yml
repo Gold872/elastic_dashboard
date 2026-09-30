@@ -303,7 +303,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           path: artifacts
-          pattern: Elastic-*
+          pattern: '[Ee]lastic-*'
           merge-multiple: true
           skip-decompress: true
 
