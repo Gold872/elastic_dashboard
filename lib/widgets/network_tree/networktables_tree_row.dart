@@ -15,6 +15,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.d
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/command_scheduler_v3.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/text_display.dart';
 
 class NetworkTableTreeRow {
@@ -131,6 +132,14 @@ class NetworkTableTreeRow {
         topic: entry.topic.name,
         dataType: entryType,
         ntStructMeta: entry.meta,
+      );
+    } else if (entryType == NT4Type.proto('wpi.proto.ProtobufScheduler')) {
+      return SingleTopicNTWidgetModel.createDefault(
+        ntConnection: ntConnection,
+        preferences: preferences,
+        type: CommandSchedulerV3.widgetType,
+        topic: entry.topic.name,
+        dataType: entryType,
       );
     } else if (entryType.isViewable) {
       return TextDisplayModel(

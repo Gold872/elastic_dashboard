@@ -46,7 +46,13 @@ enum NT4DataType {
   }.contains(this);
 }
 
-enum NT4TypeModifier { array, struct, structarray, normal }
+enum NT4TypeModifier {
+  array,
+  struct,
+  structarray,
+  protobuf,
+  normal,
+}
 
 /// This class represents a type in NT4.
 /// It can be a primitive type, an array, or a struct type.
@@ -91,9 +97,6 @@ class NT4Type {
   factory NT4Type.msgpack() =>
       NT4Type(dataType: NT4DataType.msgpack, name: 'msgpack');
 
-  factory NT4Type.protobuf() =>
-      NT4Type(dataType: NT4DataType.protobuf, name: 'protobuf');
-
   factory NT4Type.structschema() =>
       NT4Type(dataType: NT4DataType.structschema, name: 'structschema');
 
@@ -114,6 +117,20 @@ class NT4Type {
 
     return NT4Type(
       dataType: NT4DataType.raw, // structs are considered raw bytes in NT4
+      modifier: modifier,
+      name: name,
+    );
+  }
+
+  factory NT4Type.proto(String name) {
+    if (name.contains(':')) {
+      name = name.split(':')[1];
+    }
+
+    NT4TypeModifier modifier = NT4TypeModifier.protobuf;
+
+    return NT4Type(
+      dataType: NT4DataType.raw, // protobuf are considered raw bytes in NT4
       modifier: modifier,
       name: name,
     );
@@ -150,7 +167,6 @@ class NT4Type {
     'raw': NT4Type.raw,
     'rpc': NT4Type.rpc,
     'msgpack': NT4Type.msgpack,
-    'protobuf': NT4Type.protobuf,
     'structschema': NT4Type.structschema,
   };
 
@@ -166,6 +182,8 @@ class NT4Type {
       return _constructorMap[type]!();
     } else if (type.startsWith('struct:')) {
       return NT4Type.struct(type);
+    } else if (type.startsWith('proto:')) {
+      return NT4Type.proto(type);
     } else if (type.endsWith('[]')) {
       String subType = type.substring(0, type.length - 2);
       NT4Type sub = parse(subType);
@@ -220,6 +238,8 @@ class NT4Type {
       modifier == NT4TypeModifier.struct ||
       modifier == NT4TypeModifier.structarray;
 
+  bool get isProtobuf => modifier == NT4TypeModifier.protobuf;
+
   bool get isViewable => dataType.isViewable;
 
   String serialize() {
@@ -227,6 +247,10 @@ class NT4Type {
       return 'struct:$name';
     } else if (modifier == NT4TypeModifier.structarray) {
       return 'struct:$name[]';
+    }
+
+    if (modifier == NT4TypeModifier.protobuf) {
+      return 'proto:$name';
     }
 
     if (modifier == NT4TypeModifier.array) {
