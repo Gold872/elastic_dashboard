@@ -43,7 +43,10 @@ dependencies:
   popover: ^0.4.0
   provider: ^6.1.5+1
   screen_retriever: ^0.2.2
-  searchable_listview: ^2.19.3
+  searchable_listview:
+    git:
+      url: https://github.com/koukibadr/Searchable-Listview.git
+      ref: 1250b99e09b56c9b399eb0fa6fd70afd7364bcf3
   shared_preferences: ^2.5.3
   titlebar_buttons: ^1.0.0
   transitioned_indexed_stack: ^1.0.2

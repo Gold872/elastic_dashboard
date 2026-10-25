@@ -45,10 +45,10 @@ packages:
     dependency: transitive
     description:
       name: async
-      sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
+      sha256: e2eb0491ba5ddb6177742d2da23904574082139b07c1e33b8503b9f46f3e1a37
       url: "https://pub.dev"
     source: hosted
-    version: "2.13.0"
+    version: "2.13.1"
   boolean_selector:
     dependency: transitive
     description:
@@ -610,10 +610,10 @@ packages:
     dependency: "direct main"
     description:
       name: material_ui
-      sha256: "4f3f38b9953df0a87d6bf5f21880029f77c47048487d5339410c39936be4683b"
+      sha256: e4031746f96c8316864d9b92bce375f1320a36ed56e166307e1e1bda9d90b4ab
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1"
+    version: "1.8.0"
   meta:
     dependency: transitive
     description:
@@ -882,11 +882,12 @@ packages:
   searchable_listview:
     dependency: "direct main"
     description:
-      name: searchable_listview
-      sha256: "4d6fc66d51254d306ecd01677649f62ad86f7a31fc64c17ab6f4977b6db5a605"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.19.3"
+      path: "."
+      ref: "1250b99e09b56c9b399eb0fa6fd70afd7364bcf3"
+      resolved-ref: "1250b99e09b56c9b399eb0fa6fd70afd7364bcf3"
+      url: "https://github.com/koukibadr/Searchable-Listview.git"
+    source: git
+    version: "2.19.5"
   shared_preferences:
     dependency: "direct main"
     description:
