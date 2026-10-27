@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:transitioned_indexed_stack/transitioned_indexed_stack.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/util/tab_data.dart';
@@ -110,19 +111,19 @@ class EditableTabBar extends StatelessWidget {
           MenuHeader(text: tabData[index].name, disableUppercase: true),
           const MenuDivider(),
           MenuItem(
-            label: 'Rename',
-            icon: Icons.drive_file_rename_outline_outlined,
-            onSelected: () => renameTab(context, index),
+            label: const Text('Rename'),
+            icon: const Icon(Icons.drive_file_rename_outline_outlined),
+            onSelected: (_) => renameTab(context, index),
           ),
           MenuItem(
-            label: 'Duplicate',
-            icon: Icons.control_point_duplicate_sharp,
-            onSelected: () => duplicateTab(context, index),
+            label: const Text('Duplicate'),
+            icon: const Icon(Icons.control_point_duplicate_sharp),
+            onSelected: (_) => duplicateTab(context, index),
           ),
           MenuItem(
-            label: 'Close',
-            icon: Icons.close,
-            onSelected: () => closeTab(index),
+            label: const Text('Close'),
+            icon: const Icon(Icons.close),
+            onSelected: (_) => closeTab(index),
           ),
         ],
       );

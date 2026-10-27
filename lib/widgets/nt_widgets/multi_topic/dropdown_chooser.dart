@@ -58,10 +58,9 @@ class DropdownChooserModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required super.topic,
-    bool sortOptions = false,
+    this._sortOptions = false,
     super.period,
-  }) : _sortOptions = sortOptions,
-       super();
+  }) : super();
 
   DropdownChooserModel.fromJson({
     required super.ntConnection,
@@ -269,8 +268,7 @@ class DropdownChooser extends NTWidget {
         const SizedBox(width: 5),
         (showWarning)
             ? const Tooltip(
-                message:
-                    'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
+                message: 'Selected value has not been published to Network Tables.\nRobot code will not be receiving the correct value.',
                 child: Icon(Icons.priority_high, color: Colors.red),
               )
             : const Icon(Icons.check, color: Colors.green),

@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// A gesture detector for dragging that will disable any pan gestures from parent widgets
 class DragListener extends StatelessWidget {

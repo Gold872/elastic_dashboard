@@ -1,6 +1,6 @@
 // Source: https://gist.github.com/ardera/25a8c81a54fb37b0dc750d383caac5d9
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 class PixelRatioOverride extends StatelessWidget {
   final double? dpiOverride;
