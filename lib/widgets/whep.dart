@@ -1,10 +1,10 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-
 import 'package:flutter_webrtc/flutter_webrtc.dart';
 import 'package:http/http.dart';
 import 'package:visibility_detector/visibility_detector.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/widgets/camera_stream_controller.dart';
