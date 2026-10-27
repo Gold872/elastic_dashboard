@@ -542,13 +542,7 @@ class CameraStreamWidget extends NTWidget {
               quarterTurns: model.rotationTurns,
             ),
           ),
-          ListenableBuilder(
-            listenable: mjpegCtrl,
-            builder: (context, child) => Text(
-              '${CameraStreamType.mjpeg.displayName}: ${model.controller!.currentStream}',
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          const Text(''),
         ],
       ),
     );
