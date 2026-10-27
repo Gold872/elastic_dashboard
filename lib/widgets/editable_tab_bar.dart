@@ -111,19 +111,19 @@ class EditableTabBar extends StatelessWidget {
           MenuHeader(text: tabData[index].name, disableUppercase: true),
           const MenuDivider(),
           MenuItem(
-            label: 'Rename',
-            icon: Icons.drive_file_rename_outline_outlined,
-            onSelected: () => renameTab(context, index),
+            label: const Text('Rename'),
+            icon: const Icon(Icons.drive_file_rename_outline_outlined),
+            onSelected: (_) => renameTab(context, index),
           ),
           MenuItem(
-            label: 'Duplicate',
-            icon: Icons.control_point_duplicate_sharp,
-            onSelected: () => duplicateTab(context, index),
+            label: const Text('Duplicate'),
+            icon: const Icon(Icons.control_point_duplicate_sharp),
+            onSelected: (_) => duplicateTab(context, index),
           ),
           MenuItem(
-            label: 'Close',
-            icon: Icons.close,
-            onSelected: () => closeTab(index),
+            label: const Text('Close'),
+            icon: const Icon(Icons.close),
+            onSelected: (_) => closeTab(index),
           ),
         ],
       );

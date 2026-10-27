@@ -20,10 +20,10 @@ dependencies:
     sdk: flutter
   flutter_box_transform: ^0.4.7
   flutter_colorpicker: ^1.1.0
-  flutter_context_menu: ^0.3.0
+  flutter_context_menu: ^0.4.2
   flutter_fancy_tree_view: ^1.6.0
   flutter_launcher_icons: ^0.14.4
-  flutter_webrtc: ^1.5.2
+  flutter_webrtc: ^1.6.3
   geekyants_flutter_gauges:
     git:
       url: https://github.com/Gold872/GaugesFlutter.git
@@ -41,7 +41,7 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.5
   patterns_canvas: ^0.5.0
-  popover: ^0.4.0
+  popover: ^0.5.1
   provider: ^6.1.5+1
   screen_retriever: ^0.2.2
   searchable_listview:

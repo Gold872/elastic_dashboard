@@ -149,22 +149,27 @@ class _AddWidgetDialogState extends State<AddWidgetDialog> {
                         showPopover(
                           context: context,
                           direction: PopoverDirection.top,
-                          transitionDuration: const Duration(
-                            milliseconds: 100,
+                          style: PopoverStyle(
+                            transitionDuration: const Duration(
+                              milliseconds: 100,
+                            ),
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.surface,
+                            barrierColor: Colors.transparent,
                           ),
-                          backgroundColor: Theme.of(
-                            context,
-                          ).colorScheme.surface,
-                          barrierColor: Colors.transparent,
                           width: 200.0,
-                          bodyBuilder: (context) => Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: DialogToggleSwitch(
-                              label: 'Hide Metadata',
-                              initialValue: _hideMetadata,
-                              onToggle: (value) {
-                                setState(() => _hideMetadata = value);
-                              },
+                          bodyBuilder: (context) => Material(
+                            type: MaterialType.transparency,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: DialogToggleSwitch(
+                                label: 'Hide Metadata',
+                                initialValue: _hideMetadata,
+                                onToggle: (value) {
+                                  setState(() => _hideMetadata = value);
+                                },
+                              ),
                             ),
                           ),
                         );

@@ -295,9 +295,9 @@ class NTWidgetContainerModel extends WidgetContainerModel {
     for (String type in childModel.getAvailableDisplayTypes()) {
       widgetTypes.add(
         MenuItem(
-          label: type,
-          icon: (childModel.type == type) ? Icons.check : null,
-          onSelected: () {
+          label: Text(type),
+          icon: Icon((childModel.type == type) ? Icons.check : null),
+          onSelected: (_) {
             if (childModel.type != type) {
               changeChildToType(type);
             }
@@ -306,7 +306,7 @@ class NTWidgetContainerModel extends WidgetContainerModel {
         ),
       );
     }
-    return [MenuItem.submenu(label: 'Show As', items: widgetTypes)];
+    return [MenuItem.submenu(label: const Text('Show As'), items: widgetTypes)];
   }
 
   @override

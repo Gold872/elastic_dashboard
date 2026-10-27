@@ -930,20 +930,20 @@ class TabGrid extends StatelessWidget {
               MenuHeader(text: container.title ?? '', disableUppercase: true),
               const MenuDivider(),
               MenuItem(
-                label: 'Edit Properties',
-                icon: Icons.edit_outlined,
-                onSelected: () => container.showEditProperties(context),
+                label: const Text('Edit Properties'),
+                icon: const Icon(Icons.edit_outlined),
+                onSelected: (_) => container.showEditProperties(context),
               ),
               ...container.getContextMenuItems(),
               MenuItem(
-                label: 'Copy',
-                icon: Icons.copy_outlined,
-                onSelected: () => model.copyWidget(container),
+                label: const Text('Copy'),
+                icon: const Icon(Icons.copy_outlined),
+                onSelected: (_) => model.copyWidget(container),
               ),
               MenuItem(
-                label: 'Remove',
-                icon: Icons.delete_outlined,
-                onSelected: () => model.removeWidget(container),
+                label: const Text('Remove'),
+                icon: const Icon(Icons.delete_outlined),
+                onSelected: (_) => model.removeWidget(container),
               ),
             ];
 
@@ -1056,25 +1056,24 @@ class TabGrid extends StatelessWidget {
 
         List<MenuItem> contextMenuEntries = [
           MenuItem(
-            label: 'Add Widget',
-            icon: Icons.add,
-            onSelected: () => model.onAddWidgetPressed.call(),
+            label: const Text('Add Widget'),
+            icon: const Icon(Icons.add),
+            onSelected: (_) => model.onAddWidgetPressed.call(),
           ),
           MenuItem(
-            label: 'Clear Layout',
-            icon: Icons.clear,
-            onSelected: () => model.confirmClearWidgets(context),
+            label: const Text('Clear Layout'),
+            icon: const Icon(Icons.clear),
+            onSelected: (_) => model.confirmClearWidgets(context),
           ),
         ];
 
         if (TabGridModel.copyJsonData != null) {
           contextMenuEntries.add(
             MenuItem(
-              label: 'Paste',
-              icon: Icons.paste_outlined,
-              onSelected: () {
-                pasteWidget(model, TabGridModel.copyJsonData, localPosition);
-              },
+              label: const Text('Paste'),
+              icon: const Icon(Icons.paste_outlined),
+              onSelected: (_) =>
+                  pasteWidget(model, TabGridModel.copyJsonData, localPosition),
             ),
           );
         }
