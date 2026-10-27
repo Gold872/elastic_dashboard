@@ -493,13 +493,7 @@ class CameraStreamWidget extends NTWidget {
               quarterTurns: model.rotationTurns,
             ),
           ),
-          ListenableBuilder(
-            listenable: whepCtrl,
-            builder: (context, child) => Text(
-              '${CameraStreamType.whep.displayName}: ${model.controller!.currentStream}',
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          const Text(''),
         ],
       ),
     );
