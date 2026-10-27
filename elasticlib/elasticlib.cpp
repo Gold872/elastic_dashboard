@@ -8,23 +8,23 @@
 #include <exception>
 #include <string>
 
-#include <fmt/core.h>
-#include <networktables/NetworkTableInstance.h>
-#include <networktables/StringTopic.h>
-#include <wpi/json.h>
+#include <wpi/nt/NetworkTableInstance.hpp>
+#include <wpi/nt/StringTopic.hpp>
+#include <wpi/util/json.hpp>
+#include <wpi/util/print.hpp>
 
 namespace elastic {
 
 void SendNotification(const Notification& notification) {
-  static nt::StringTopic topic =
-      nt::NetworkTableInstance::GetDefault().GetStringTopic(
+  static wpi::nt::StringTopic topic =
+      wpi::nt::NetworkTableInstance::GetDefault().GetStringTopic(
           "/Elastic/RobotNotifications");
-  static nt::StringPublisher publisher =
+  static wpi::nt::StringPublisher publisher =
       topic.Publish({.sendAll = true, .keepDuplicates = true});
 
   try {
     // Convert Notification to JSON string
-    wpi::json jsonData;
+    wpi::util::json jsonData;
 
     if (notification.level == NotificationLevel::INFO) {
       jsonData["level"] = "INFO";
@@ -43,19 +43,19 @@ void SendNotification(const Notification& notification) {
     jsonData["height"] = notification.height;
 
     // Publish the JSON string
-    publisher.Set(jsonData.dump());
+    publisher.Set(jsonData.to_string());
   } catch (const std::exception& e) {
-    fmt::println(stderr, "Error processing JSON: {}", e.what());
+    wpi::util::println(stderr, "Error processing JSON: {}", e.what());
   } catch (...) {
-    fmt::println(stderr, "Unknown error occurred while processing JSON.");
+    wpi::util::println(stderr, "Unknown error occurred while processing JSON.");
   }
 }
 
 void SelectTab(std::string_view tabName) {
-  static nt::StringTopic topic =
-      nt::NetworkTableInstance::GetDefault().GetStringTopic(
+  static wpi::nt::StringTopic topic =
+      wpi::nt::NetworkTableInstance::GetDefault().GetStringTopic(
           "/Elastic/SelectedTab");
-  static nt::StringPublisher publisher =
+  static wpi::nt::StringPublisher publisher =
       topic.Publish({.keepDuplicates = true});
 
   publisher.Set(tabName);
