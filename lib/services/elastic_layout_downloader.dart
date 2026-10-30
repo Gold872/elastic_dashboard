@@ -22,8 +22,7 @@ class ElasticLayoutDownloader {
     if (!ntConnection.isNT4Connected) {
       return (
         successful: false,
-        data:
-            'Cannot download a remote layout while disconnected from the robot.',
+        data: 'Cannot download a remote layout while disconnected from the robot.',
       );
     }
     String robotIP =

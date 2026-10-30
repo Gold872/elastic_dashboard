@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:provider/provider.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
@@ -11,9 +11,9 @@ import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_dropdown_chooser.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/empty_nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
-import 'widget_container_model.dart';
 
 class NTWidgetContainerModel extends WidgetContainerModel {
   final NTConnection ntConnection;
@@ -295,9 +295,9 @@ class NTWidgetContainerModel extends WidgetContainerModel {
     for (String type in childModel.getAvailableDisplayTypes()) {
       widgetTypes.add(
         MenuItem(
-          label: type,
-          icon: (childModel.type == type) ? Icons.check : null,
-          onSelected: () {
+          label: Text(type),
+          icon: Icon((childModel.type == type) ? Icons.check : null),
+          onSelected: (_) {
             if (childModel.type != type) {
               changeChildToType(type);
             }
@@ -306,7 +306,7 @@ class NTWidgetContainerModel extends WidgetContainerModel {
         ),
       );
     }
-    return [MenuItem.submenu(label: 'Show As', items: widgetTypes)];
+    return [MenuItem.submenu(label: const Text('Show As'), items: widgetTypes)];
   }
 
   @override

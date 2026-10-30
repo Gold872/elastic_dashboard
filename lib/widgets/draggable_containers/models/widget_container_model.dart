@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
-
 import 'package:dot_cast/dot_cast.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
@@ -153,12 +153,11 @@ abstract class WidgetContainerModel extends ChangeNotifier {
   WidgetContainerModel({
     required this.preferences,
     required Rect initialPosition,
-    required String? title,
-    bool enabled = false,
+    required this._title,
+    this._enabled = false,
     this.minWidth = 128.0,
     this.minHeight = 128.0,
-  }) : _title = title,
-       _enabled = enabled {
+  }) {
     _displayRect = initialPosition;
     init();
   }
@@ -166,11 +165,11 @@ abstract class WidgetContainerModel extends ChangeNotifier {
   WidgetContainerModel.fromJson({
     required Map<String, dynamic> jsonData,
     required this.preferences,
-    bool enabled = false,
+    this._enabled = false,
     this.minWidth = 128.0,
     this.minHeight = 128.0,
     Function(String errorMessage)? onJsonLoadingWarning,
-  }) : _enabled = enabled {
+  }) {
     fromJson(jsonData);
     init();
   }

@@ -6,15 +6,15 @@ This document provides a set of guidelines to help you contribute to the project
 
 ## Ways to Contribute
 
-- **Bug Reports:** If you encounter a bug, please open a [Bug Report Issue](https://github.com/Gold87/elastic_dashboard/issues/new?assignees=&labels=bug&projects=&template=bug_report.md) on the project issue tracker.
-- **Suggesting Enhancements:** If you have an idea for a new feature or an improvement to an existing one, feel free to open a [Feature Request Issue](https://github.com/Gold87/elastic_dashboard/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md).
+- **Bug Reports:** If you encounter a bug, please open a [Bug Report Issue](https://github.com/Gold872/elastic_dashboard/issues/new?assignees=&labels=bug&projects=&template=bug_report.md) on the project issue tracker.
+- **Suggesting Enhancements:** If you have an idea for a new feature or an improvement to an existing one, feel free to open a [Feature Request Issue](https://github.com/Gold872/elastic_dashboard/issues/new?assignees=&labels=enhancement&projects=&template=feature_request.md).
 - **Code Contributions:** If you'd like to fix a bug or implement a feature, please follow the workflow described below.
 
 ## Contribution Workflow
 
 To ensure a standardized process, please follow this development workflow:
 
-1. **Fork the Repository:** Start by [forking the repository](https://github.com/Gold87/elastic_dashboard/fork) to your own GitHub account.
+1. **Fork the Repository:** Start by [forking the repository](https://github.com/Gold872/elastic_dashboard/fork) to your own GitHub account.
 2. **Create a Branch:** Create a new branch from `main` in your fork for your changes. Use a descriptive name, such as `fix-connection-error` or `add-new-widget`.
     ```bash
     git checkout -b <your-branch-name>

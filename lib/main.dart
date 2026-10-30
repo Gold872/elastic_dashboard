@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as legacy;
 import 'package:flutter/services.dart';
 
 import 'package:collection/collection.dart';
@@ -11,6 +11,8 @@ import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/app_distributor.dart';
@@ -313,6 +315,9 @@ class _ElasticState extends State<Elastic> {
       debugShowCheckedModeBanner: false,
       title: appTitle,
       theme: theme,
+      builder: (BuildContext context, Widget? child) =>
+          // ignore: deprecated_member_use
+          legacy.Material(child: MaterialUiCompatibilityBridge(child: child!)),
       home: DashboardPage(model: dashboardViewModel),
     );
   }

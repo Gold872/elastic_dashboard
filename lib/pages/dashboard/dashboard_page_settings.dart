@@ -1,10 +1,10 @@
 import 'dart:io';
 
-import 'package:flutter/material.dart';
-
 import 'package:logger/logger.dart';
 import 'package:path/path.dart' as path;
 import 'package:url_launcher/url_launcher.dart';
+
+import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/pages/dashboard_page.dart';
 import 'package:elastic_dashboard/services/ip_address_util.dart';

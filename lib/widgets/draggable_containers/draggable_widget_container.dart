@@ -1,13 +1,13 @@
 import 'dart:ui';
 
-import 'package:flutter/material.dart';
-
 import 'package:collection/collection.dart';
 import 'package:flutter_box_transform/flutter_box_transform.dart';
 import 'package:provider/provider.dart';
 
+import 'package:material_ui/material_ui.dart';
+
 import 'package:elastic_dashboard/services/settings.dart';
-import 'models/widget_container_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 
 typedef DraggableContainerUpdateFunctions = ({
   Function(WidgetContainerModel widget, Rect newRect, TransformResult result)

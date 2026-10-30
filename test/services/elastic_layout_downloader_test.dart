@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:elastic_dashboard/services/elastic_layout_downloader.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
+
 import '../test_util.dart';
 import '../test_util.mocks.dart';
 

@@ -1,9 +1,9 @@
-import 'package:flutter/material.dart';
-
 import 'package:provider/provider.dart';
 
+import 'package:material_ui/material_ui.dart';
+
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_layout_container.dart';
-import 'models/list_layout_model.dart';
+import 'package:elastic_dashboard/widgets/draggable_containers/models/list_layout_model.dart';
 
 class DraggableListLayout extends DraggableLayoutContainer {
   const DraggableListLayout({super.key, super.updateFunctions}) : super();
