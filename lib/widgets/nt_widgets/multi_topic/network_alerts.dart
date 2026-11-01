@@ -132,7 +132,7 @@ class NetworkAlerts extends NTWidget {
                     leading: const Icon(
                       Icons.info,
                       size: 24,
-                      color: Colors.green,
+                      color: Colors.blue,
                     ),
                     title: Text(alertMessage, style: messageStyle),
                   );
