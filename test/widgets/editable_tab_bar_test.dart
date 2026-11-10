@@ -459,4 +459,91 @@ void main() {
 
     verify(tabBarFunctions.onTabChanged()).called(1);
   });
+
+  testWidgets('Edit tab background', (widgetTester) async {
+    FlutterError.onError = ignoreOverflowErrors;
+
+    TabGridModel teleopGrid = TabGridModel.fromJson(
+      ntConnection: mockNTConnection,
+      preferences: preferences,
+      jsonData: {
+        'layouts': [],
+        'containers': [],
+        'background': {
+          'image': 'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAAC56t6BAAAAEUlEQVR4nGP4z8DwH4QZMBgAoXkL9U3EmgcAAAAASUVORK5CYII=',
+          'x': 0.0,
+          'y': 0.0,
+          'width': 256.0,
+          'height': 128.0,
+          'opacity': 1.0,
+        },
+      },
+      onAddWidgetPressed: () {},
+    );
+
+    await widgetTester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: EditableTabBar(
+            preferences: preferences,
+            currentIndex: 0,
+            tabData: [TabData(name: 'Teleoperated', tabGrid: teleopGrid)],
+            onTabCreate: () {},
+            onTabDestroy: (index) {},
+            onTabMoveLeft: () {},
+            onTabMoveRight: () {},
+            onTabRename: (tab, grid) {},
+            onTabChanged: (index) {},
+            onTabDuplicate: (index) {},
+          ),
+        ),
+      ),
+    );
+
+    await widgetTester.pumpAndSettle();
+
+    final teleopTab = find.widgetWithText(AnimatedContainer, 'Teleoperated');
+
+    await widgetTester.tap(teleopTab, buttons: kSecondaryButton);
+    await widgetTester.pumpAndSettle();
+
+    final backgroundButton = find.text('Background');
+
+    expect(backgroundButton, findsOneWidget);
+
+    await widgetTester.tap(backgroundButton);
+    await widgetTester.pumpAndSettle();
+
+    expect(find.text('Tab Background'), findsOneWidget);
+    expect(find.text('Choose Image'), findsOneWidget);
+
+    final widthField = find.widgetWithText(DialogTextInput, 'Width');
+    final opacityField = find.widgetWithText(
+      DialogTextInput,
+      'Opacity (0 - 1)',
+    );
+
+    expect(widthField, findsOneWidget);
+    expect(opacityField, findsOneWidget);
+
+    await widgetTester.enterText(widthField, '512');
+    await widgetTester.testTextInput.receiveAction(TextInputAction.done);
+    await widgetTester.pumpAndSettle();
+
+    expect(teleopGrid.background!.width, 512.0);
+    expect(teleopGrid.background!.height, 128.0);
+
+    await widgetTester.enterText(opacityField, '0.25');
+    await widgetTester.testTextInput.receiveAction(TextInputAction.done);
+    await widgetTester.pumpAndSettle();
+
+    expect(teleopGrid.background!.opacity, 0.25);
+
+    await widgetTester.tap(find.text('Remove'));
+    await widgetTester.pumpAndSettle();
+
+    expect(teleopGrid.background, isNull);
+    expect(widthField, findsNothing);
+    expect(teleopGrid.toJson().containsKey('background'), isFalse);
+  });
 }
