@@ -558,12 +558,14 @@ class ListLayoutModel extends LayoutContainerModel {
   WidgetContainer getDraggingWidgetContainer(BuildContext context) =>
       WidgetContainer(
         title: title,
+        showTitle: showTitle,
         width: draggingRect.width,
         height: draggingRect.height,
         cornerRadius:
             preferences.getDouble(PrefKeys.cornerRadius) ??
             Defaults.cornerRadius,
         opacity: 0.80,
+        backgroundOpacity: backgroundOpacity,
         horizontalPadding: 5.0,
         verticalPadding: 5.0,
         child: Stack(
@@ -582,11 +584,13 @@ class ListLayoutModel extends LayoutContainerModel {
   @override
   WidgetContainer getWidgetContainer(BuildContext context) => WidgetContainer(
     title: title,
+    showTitle: showTitle,
     width: displayRect.width,
     height: displayRect.height,
     cornerRadius:
         preferences.getDouble(PrefKeys.cornerRadius) ?? Defaults.cornerRadius,
     opacity: (previewVisible) ? 0.25 : 1.00,
+    backgroundOpacity: backgroundOpacity,
     horizontalPadding: 5.0,
     verticalPadding: 5.0,
     child: Opacity(
