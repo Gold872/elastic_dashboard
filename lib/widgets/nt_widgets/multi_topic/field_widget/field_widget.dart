@@ -219,7 +219,7 @@ class FieldWidget extends NTWidget {
         rotatedScaleReduction / scaleReduction,
         1,
       )
-      ..rotateZ(radians(model.fieldRotation))
+      ..rotateZ(radians(model.displayedFieldRotation))
       ..translateByDouble(-size.width / 2, -size.height / 2, 0, 1);
 
     final Matrix4 totalTransform = controller.value * innerTransform;
@@ -291,7 +291,7 @@ class FieldWidget extends NTWidget {
     return Transform.scale(
       scale: rotatedScaleReduction / scaleReduction,
       child: Transform.rotate(
-        angle: radians(model.fieldRotation),
+        angle: radians(model.displayedFieldRotation),
         child: Stack(
           alignment: Alignment.center,
           children: [
@@ -330,7 +330,7 @@ class FieldWidget extends NTWidget {
         FittedSizes rotatedFittedSizes = applyBoxFit(
           BoxFit.contain,
           model.field.fieldImageSize?.rotateBy(
-                -radians(model.fieldRotation),
+                -radians(model.displayedFieldRotation),
               ) ??
               const Size(0, 0),
           size,
@@ -401,7 +401,7 @@ class FieldWidget extends NTWidget {
                   return Transform.scale(
                     scale: rotatedScaleReduction / scaleReduction,
                     child: Transform.rotate(
-                      angle: radians(model.fieldRotation),
+                      angle: radians(model.displayedFieldRotation),
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
@@ -456,6 +456,31 @@ class FieldWidget extends NTWidget {
                 ),
               ),
             ),
+            if (model.driverStationAtBottom && !model.allianceKnown)
+              Positioned(
+                top: 4,
+                left: 4,
+                child: IgnorePointer(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.6),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Alliance unknown: '
+                      '${model.isRedAlliance ? 'RED' : 'BLUE'} view',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
           ],
         );
       },

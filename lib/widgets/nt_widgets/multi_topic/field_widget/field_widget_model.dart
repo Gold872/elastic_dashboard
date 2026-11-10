@@ -44,10 +44,17 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   final List<String> _otherObjectTopics = [];
   final List<NT4Subscription> _otherObjectSubscriptions = [];
 
+  /// Published by WPILib's DriverStation: 0 is unknown (no Driver Station),
+  /// 1-3 are Red 1-3 and 4-6 are Blue 1-3
+  static const String allianceStationTopic = '/DriverStation/AllianceStationID';
+
+  NT4Subscription? _allianceStationSubscription;
+
   @override
   List<NT4Subscription> get subscriptions => [
     robotSubscription,
     ..._otherObjectSubscriptions,
+    ?_allianceStationSubscription,
   ];
 
   List<NT4Subscription> get otherObjectSubscriptions =>
@@ -68,6 +75,10 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   bool _showTrajectories = true;
 
   double _fieldRotation = 0.0;
+
+  bool _driverStationAtBottom = false;
+  bool _allianceKnown = false;
+  bool _isRedAlliance = false;
 
   Color _robotColor = Colors.red;
   Color _trajectoryColor = Colors.white;
@@ -117,6 +128,40 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
   set fieldRotation(double value) {
     _fieldRotation = value;
     refresh();
+  }
+
+  /// When enabled, the field is drawn vertically with the robot's alliance
+  /// wall at the bottom, following [allianceStationTopic]. This overrides
+  /// [fieldRotation] while enabled.
+  bool get driverStationAtBottom => _driverStationAtBottom;
+
+  set driverStationAtBottom(bool value) {
+    if (value == _driverStationAtBottom) {
+      return;
+    }
+    _driverStationAtBottom = value;
+    _unsubscribeAllianceStation();
+    if (value) {
+      _subscribeAllianceStation();
+    }
+    transformController.value = Matrix4.identity();
+    refresh();
+  }
+
+  /// Whether the alliance is currently known. When it isn't (no value yet or
+  /// no Driver Station), the last known alliance is kept, starting with blue.
+  bool get allianceKnown => _allianceKnown;
+
+  bool get isRedAlliance => _isRedAlliance;
+
+  /// The rotation the field is drawn with, in degrees
+  double get displayedFieldRotation {
+    if (!_driverStationAtBottom) {
+      return _fieldRotation;
+    }
+    // The red alliance wall is on the left of the field image and the blue
+    // alliance wall is on the right
+    return _isRedAlliance ? -90.0 : 90.0;
   }
 
   Color get robotColor => _robotColor;
@@ -330,6 +375,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     this._robotColor = Colors.red,
     this._trajectoryColor = Colors.white,
     this._showRobotOutsideWidget = true,
+    this._driverStationAtBottom = false,
     super.period,
   }) : _selectedCoordinateSystem = coordinateSystem,
        super() {
@@ -346,7 +392,9 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     required super.ntConnection,
     required super.preferences,
     required Map<String, dynamic> jsonData,
-  }) : super.fromJson(jsonData: jsonData) {
+  }) : _driverStationAtBottom =
+           tryCast(jsonData['driver_station_at_bottom']) ?? false,
+       super.fromJson(jsonData: jsonData) {
     _fieldGame = tryCast(jsonData['field_game']) ?? _fieldGame;
     if (jsonData['coordinate_system'] is String) {
       _selectedCoordinateSystem = CoordinateSystem.fromJson(
@@ -407,11 +455,68 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     _otherObjectSubscriptions.clear();
 
     robotSubscription = ntConnection.subscribe(robotTopicName, super.period);
+
+    if (_driverStationAtBottom) {
+      _subscribeAllianceStation();
+    }
+  }
+
+  void _subscribeAllianceStation() {
+    _allianceStationSubscription = ntConnection.subscribe(
+      allianceStationTopic,
+      super.period,
+    )..addListener(_onAllianceStationChanged);
+    _onAllianceStationChanged();
+  }
+
+  void _unsubscribeAllianceStation() {
+    if (_allianceStationSubscription == null) {
+      return;
+    }
+    _allianceStationSubscription!.removeListener(_onAllianceStationChanged);
+    ntConnection.unSubscribe(_allianceStationSubscription!);
+    _allianceStationSubscription = null;
+  }
+
+  // Only rebuilds when the drawn side or the unknown marker changes
+  void _onAllianceStationChanged() {
+    Object? allianceStation = _allianceStationSubscription?.value;
+
+    bool known = false;
+    bool red = _isRedAlliance;
+    if (allianceStation is int && allianceStation >= 1) {
+      if (allianceStation <= 3) {
+        known = true;
+        red = true;
+      } else if (allianceStation <= 6) {
+        known = true;
+        red = false;
+      }
+    }
+
+    if (known == _allianceKnown && red == _isRedAlliance) {
+      return;
+    }
+
+    if (red != _isRedAlliance) {
+      transformController.value = Matrix4.identity();
+    }
+    _allianceKnown = known;
+    _isRedAlliance = red;
+    refresh();
+  }
+
+  @override
+  void unSubscribe() {
+    _unsubscribeAllianceStation();
+
+    super.unSubscribe();
   }
 
   @override
   void resetSubscription() {
     _otherObjectTopics.clear();
+    _unsubscribeAllianceStation();
 
     super.resetSubscription();
 
@@ -448,6 +553,7 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     'robot_color': robotColor.toARGB32(),
     'trajectory_color': trajectoryColor.toARGB32(),
     'show_robot_outside_widget': showRobotOutsideWidget,
+    if (_driverStationAtBottom) 'driver_station_at_bottom': true,
   };
 
   @override
@@ -602,53 +708,80 @@ class FieldWidgetModel extends MultiTopicNTWidgetModel {
     ),
     const SizedBox(height: 5),
     Row(
-      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-              ),
-              label: const Text('Rotate Left'),
-              icon: const Icon(Icons.rotate_90_degrees_ccw),
-              onPressed: () {
-                double newRotation = fieldRotation - 90;
-                if (newRotation < -180) {
-                  newRotation += 360;
-                }
-                fieldRotation = newRotation;
-                transformController.value = Matrix4.identity();
-              },
-            ),
-          ),
+        Tooltip(
+          waitDuration: const Duration(milliseconds: 100),
+          message:
+              'If turned on, the field is drawn vertically with your alliance\'s driver station wall at the bottom, following $allianceStationTopic. This replaces the manual rotation.\nIf the alliance is unknown, the last known side is kept (blue at first) and an "Alliance unknown" label is shown.',
+          child: Icon(Icons.help),
         ),
+        const SizedBox(width: 5),
         Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-            child: OutlinedButton.icon(
-              style: OutlinedButton.styleFrom(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(5.0),
-                ),
-              ),
-              label: const Text('Rotate Right'),
-              icon: const Icon(Icons.rotate_90_degrees_cw),
-              onPressed: () {
-                double newRotation = fieldRotation + 90;
-                if (newRotation > 180) {
-                  newRotation -= 360;
-                }
-                fieldRotation = newRotation;
-                transformController.value = Matrix4.identity();
-              },
-            ),
+          child: DialogToggleSwitch(
+            onToggle: (value) => driverStationAtBottom = value,
+            initialValue: driverStationAtBottom,
+            label: 'Driver Station at Bottom (Follows Alliance)',
           ),
         ),
       ],
+    ),
+    const SizedBox(height: 5),
+    // Rebuilds with the model so the buttons are disabled with the toggle above
+    ListenableBuilder(
+      listenable: this,
+      builder: (context, child) => Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                ),
+                label: const Text('Rotate Left'),
+                icon: const Icon(Icons.rotate_90_degrees_ccw),
+                onPressed: driverStationAtBottom
+                    ? null
+                    : () {
+                        double newRotation = fieldRotation - 90;
+                        if (newRotation < -180) {
+                          newRotation += 360;
+                        }
+                        fieldRotation = newRotation;
+                        transformController.value = Matrix4.identity();
+                      },
+              ),
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4.0),
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(5.0),
+                  ),
+                ),
+                label: const Text('Rotate Right'),
+                icon: const Icon(Icons.rotate_90_degrees_cw),
+                onPressed: driverStationAtBottom
+                    ? null
+                    : () {
+                        double newRotation = fieldRotation + 90;
+                        if (newRotation > 180) {
+                          newRotation -= 360;
+                        }
+                        fieldRotation = newRotation;
+                        transformController.value = Matrix4.identity();
+                      },
+              ),
+            ),
+          ),
+        ],
+      ),
     ),
     const SizedBox(height: 10),
     Row(
