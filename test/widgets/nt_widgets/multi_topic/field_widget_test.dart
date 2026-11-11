@@ -150,6 +150,271 @@ void main() {
     expect(fieldWidgetModel.toJson(), fieldWidgetJson);
   });
 
+  group('Field driver station at bottom', () {
+    // Manual rotation that differs from both alliance rotations
+    final Map<String, dynamic> manualRotationJson = {
+      ...fieldWidgetJson,
+      'field_rotation': 180.0,
+    };
+
+    late NTConnection allianceConnection;
+
+    setUp(() {
+      allianceConnection = createMockOnlineNT4(
+        virtualTopics: [
+          NT4Topic(
+            name: 'Test/Field/Robot',
+            type: NT4Type.array(NT4Type.double()),
+            properties: {},
+          ),
+          NT4Topic(
+            name: 'Test/Field/OtherObject',
+            type: NT4Type.array(NT4Type.double()),
+            properties: {},
+          ),
+          NT4Topic(
+            name: FieldWidgetModel.allianceStationTopic,
+            type: NT4Type.int(),
+            properties: {},
+          ),
+        ],
+        virtualValues: {
+          'Test/Field/Robot': [2.0, 1.0, 0.0],
+          'Test/Field/OtherObject': [1.0, 1.0, 0.0],
+          // Blue 1
+          FieldWidgetModel.allianceStationTopic: 4,
+        },
+      );
+    });
+
+    FieldWidgetModel buildModel(bool driverStationAtBottom) =>
+        NTWidgetRegistry.buildNTModelFromJson(
+          allianceConnection,
+          preferences,
+          'Field',
+          {
+            ...manualRotationJson,
+            'driver_station_at_bottom': driverStationAtBottom,
+          },
+        ) as FieldWidgetModel;
+
+    Iterable<String> subscribedTopics(FieldWidgetModel model) =>
+        model.subscriptions.map((e) => e.topic);
+
+    test('json round trip', () {
+      FieldWidgetModel model = buildModel(true);
+
+      expect(model.driverStationAtBottom, isTrue);
+      expect(model.fieldRotation, 180.0);
+      expect(model.toJson(), {
+        ...manualRotationJson,
+        'driver_station_at_bottom': true,
+      });
+
+      model.driverStationAtBottom = false;
+      expect(model.toJson(), manualRotationJson);
+
+      FieldWidgetModel constructed = FieldWidgetModel(
+        ntConnection: allianceConnection,
+        preferences: preferences,
+        period: 0.100,
+        topic: 'Test/Field',
+        fieldGame: 'Rebuilt',
+        robotWidthMeters: 1.0,
+        robotLengthMeters: 1.0,
+        fieldRotation: 90.0,
+        coordinateSystem: CoordinateSystem.center,
+        driverStationAtBottom: true,
+      );
+
+      expect(constructed.toJson(), {
+        ...fieldWidgetJson,
+        'driver_station_at_bottom': true,
+      });
+      expect(
+        subscribedTopics(constructed),
+        contains(FieldWidgetModel.allianceStationTopic),
+      );
+    });
+
+    test('off keeps the manual rotation and does not subscribe', () {
+      FieldWidgetModel model = buildModel(false);
+
+      expect(model.driverStationAtBottom, isFalse);
+      expect(model.displayedFieldRotation, 180.0);
+      expect(
+        subscribedTopics(model),
+        isNot(contains(FieldWidgetModel.allianceStationTopic)),
+      );
+    });
+
+    test('blue, red and unknown alliance', () {
+      FieldWidgetModel model = buildModel(true);
+      int notifications = 0;
+      model.addListener(() => notifications++);
+
+      expect(
+        subscribedTopics(model),
+        contains(FieldWidgetModel.allianceStationTopic),
+      );
+      expect(model.allianceKnown, isTrue);
+      expect(model.isRedAlliance, isFalse);
+      expect(model.displayedFieldRotation, 90.0);
+
+      // Red 1
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        1,
+      );
+      expect(model.allianceKnown, isTrue);
+      expect(model.isRedAlliance, isTrue);
+      expect(model.displayedFieldRotation, -90.0);
+      expect(notifications, 1);
+
+      // Red 3, same side
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        3,
+      );
+      expect(notifications, 1);
+
+      // No Driver Station: keeps the last side
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        0,
+      );
+      expect(model.allianceKnown, isFalse);
+      expect(model.isRedAlliance, isTrue);
+      expect(model.displayedFieldRotation, -90.0);
+      expect(notifications, 2);
+
+      // Blue 3
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        6,
+      );
+      expect(model.allianceKnown, isTrue);
+      expect(model.isRedAlliance, isFalse);
+      expect(model.displayedFieldRotation, 90.0);
+      expect(notifications, 3);
+
+      // No value (cleared when NT reconnects)
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        null,
+      );
+      expect(model.allianceKnown, isFalse);
+      expect(model.displayedFieldRotation, 90.0);
+      expect(notifications, 4);
+
+      int beforeRobotUpdates = notifications;
+      for (int i = 0; i < 10; i++) {
+        allianceConnection.updateDataFromTopicName('Test/Field/Robot', [
+          2.0 + i,
+          1.0,
+          0.0,
+        ]);
+      }
+      expect(notifications, beforeRobotUpdates);
+
+      model.driverStationAtBottom = false;
+      expect(model.displayedFieldRotation, 180.0);
+      expect(
+        subscribedTopics(model),
+        isNot(contains(FieldWidgetModel.allianceStationTopic)),
+      );
+    });
+
+    test('unknown before any data is blue', () {
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        null,
+      );
+      FieldWidgetModel model = buildModel(true);
+
+      expect(model.allianceKnown, isFalse);
+      expect(model.isRedAlliance, isFalse);
+      expect(model.displayedFieldRotation, 90.0);
+    });
+
+    test('invalid alliance stations are unknown', () {
+      FieldWidgetModel model = buildModel(true);
+
+      for (Object value in [7, -1, 2.0, true, 'Red1']) {
+        allianceConnection.updateDataFromTopicName(
+          FieldWidgetModel.allianceStationTopic,
+          value,
+        );
+        expect(model.allianceKnown, isFalse, reason: 'value: $value');
+        expect(model.displayedFieldRotation, 90.0, reason: 'value: $value');
+      }
+    });
+
+    test('resubscribes after the subscriptions reset', () {
+      FieldWidgetModel model = buildModel(true);
+
+      model.unSubscribe();
+      expect(
+        subscribedTopics(model),
+        isNot(contains(FieldWidgetModel.allianceStationTopic)),
+      );
+
+      model.resetSubscription();
+      expect(
+        subscribedTopics(model).where(
+          (topic) => topic == FieldWidgetModel.allianceStationTopic,
+        ),
+        hasLength(1),
+      );
+
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        2,
+      );
+      expect(model.isRedAlliance, isTrue);
+      expect(model.displayedFieldRotation, -90.0);
+    });
+
+    testWidgets('draws objects and marks an unknown alliance', (
+      widgetTester,
+    ) async {
+      FieldWidgetModel model = buildModel(true);
+
+      await widgetTester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<NTWidgetModel>.value(
+              value: model,
+              child: const FieldWidget(),
+            ),
+          ),
+        ),
+      );
+      await widgetTester.pumpAndSettle();
+
+      final fieldObject = find.byWidgetPredicate(
+        (widget) => widget is CustomPaint && widget.painter is TrianglePainter,
+      );
+
+      expect(fieldObject, findsNWidgets(2));
+      expect(find.textContaining('Alliance unknown'), findsNothing);
+
+      allianceConnection.updateDataFromTopicName(
+        FieldWidgetModel.allianceStationTopic,
+        0,
+      );
+      await widgetTester.pumpAndSettle();
+
+      expect(find.text('Alliance unknown: BLUE view'), findsOneWidget);
+      expect(fieldObject, findsNWidgets(2));
+
+      model.driverStationAtBottom = false;
+      await widgetTester.pumpAndSettle();
+
+      expect(find.textContaining('Alliance unknown'), findsNothing);
+    });
+  });
+
   group('Field widget with', () {
     final fieldObject = find.byWidgetPredicate(
       (widget) => widget is CustomPaint && widget.painter is TrianglePainter,
@@ -707,5 +972,35 @@ void main() {
     );
     await widgetTester.pumpAndSettle();
     expect(fieldWidgetModel.showRobotOutsideWidget, true);
+
+    final driverStationAtBottom = find.widgetWithText(
+      DialogToggleSwitch,
+      'Driver Station at Bottom (Follows Alliance)',
+    );
+    expect(driverStationAtBottom, findsOneWidget);
+    expect(
+      widgetTester.widget<OutlinedButton>(rotateLeft).onPressed,
+      isNotNull,
+    );
+
+    await widgetTester.ensureVisible(driverStationAtBottom);
+    await widgetTester.tap(
+      find.descendant(of: driverStationAtBottom, matching: find.byType(Switch)),
+    );
+    await widgetTester.pumpAndSettle();
+    expect(fieldWidgetModel.driverStationAtBottom, isTrue);
+    expect(widgetTester.widget<OutlinedButton>(rotateLeft).onPressed, isNull);
+    expect(widgetTester.widget<OutlinedButton>(rotateRight).onPressed, isNull);
+
+    await widgetTester.tap(
+      find.descendant(of: driverStationAtBottom, matching: find.byType(Switch)),
+    );
+    await widgetTester.pumpAndSettle();
+    expect(fieldWidgetModel.driverStationAtBottom, isFalse);
+    expect(fieldWidgetModel.fieldRotation, 90.0);
+    expect(
+      widgetTester.widget<OutlinedButton>(rotateRight).onPressed,
+      isNotNull,
+    );
   });
 }
