@@ -121,6 +121,12 @@ class EditableTabBar extends StatelessWidget {
             onSelected: (_) => duplicateTab(context, index),
           ),
           MenuItem(
+            label: const Text('Background'),
+            icon: const Icon(Icons.wallpaper_outlined),
+            onSelected: (_) =>
+                tabData[index].tabGrid.showBackgroundSettings(context),
+          ),
+          MenuItem(
             label: const Text('Close'),
             icon: const Icon(Icons.close),
             onSelected: (_) => closeTab(index),
