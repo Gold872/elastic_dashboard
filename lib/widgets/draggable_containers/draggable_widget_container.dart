@@ -168,13 +168,22 @@ class WidgetContainer extends StatelessWidget {
     required this.width,
     required this.height,
     this.opacity = 1.0,
+    this.backgroundOpacity = 1.0,
+    this.showTitle = true,
     this.horizontalPadding = 7.5,
     this.verticalPadding = 7.5,
     this.cornerRadius = Defaults.cornerRadius,
   });
 
   final double opacity;
+
+  /// Opacity of the card behind the widget (background, title bar and shadow).
+  ///
+  /// This only changes colors instead of adding an opacity layer, so it stays
+  /// cheap with many widgets.
+  final double backgroundOpacity;
   final String? title;
+  final bool showTitle;
   final Widget? child;
   final double width;
   final double height;
@@ -186,6 +195,8 @@ class WidgetContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
 
+    bool opaqueBackground = backgroundOpacity >= 1.0;
+
     return SizedBox(
       width: width,
       height: height,
@@ -196,44 +207,56 @@ class WidgetContainer extends StatelessWidget {
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(cornerRadius),
-              color: const Color.fromARGB(255, 40, 40, 40),
-              boxShadow: const [
-                BoxShadow(
-                  offset: Offset(2, 2),
-                  blurRadius: 10.5,
-                  spreadRadius: 0,
-                  color: Colors.black,
-                ),
-              ],
+              color: const Color.fromARGB(
+                255,
+                40,
+                40,
+                40,
+              ).withValues(alpha: backgroundOpacity),
+              boxShadow: (opaqueBackground)
+                  ? const [
+                      BoxShadow(
+                        offset: Offset(2, 2),
+                        blurRadius: 10.5,
+                        spreadRadius: 0,
+                        color: Colors.black,
+                      ),
+                    ]
+                  : null,
             ),
             child: Center(
               child: Column(
                 children: [
                   // Title
-                  LayoutBuilder(
-                    builder: (context, constraints) => Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(cornerRadius),
-                          topRight: Radius.circular(cornerRadius),
+                  if (showTitle)
+                    LayoutBuilder(
+                      builder: (context, constraints) => Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(cornerRadius),
+                            topRight: Radius.circular(cornerRadius),
+                          ),
+                          color: theme.colorScheme.primaryContainer.withValues(
+                            alpha:
+                                theme.colorScheme.primaryContainer.a *
+                                backgroundOpacity,
+                          ),
                         ),
-                        color: theme.colorScheme.primaryContainer,
-                      ),
-                      width: constraints.maxWidth,
-                      alignment: Alignment.center,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0,
-                          vertical: 6.50,
-                        ),
-                        child: Text(
-                          title!,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleSmall,
+                        width: constraints.maxWidth,
+                        alignment: Alignment.center,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10.0,
+                            vertical: 6.50,
+                          ),
+                          child: Text(
+                            title!,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall,
+                          ),
                         ),
                       ),
                     ),
-                  ),
                   // The child widget
                   Expanded(
                     child: Padding(
