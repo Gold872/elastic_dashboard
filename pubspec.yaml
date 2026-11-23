@@ -11,7 +11,7 @@ dependencies:
   collection: ^1.19.1
   decimal: ^3.2.4
   dot_cast: ^1.2.0
-  dropdown_button2: ^2.3.9
+  dropdown_button2: ^4.0.0
   elegant_notification: ^2.5.1
   file_selector: ^1.0.4
   fl_chart: ^1.1.1
@@ -39,15 +39,12 @@ dependencies:
       ref: fix-64-bit-ints
   package_info_plus: ^9.0.0
   path: ^1.9.1
-  path_provider: ^2.1.5
+  path_provider: ^2.1.6
   patterns_canvas: ^0.5.0
   popover: ^0.5.1
   provider: ^6.1.5+1
   screen_retriever: ^0.2.2
-  searchable_listview:
-    git:
-      url: https://github.com/koukibadr/Searchable-Listview.git
-      ref: 1250b99e09b56c9b399eb0fa6fd70afd7364bcf3
+  searchable_listview: ^2.20.1
   shared_preferences: ^2.5.3
   titlebar_buttons: ^1.0.0
   transitioned_indexed_stack: ^1.0.2
@@ -65,7 +62,7 @@ dev_dependencies:
   flutter_lints: ^6.0.0
   flutter_test:
     sdk: flutter
-  mockito: ^5.5.1
+  mockito: ^5.8.1
   tidy_imports: ^1.3.0
 
 flutter:

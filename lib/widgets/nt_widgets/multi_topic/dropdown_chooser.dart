@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -298,7 +298,7 @@ class _StringChooserDropdown extends StatelessWidget {
       child: LayoutBuilder(
         builder: (context, constraints) => DropdownButton2<String>(
           isExpanded: true,
-          value: selected,
+          valueListenable: ValueNotifier(selected),
           selectedItemBuilder: (context) => [
             ...options.map(
               (String option) => Container(
@@ -324,8 +324,8 @@ class _StringChooserDropdown extends StatelessWidget {
                 item.value.toString().toLowerCase().contains(
                   searchValue.toLowerCase(),
                 ),
-            searchInnerWidgetHeight: 50,
-            searchInnerWidget: Container(
+            searchBarWidgetHeight: 50,
+            searchBarWidget: Container(
               color: Theme.of(context).colorScheme.surface,
               height: 50,
               padding: const EdgeInsets.only(
@@ -354,7 +354,7 @@ class _StringChooserDropdown extends StatelessWidget {
           ),
           items: options
               .map(
-                (String option) => DropdownMenuItem(
+                (String option) => DropdownItem(
                   value: option,
                   child: Text(
                     option,

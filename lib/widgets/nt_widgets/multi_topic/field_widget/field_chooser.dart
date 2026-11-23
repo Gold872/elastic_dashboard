@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
 
@@ -30,14 +30,14 @@ class _FieldChooserState extends State<FieldChooser> {
     selectedValue = widget.initialValue;
   }
 
-  DropdownMenuItem<String> _buildDropdownItem(String value) =>
-      DropdownMenuItem<String>(
-        value: value,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 12.0),
-          child: Text(value),
-        ),
-      );
+  DropdownItem<String> _buildDropdownItem(String value) => DropdownItem<String>(
+    value: value,
+    height: 30,
+    child: Padding(
+      padding: const EdgeInsets.only(left: 12.0),
+      child: Text(value),
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -62,10 +62,10 @@ class _FieldChooserState extends State<FieldChooser> {
                 ),
               ),
               buttonStyleData: ButtonStyleData(height: 40),
-              menuItemStyleData: MenuItemStyleData(height: 30),
               items: [
-                DropdownMenuItem<String>(
+                DropdownItem<String>(
                   enabled: false,
+                  height: 30,
                   value: null,
                   child: Text(
                     'FRC Fields',
@@ -79,9 +79,10 @@ class _FieldChooserState extends State<FieldChooser> {
                     .map(
                       (Field item) => _buildDropdownItem(item.game!),
                     ),
-                DropdownMenuItem<String>(
+                DropdownItem<String>(
                   enabled: false,
                   value: null,
+                  height: 30,
                   child: Text(
                     'FTC Fields',
                     style: theme.textTheme.bodyMedium?.copyWith(
@@ -95,7 +96,7 @@ class _FieldChooserState extends State<FieldChooser> {
                       (Field item) => _buildDropdownItem(item.game!),
                     ),
               ],
-              value: selectedValue,
+              valueListenable: ValueNotifier(selectedValue),
               onChanged: (value) {
                 setState(() {
                   selectedValue = value;
