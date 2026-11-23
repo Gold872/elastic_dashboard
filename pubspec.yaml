@@ -46,7 +46,7 @@ dependencies:
   screen_retriever: ^0.2.2
   searchable_listview: ^2.20.1
   shared_preferences: ^2.5.3
-  titlebar_buttons: ^1.0.0
+  titlebar_buttons: ^2.0.0
   transitioned_indexed_stack: ^1.0.2
   url_launcher: ^6.3.2
   uuid: ^4.5.2
