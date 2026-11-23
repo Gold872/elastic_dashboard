@@ -163,15 +163,11 @@ class NetworkTableTreeRow {
         );
       }
 
-      if (hasRows([
-        'desiredStates',
-        'maxSpeed',
-        'measuredStates',
-        'robotRotation',
-        'rotationUnit',
-        'sizeFrontBack',
-        'sizeLeftRight',
-      ])) {
+      // A YAMS swerve drive, which YAGSL publishes under Mechanisms/<name>
+      bool isYAGSLSwerveDrive =
+          hasRows(['states', 'pose']) && getRow('states').hasRow('current');
+
+      if (isYAGSLSwerveDrive) {
         return YAGSLSwerveDriveModel(
           ntConnection: ntConnection,
           preferences: preferences,

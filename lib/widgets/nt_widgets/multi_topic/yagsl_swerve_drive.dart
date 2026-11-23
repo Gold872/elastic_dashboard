@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:dot_cast/dot_cast.dart';
 import 'package:provider/provider.dart';
@@ -7,45 +8,43 @@ import 'package:vector_math/vector_math_64.dart' show radians;
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
+import 'package:elastic_dashboard/services/struct_schemas/pose2d_struct.dart';
+import 'package:elastic_dashboard/services/struct_schemas/swerve_module_state_struct.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
+/// Shows a YAGSL swerve drive from the telemetry YAMS publishes under
+/// `Mechanisms/<drive name>`.
+///
+/// Reads `states/current` and `states/desired` (`struct:SwerveModuleVelocity[]`)
+/// and the robot's rotation from `pose` (`struct:Pose2d`). The modules are drawn
+/// in the order they are listed in `swervedrive.json`: front left, front right,
+/// back left, back right.
 class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
   @override
   String type = YAGSLSwerveDrive.widgetType;
 
-  String get measuredStatesTopic => '$topic/measuredStates';
-  String get desiredStatesTopic => '$topic/desiredStates';
-  String get robotRotationTopic => '$topic/robotRotation';
-  String get maxSpeedTopic => '$topic/maxSpeed';
-  String get robotWidthTopic => '$topic/sizeLeftRight';
-  String get robotLengthTopic => '$topic/sizeFrontBack';
-  String get rotationUnitTopic => '$topic/rotationUnit';
+  String get measuredStatesTopic => '$topic/states/current';
+  String get desiredStatesTopic => '$topic/states/desired';
+  String get poseTopic => '$topic/pose';
 
   late NT4Subscription measuredStatesSubscription;
   late NT4Subscription desiredStatesSubscription;
-  late NT4Subscription robotRotationSubscription;
-  late NT4Subscription maxSpeedSubscription;
-  late NT4Subscription robotWidthSubscription;
-  late NT4Subscription robotLengthSubscription;
-  late NT4Subscription rotationUnitSubscription;
+  late NT4Subscription poseSubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
     measuredStatesSubscription,
     desiredStatesSubscription,
-    robotRotationSubscription,
-    maxSpeedSubscription,
-    robotWidthSubscription,
-    robotLengthSubscription,
-    rotationUnitSubscription,
+    poseSubscription,
   ];
 
   bool _showRobotRotation = true;
   bool _showDesiredStates = true;
   double _angleOffset = 0; // Modifiable angle offset to allow all kinds of swerve libraries setups
+  double _maxSpeed = 4.5;
 
   bool get showRobotRotation => _showRobotRotation;
 
@@ -68,6 +67,14 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
+  /// The module speed, in meters per second, that draws the longest arrow.
+  double get maxSpeed => _maxSpeed;
+
+  set maxSpeed(double value) {
+    _maxSpeed = value;
+    refresh();
+  }
+
   YAGSLSwerveDriveModel({
     required super.ntConnection,
     required super.preferences,
@@ -75,6 +82,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     this._showRobotRotation = true,
     this._showDesiredStates = true,
     this._angleOffset = 0.0,
+    this._maxSpeed = 4.5,
     super.period,
   }) : super();
 
@@ -86,6 +94,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     _showRobotRotation = tryCast(jsonData['show_robot_rotation']) ?? true;
     _showDesiredStates = tryCast(jsonData['show_desired_states']) ?? true;
     _angleOffset = tryCast(jsonData['angle_offset']) ?? 0.0;
+    _maxSpeed = tryCast(jsonData['max_speed']) ?? 4.5;
   }
 
   @override
@@ -98,23 +107,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
       desiredStatesTopic,
       super.period,
     );
-    robotRotationSubscription = ntConnection.subscribe(
-      robotRotationTopic,
-      super.period,
-    );
-    maxSpeedSubscription = ntConnection.subscribe(maxSpeedTopic, super.period);
-    robotWidthSubscription = ntConnection.subscribe(
-      robotWidthTopic,
-      super.period,
-    );
-    robotLengthSubscription = ntConnection.subscribe(
-      robotLengthTopic,
-      super.period,
-    );
-    rotationUnitSubscription = ntConnection.subscribe(
-      rotationUnitTopic,
-      super.period,
-    );
+    poseSubscription = ntConnection.subscribe(poseTopic, super.period);
   }
 
   @override
@@ -123,7 +116,38 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     'show_robot_rotation': _showRobotRotation,
     'show_desired_states': _showDesiredStates,
     'angle_offset': _angleOffset,
+    'max_speed': _maxSpeed,
   };
+
+  /// Decodes a `struct:SwerveModuleVelocity[]` value into
+  /// `[angle, velocity, angle, velocity, ...]`, with angles in radians and
+  /// velocities in meters per second.
+  static List<double> moduleStatesFromValue(Object? value) {
+    List<Object?> raw = tryCast(value) ?? [];
+    List<SwerveModuleStateStruct> states =
+        SwerveModuleStateStruct.listFromBytes(
+          Uint8List.fromList(raw.whereType<int>().toList()),
+        );
+
+    return [
+      for (SwerveModuleStateStruct state in states) ...[
+        state.angle,
+        state.speed,
+      ],
+    ];
+  }
+
+  /// The robot's rotation in radians, from a `struct:Pose2d` value.
+  static double robotRotationFromValue(Object? value) {
+    List<Object?> raw = tryCast(value) ?? [];
+    List<int> bytes = raw.whereType<int>().toList();
+
+    if (bytes.length < Pose2dStruct.length) {
+      return 0.0;
+    }
+
+    return Pose2dStruct.valueFromBytes(Uint8List.fromList(bytes)).angle;
+  }
 
   @override
   List<Widget> getEditProperties(BuildContext context) => [
@@ -168,6 +192,20 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
             ),
           ),
         ),
+        Flexible(
+          child: DialogTextInput(
+            initialText: maxSpeed.toString(),
+            label: 'Max Speed (m/s)',
+            onSubmit: (String value) {
+              double? doubleValue = double.tryParse(value);
+
+              if (doubleValue != null && doubleValue > 0) {
+                maxSpeed = doubleValue;
+              }
+            },
+            formatter: TextFormatterBuilder.decimalTextFormatter(),
+          ),
+        ),
       ],
     ),
   ];
@@ -185,65 +223,34 @@ class YAGSLSwerveDrive extends NTWidget {
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
-        List<Object?> measuredStatesRaw =
-            tryCast(model.measuredStatesSubscription.value) ?? [];
-        List<Object?> desiredStatesRaw =
-            tryCast(model.desiredStatesSubscription.value) ?? [];
-
-        List<double> measuredStates = measuredStatesRaw
-            .whereType<double>()
-            .toList();
-        List<double> desiredStates = desiredStatesRaw
-            .whereType<double>()
-            .toList();
-
-        double width = tryCast(model.robotWidthSubscription.value) ?? 1.0;
-        double length = tryCast(model.robotLengthSubscription.value) ?? width;
-
-        if (width <= 0.0) {
-          width = 1.0;
-        }
-        if (length <= 0.0) {
-          length = 0.0;
-        }
-
-        double sizeRatio = min(length, width) / max(length, width);
-        double lengthWidthRatio = length / width;
-
-        String rotationUnit =
-            tryCast(model.rotationUnitSubscription.value) ?? 'radians';
+        List<double> measuredStates =
+            YAGSLSwerveDriveModel.moduleStatesFromValue(
+              model.measuredStatesSubscription.value,
+            );
+        List<double> desiredStates =
+            YAGSLSwerveDriveModel.moduleStatesFromValue(
+              model.desiredStatesSubscription.value,
+            );
 
         double robotAngle =
-            tryCast(model.robotRotationSubscription.value) ?? 0.0;
+            YAGSLSwerveDriveModel.robotRotationFromValue(
+              model.poseSubscription.value,
+            ) -
+            radians(model.angleOffset);
 
-        if (rotationUnit == 'degrees') {
-          robotAngle = radians(robotAngle);
-        } else if (rotationUnit == 'rotations') {
-          robotAngle *= 2 * pi;
-        }
-
-        robotAngle -= radians(model.angleOffset);
-
-        double maxSpeed = tryCast(model.maxSpeedSubscription.value) ?? 4.5;
-
-        if (maxSpeed <= 0.0) {
-          maxSpeed = 4.5;
-        }
+        double maxSpeed = model.maxSpeed > 0.0 ? model.maxSpeed : 4.5;
 
         return LayoutBuilder(
           builder: (context, constraints) {
-            double maxSideLength =
-                min(constraints.maxWidth, constraints.maxHeight) *
-                0.9 *
-                sizeRatio;
+            double sideLength =
+                min(constraints.maxWidth, constraints.maxHeight) * 0.9;
             return Transform.rotate(
               angle: (model.showRobotRotation) ? -robotAngle : 0.0,
               child: SizedBox(
-                width: maxSideLength / lengthWidthRatio,
-                height: maxSideLength * lengthWidthRatio,
+                width: sideLength,
+                height: sideLength,
                 child: CustomPaint(
                   painter: SwerveDrivePainter(
-                    rotationUnit: rotationUnit,
                     maxSpeed: maxSpeed,
                     moduleStates: measuredStates,
                     desiredStates: (model.showDesiredStates)
@@ -263,13 +270,11 @@ class YAGSLSwerveDrive extends NTWidget {
 class SwerveDrivePainter extends CustomPainter {
   final List<double> moduleStates;
   final List<double> desiredStates;
-  final String rotationUnit;
   final double maxSpeed;
 
   const SwerveDrivePainter({
     required this.moduleStates,
     required this.desiredStates,
-    required this.rotationUnit,
     required this.maxSpeed,
   });
 
@@ -432,12 +437,6 @@ class SwerveDrivePainter extends CustomPainter {
     double backRightVelocity = 0.0,
     bool drawXIfZero = true,
   }) {
-    if (rotationUnit == 'degrees') {
-      frontLeftAngle = radians(frontLeftAngle);
-      frontRightAngle = radians(frontRightAngle);
-      backLeftAngle = radians(backLeftAngle);
-      backRightAngle = radians(backRightAngle);
-    }
     final double circleRadius = min(size.width, size.height) / 8;
     const double arrowAngle = 40 * pi / 180;
 

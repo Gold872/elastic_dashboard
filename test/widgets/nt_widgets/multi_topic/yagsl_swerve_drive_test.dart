@@ -1,3 +1,6 @@
+import 'dart:math';
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,6 +27,7 @@ void main() {
     'show_robot_rotation': true,
     'show_desired_states': true,
     'angle_offset': 90.0,
+    'max_speed': 5.0,
   };
 
   late SharedPreferences preferences;
@@ -54,6 +58,7 @@ void main() {
     expect(yagslSwerveModel.showRobotRotation, isTrue);
     expect(yagslSwerveModel.showDesiredStates, isTrue);
     expect(yagslSwerveModel.angleOffset, 90.0);
+    expect(yagslSwerveModel.maxSpeed, 5.0);
   });
 
   test('YAGSL swerve drive to json', () {
@@ -65,6 +70,7 @@ void main() {
       showRobotRotation: true,
       showDesiredStates: true,
       angleOffset: 90.0,
+      maxSpeed: 5.0,
     );
 
     expect(yagslSwerveModel.toJson(), yagslSwerveJson);
@@ -107,6 +113,7 @@ void main() {
       showRobotRotation: true,
       showDesiredStates: true,
       angleOffset: 90.0,
+      maxSpeed: 5.0,
     );
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
@@ -149,10 +156,12 @@ void main() {
       DialogTextInput,
       'Angle Offset (Degrees)',
     );
+    final maxSpeed = find.widgetWithText(DialogTextInput, 'Max Speed (m/s)');
 
     expect(showRobotRotation, findsOneWidget);
     expect(showDesiredStates, findsOneWidget);
     expect(angleOffset, findsOneWidget);
+    expect(maxSpeed, findsOneWidget);
 
     await widgetTester.tap(
       find.descendant(of: showRobotRotation, matching: find.byType(Switch)),
@@ -170,5 +179,37 @@ void main() {
     await widgetTester.testTextInput.receiveAction(TextInputAction.done);
     await widgetTester.pumpAndSettle();
     expect(yagslSwerveModel.angleOffset, 45.0);
+
+    await widgetTester.enterText(maxSpeed, '3.5');
+    await widgetTester.testTextInput.receiveAction(TextInputAction.done);
+    await widgetTester.pumpAndSettle();
+    expect(yagslSwerveModel.maxSpeed, 3.5);
+  });
+
+  test('YAGSL swerve drive decodes module states', () {
+    ByteData data = ByteData(32)
+      ..setFloat64(0, 1.5, Endian.little)
+      ..setFloat64(8, pi / 2, Endian.little)
+      ..setFloat64(16, -2.0, Endian.little)
+      ..setFloat64(24, pi, Endian.little);
+
+    expect(
+      YAGSLSwerveDriveModel.moduleStatesFromValue(data.buffer.asUint8List()),
+      [pi / 2, 1.5, pi, -2.0],
+    );
+    expect(YAGSLSwerveDriveModel.moduleStatesFromValue(null), isEmpty);
+  });
+
+  test('YAGSL swerve drive decodes robot rotation', () {
+    ByteData data = ByteData(24)
+      ..setFloat64(0, 3.0, Endian.little)
+      ..setFloat64(8, 4.0, Endian.little)
+      ..setFloat64(16, pi / 4, Endian.little);
+
+    expect(
+      YAGSLSwerveDriveModel.robotRotationFromValue(data.buffer.asUint8List()),
+      pi / 4,
+    );
+    expect(YAGSLSwerveDriveModel.robotRotationFromValue(null), 0.0);
   });
 }
