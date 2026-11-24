@@ -68,7 +68,7 @@ void main() {
     },
   );
 
-  test("WPILib's SwerveDrive sendable is still a Basic Swerve Drive", () async {
+  test("A team's SwerveDrive sendable is still a Basic Swerve Drive", () async {
     NetworkTableTreeRow swerve = table('/SmartDashboard/Swerve', [
       '.type',
       'Front Left Angle',

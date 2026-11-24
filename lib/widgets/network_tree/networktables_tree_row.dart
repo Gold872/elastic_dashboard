@@ -184,8 +184,8 @@ class NetworkTableTreeRow {
     }
 
     // A YAMS swerve drive, which YAGSL publishes under Mechanisms/<name>, has
-    // the same .type as WPILib's SwerveDrive sendable, but publishes its module
-    // states under states/
+    // the same .type as a team's own SwerveDrive sendable for the Basic Swerve
+    // Drive, but publishes its module states under states/
     bool isYAGSLSwerveDrive =
         type == SwerveDriveWidget.widgetType &&
         hasRow('states') &&
