@@ -147,6 +147,21 @@ class NetworkTableTreeRow {
 
   Future<NTWidgetModel?>? getPrimaryWidget() async {
     if (entry == null) {
+      // A YAMS swerve drive, which YAGSL publishes under Mechanisms/<name>.
+      // Checked before .type, since its .type of SwerveDrive is also the type
+      // of WPILib's SwerveDrive sendable.
+      bool isYAGSLSwerveDrive =
+          hasRows(['states', 'gyroRotation']) &&
+          getRow('states').hasRow('current');
+
+      if (isYAGSLSwerveDrive) {
+        return YAGSLSwerveDriveModel(
+          ntConnection: ntConnection,
+          preferences: preferences,
+          topic: topic,
+        );
+      }
+
       if (hasRow('.type')) {
         return await getTypedWidget('$topic/.type');
       }
@@ -157,18 +172,6 @@ class NetworkTableTreeRow {
 
       if (isCameraStream) {
         return CameraStreamModel(
-          ntConnection: ntConnection,
-          preferences: preferences,
-          topic: topic,
-        );
-      }
-
-      // A YAMS swerve drive, which YAGSL publishes under Mechanisms/<name>
-      bool isYAGSLSwerveDrive =
-          hasRows(['states', 'pose']) && getRow('states').hasRow('current');
-
-      if (isYAGSLSwerveDrive) {
-        return YAGSLSwerveDriveModel(
           ntConnection: ntConnection,
           preferences: preferences,
           topic: topic,

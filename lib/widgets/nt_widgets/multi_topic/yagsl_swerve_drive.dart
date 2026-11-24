@@ -8,7 +8,6 @@ import 'package:vector_math/vector_math_64.dart' show radians;
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt4_client.dart';
-import 'package:elastic_dashboard/services/struct_schemas/pose2d_struct.dart';
 import 'package:elastic_dashboard/services/struct_schemas/swerve_module_state_struct.dart';
 import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
@@ -18,33 +17,36 @@ import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 /// Shows a YAGSL swerve drive from the telemetry YAMS publishes under
 /// `Mechanisms/<drive name>`.
 ///
-/// Reads `states/current` and `states/desired` (`struct:SwerveModuleVelocity[]`)
-/// and the robot's rotation from `pose` (`struct:Pose2d`). The modules are drawn
-/// in the order they are listed in `swervedrive.json`: front left, front right,
-/// back left, back right.
+/// Reads `states/current` and `states/desired` (`struct:SwerveModuleVelocity[]`),
+/// the robot's rotation from `gyroRotation` (`struct:Rotation2d`), and scales the
+/// arrows by `maxModuleVelocity` (meters per second). YAMS publishes all of them
+/// at `TelemetryVerbosity.LOW`. The modules are drawn in the order they are
+/// listed in `swervedrive.json`: front left, front right, back left, back right.
 class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
   @override
   String type = YAGSLSwerveDrive.widgetType;
 
   String get measuredStatesTopic => '$topic/states/current';
   String get desiredStatesTopic => '$topic/states/desired';
-  String get poseTopic => '$topic/pose';
+  String get gyroRotationTopic => '$topic/gyroRotation';
+  String get maxModuleVelocityTopic => '$topic/maxModuleVelocity';
 
   late NT4Subscription measuredStatesSubscription;
   late NT4Subscription desiredStatesSubscription;
-  late NT4Subscription poseSubscription;
+  late NT4Subscription gyroRotationSubscription;
+  late NT4Subscription maxModuleVelocitySubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
     measuredStatesSubscription,
     desiredStatesSubscription,
-    poseSubscription,
+    gyroRotationSubscription,
+    maxModuleVelocitySubscription,
   ];
 
   bool _showRobotRotation = true;
   bool _showDesiredStates = true;
   double _angleOffset = 0; // Modifiable angle offset to allow all kinds of swerve libraries setups
-  double _maxSpeed = 4.5;
 
   bool get showRobotRotation => _showRobotRotation;
 
@@ -67,14 +69,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
-  /// The module speed, in meters per second, that draws the longest arrow.
-  double get maxSpeed => _maxSpeed;
-
-  set maxSpeed(double value) {
-    _maxSpeed = value;
-    refresh();
-  }
-
   YAGSLSwerveDriveModel({
     required super.ntConnection,
     required super.preferences,
@@ -82,7 +76,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     this._showRobotRotation = true,
     this._showDesiredStates = true,
     this._angleOffset = 0.0,
-    this._maxSpeed = 4.5,
     super.period,
   }) : super();
 
@@ -94,7 +87,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     _showRobotRotation = tryCast(jsonData['show_robot_rotation']) ?? true;
     _showDesiredStates = tryCast(jsonData['show_desired_states']) ?? true;
     _angleOffset = tryCast(jsonData['angle_offset']) ?? 0.0;
-    _maxSpeed = tryCast(jsonData['max_speed']) ?? 4.5;
   }
 
   @override
@@ -107,7 +99,14 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
       desiredStatesTopic,
       super.period,
     );
-    poseSubscription = ntConnection.subscribe(poseTopic, super.period);
+    gyroRotationSubscription = ntConnection.subscribe(
+      gyroRotationTopic,
+      super.period,
+    );
+    maxModuleVelocitySubscription = ntConnection.subscribe(
+      maxModuleVelocityTopic,
+      super.period,
+    );
   }
 
   @override
@@ -116,7 +115,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     'show_robot_rotation': _showRobotRotation,
     'show_desired_states': _showDesiredStates,
     'angle_offset': _angleOffset,
-    'max_speed': _maxSpeed,
   };
 
   /// Decodes a `struct:SwerveModuleVelocity[]` value into
@@ -137,16 +135,18 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     ];
   }
 
-  /// The robot's rotation in radians, from a `struct:Pose2d` value.
+  /// The robot's rotation in radians, from a `struct:Rotation2d` value.
   static double robotRotationFromValue(Object? value) {
     List<Object?> raw = tryCast(value) ?? [];
     List<int> bytes = raw.whereType<int>().toList();
 
-    if (bytes.length < Pose2dStruct.length) {
+    if (bytes.length < 8) {
       return 0.0;
     }
 
-    return Pose2dStruct.valueFromBytes(Uint8List.fromList(bytes)).angle;
+    return ByteData.sublistView(
+      Uint8List.fromList(bytes),
+    ).getFloat64(0, Endian.little);
   }
 
   @override
@@ -192,20 +192,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
             ),
           ),
         ),
-        Flexible(
-          child: DialogTextInput(
-            initialText: maxSpeed.toString(),
-            label: 'Max Speed (m/s)',
-            onSubmit: (String value) {
-              double? doubleValue = double.tryParse(value);
-
-              if (doubleValue != null && doubleValue > 0) {
-                maxSpeed = doubleValue;
-              }
-            },
-            formatter: TextFormatterBuilder.decimalTextFormatter(),
-          ),
-        ),
       ],
     ),
   ];
@@ -234,11 +220,16 @@ class YAGSLSwerveDrive extends NTWidget {
 
         double robotAngle =
             YAGSLSwerveDriveModel.robotRotationFromValue(
-              model.poseSubscription.value,
+              model.gyroRotationSubscription.value,
             ) -
             radians(model.angleOffset);
 
-        double maxSpeed = model.maxSpeed > 0.0 ? model.maxSpeed : 4.5;
+        double maxSpeed =
+            tryCast(model.maxModuleVelocitySubscription.value) ?? 4.5;
+
+        if (maxSpeed <= 0.0) {
+          maxSpeed = 4.5;
+        }
 
         return LayoutBuilder(
           builder: (context, constraints) {
