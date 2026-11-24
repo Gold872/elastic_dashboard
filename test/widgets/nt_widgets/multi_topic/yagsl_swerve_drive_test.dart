@@ -188,14 +188,4 @@ void main() {
     );
     expect(YAGSLSwerveDriveModel.moduleStatesFromValue(null), isEmpty);
   });
-
-  test('YAGSL swerve drive decodes robot rotation', () {
-    ByteData data = ByteData(8)..setFloat64(0, pi / 4, Endian.little);
-
-    expect(
-      YAGSLSwerveDriveModel.robotRotationFromValue(data.buffer.asUint8List()),
-      pi / 4,
-    );
-    expect(YAGSLSwerveDriveModel.robotRotationFromValue(null), 0.0);
-  });
 }

@@ -151,8 +151,7 @@ class NetworkTableTreeRow {
       // Checked before .type, since its .type of SwerveDrive is also the type
       // of WPILib's SwerveDrive sendable.
       bool isYAGSLSwerveDrive =
-          hasRows(['states', 'gyroRotation']) &&
-          getRow('states').hasRow('current');
+          hasRows(['states', 'gyro']) && getRow('states').hasRow('current');
 
       if (isYAGSLSwerveDrive) {
         return YAGSLSwerveDriveModel(

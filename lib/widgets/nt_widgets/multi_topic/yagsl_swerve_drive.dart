@@ -18,7 +18,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 /// `Mechanisms/<drive name>`.
 ///
 /// Reads `states/current` and `states/desired` (`struct:SwerveModuleVelocity[]`),
-/// the robot's rotation from `gyroRotation` (`struct:Rotation2d`), and scales the
+/// the robot's rotation from `gyro` (degrees), and scales the
 /// arrows by `maxModuleVelocity` (meters per second). YAMS publishes all of them
 /// at `TelemetryVerbosity.LOW`. The modules are drawn in the order they are
 /// listed in `swervedrive.json`: front left, front right, back left, back right.
@@ -28,19 +28,19 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
 
   String get measuredStatesTopic => '$topic/states/current';
   String get desiredStatesTopic => '$topic/states/desired';
-  String get gyroRotationTopic => '$topic/gyroRotation';
+  String get gyroTopic => '$topic/gyro';
   String get maxModuleVelocityTopic => '$topic/maxModuleVelocity';
 
   late NT4Subscription measuredStatesSubscription;
   late NT4Subscription desiredStatesSubscription;
-  late NT4Subscription gyroRotationSubscription;
+  late NT4Subscription gyroSubscription;
   late NT4Subscription maxModuleVelocitySubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
     measuredStatesSubscription,
     desiredStatesSubscription,
-    gyroRotationSubscription,
+    gyroSubscription,
     maxModuleVelocitySubscription,
   ];
 
@@ -99,10 +99,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
       desiredStatesTopic,
       super.period,
     );
-    gyroRotationSubscription = ntConnection.subscribe(
-      gyroRotationTopic,
-      super.period,
-    );
+    gyroSubscription = ntConnection.subscribe(gyroTopic, super.period);
     maxModuleVelocitySubscription = ntConnection.subscribe(
       maxModuleVelocityTopic,
       super.period,
@@ -133,20 +130,6 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
         state.speed,
       ],
     ];
-  }
-
-  /// The robot's rotation in radians, from a `struct:Rotation2d` value.
-  static double robotRotationFromValue(Object? value) {
-    List<Object?> raw = tryCast(value) ?? [];
-    List<int> bytes = raw.whereType<int>().toList();
-
-    if (bytes.length < 8) {
-      return 0.0;
-    }
-
-    return ByteData.sublistView(
-      Uint8List.fromList(bytes),
-    ).getFloat64(0, Endian.little);
   }
 
   @override
@@ -218,11 +201,8 @@ class YAGSLSwerveDrive extends NTWidget {
               model.desiredStatesSubscription.value,
             );
 
-        double robotAngle =
-            YAGSLSwerveDriveModel.robotRotationFromValue(
-              model.gyroRotationSubscription.value,
-            ) -
-            radians(model.angleOffset);
+        double gyroDegrees = tryCast(model.gyroSubscription.value) ?? 0.0;
+        double robotAngle = radians(gyroDegrees - model.angleOffset);
 
         double maxSpeed =
             tryCast(model.maxModuleVelocitySubscription.value) ?? 4.5;
