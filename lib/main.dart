@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
+// ignore: deprecated_member_use
 import 'package:flutter/material.dart' as legacy;
 import 'package:flutter/services.dart';
 
@@ -10,7 +11,13 @@ import 'package:dot_cast/dot_cast.dart';
 import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path_provider/path_provider.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/path_stub.dart';
+import 'package:screen_retriever/screen_retriever.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/screen_stub.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:window_manager/window_manager.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 import 'package:material_ui/material_ui.dart';
 
@@ -21,13 +28,6 @@ import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/services/settings.dart';
-
-import 'package:path_provider/path_provider.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/path_stub.dart';
-import 'package:screen_retriever/screen_retriever.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/screen_stub.dart';
-import 'package:window_manager/window_manager.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
