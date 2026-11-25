@@ -14,14 +14,6 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart'
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-/// Shows a YAGSL swerve drive from the telemetry YAMS publishes under
-/// `Mechanisms/<drive name>`.
-///
-/// Reads `states/current` and `states/desired` (`struct:SwerveModuleVelocity[]`),
-/// the robot's rotation from `gyro` (degrees), and scales the
-/// arrows by `maxModuleVelocity` (meters per second). YAMS publishes all of them
-/// at `TelemetryVerbosity.LOW`. The modules are drawn in the order they are
-/// listed in `swervedrive.json`: front left, front right, back left, back right.
 class SwerveDriveModel extends MultiTopicNTWidgetModel {
   @override
   String type = SwerveDrive.widgetType;
@@ -192,14 +184,12 @@ class SwerveDrive extends NTWidget {
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
-        List<double> measuredStates =
-            SwerveDriveModel.moduleStatesFromValue(
-              model.measuredStatesSubscription.value,
-            );
-        List<double> desiredStates =
-            SwerveDriveModel.moduleStatesFromValue(
-              model.desiredStatesSubscription.value,
-            );
+        List<double> measuredStates = SwerveDriveModel.moduleStatesFromValue(
+          model.measuredStatesSubscription.value,
+        );
+        List<double> desiredStates = SwerveDriveModel.moduleStatesFromValue(
+          model.desiredStatesSubscription.value,
+        );
 
         double gyroDegrees = tryCast(model.gyroSubscription.value) ?? 0.0;
         double robotAngle = radians(gyroDegrees - model.angleOffset);
