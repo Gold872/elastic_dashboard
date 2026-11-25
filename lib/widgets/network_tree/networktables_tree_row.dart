@@ -11,7 +11,6 @@ import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/widget_container_model.dart';
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
@@ -181,22 +180,6 @@ class NetworkTableTreeRow {
 
     if (type == null) {
       return null;
-    }
-
-    // A YAMS swerve drive, which YAGSL publishes under Mechanisms/<name>, has
-    // the same .type as a team's own SwerveDrive sendable for the Basic Swerve
-    // Drive, but publishes its module states under states/
-    bool isYAGSLSwerveDrive =
-        type == SwerveDriveWidget.widgetType &&
-        hasRow('states') &&
-        getRow('states').hasRow('current');
-
-    if (isYAGSLSwerveDrive) {
-      return YAGSLSwerveDriveModel(
-        ntConnection: ntConnection,
-        preferences: preferences,
-        topic: topic,
-      );
     }
 
     return NTWidgetRegistry.buildNTModelFromType(

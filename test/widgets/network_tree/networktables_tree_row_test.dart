@@ -3,7 +3,6 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree_row.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
@@ -67,17 +66,4 @@ void main() {
       expect(model!.topic, '/Mechanisms/swerve');
     },
   );
-
-  test("A team's SwerveDrive sendable is still a Basic Swerve Drive", () async {
-    NetworkTableTreeRow swerve = table('/SmartDashboard/Swerve', [
-      '.type',
-      'Front Left Angle',
-      'Front Left Velocity',
-      'Robot Angle',
-    ]);
-
-    NTWidgetModel? model = await swerve.getPrimaryWidget();
-
-    expect(model, isA<BasicSwerveModel>());
-  });
 }

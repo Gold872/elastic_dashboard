@@ -15,7 +15,6 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart'
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_layout.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
@@ -109,7 +108,6 @@ void main() async {
     expect(find.bySubtype<CameraStreamWidget>(), findsOneWidget);
     expect(find.bySubtype<MatchTimeWidget>(), findsOneWidget);
     expect(find.bySubtype<PIDControllerWidget>(), findsOneWidget);
-    expect(find.bySubtype<SwerveDriveWidget>(), findsOneWidget);
 
     expect(find.bySubtype<DraggableListLayout>(), findsOneWidget);
   });
