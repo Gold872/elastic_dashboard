@@ -240,6 +240,11 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
     CameraStreamType.mjpeg => _mjpegEditFields(),
   };
 
+  Overlay _wrapWithOverlay(WidgetBuilder builder) => Overlay(
+    clipBehavior: Clip.none,
+    initialEntries: [OverlayEntry(builder: builder)],
+  );
+
   List<Widget> _whepEditFields() => _rotationFields();
 
   List<Widget> _mjpegEditFields() => [
@@ -323,30 +328,35 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
         ],
       ),
     ),
-    StatefulBuilder(
-      builder: (context, setState) => Row(
-        children: [
-          const Text('Quality:'),
-          Expanded(
-            child: Slider(
-              value: quality?.toDouble() ?? -5.0,
-              min: -5.0,
-              max: 100.0,
-              divisions: 105,
-              label: '${quality ?? -1}',
-              onChanged: (value) {
-                setState(() {
-                  if (value < 0) {
-                    quality = null;
-                  } else {
-                    quality = value.floor();
-                  }
-                });
-              },
+    Row(
+      children: [
+        const Text('Quality:'),
+        Expanded(
+          child: SizedBox(
+            height: 48,
+            child: _wrapWithOverlay(
+              (_) => StatefulBuilder(
+                builder: (context, setState) => Slider(
+                  value: quality?.toDouble() ?? -5.0,
+                  min: -5.0,
+                  max: 100.0,
+                  divisions: 105,
+                  label: '${quality ?? -1}',
+                  onChanged: (value) {
+                    setState(() {
+                      if (value < 0) {
+                        quality = null;
+                      } else {
+                        quality = value.floor();
+                      }
+                    });
+                  },
+                ),
+              ),
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     ),
     TextButton(
       onPressed: () => refresh(),
