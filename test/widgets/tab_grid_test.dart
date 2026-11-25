@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/gestures.dart';
 
@@ -11,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/field_images.dart';
+import 'package:elastic_dashboard/util/tab_background.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_layout.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
@@ -402,5 +404,239 @@ void main() async {
     await widgetTester.pumpAndSettle();
 
     verify(ntConnection.unSubscribe(any)).called(subscribeCallCount);
+  });
+
+  group('Tab background', () {
+    // 2x3 red PNG
+    const String pngData =
+        'iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAAC56t6BAAAAEUlEQVR4nGP4z8DwH4QZMBgAoXkL9U3EmgcAAAAASUVORK5CYII=';
+
+    final Map<String, dynamic> backgroundJson = {
+      'image': pngData,
+      'x': 128.0,
+      'y': 64.0,
+      'width': 512.0,
+      'height': 384.0,
+      'opacity': 0.5,
+    };
+
+    TabGridModel createGrid(Map<String, dynamic> gridJson) =>
+        TabGridModel.fromJson(
+          ntConnection: createMockOfflineNT4(),
+          preferences: preferences,
+          jsonData: gridJson,
+          onAddWidgetPressed: () {},
+        );
+
+    test('Background from json', () {
+      TabGridModel grid = createGrid({
+        'layouts': [],
+        'containers': [],
+        'background': backgroundJson,
+      });
+
+      expect(grid.background, isNotNull);
+      expect(grid.background!.x, 128.0);
+      expect(grid.background!.y, 64.0);
+      expect(grid.background!.width, 512.0);
+      expect(grid.background!.height, 384.0);
+      expect(grid.background!.opacity, 0.5);
+      expect(grid.background!.imageBytes, base64Decode(pngData));
+    });
+
+    test('Background to json', () {
+      TabGridModel grid = createGrid({
+        'layouts': [],
+        'containers': [],
+        'background': backgroundJson,
+      });
+
+      expect(grid.toJson()['background'], backgroundJson);
+    });
+
+    test('No background by default', () {
+      Map<String, dynamic> gridJson = jsonDecode(
+        jsonEncode(jsonData['tabs'][0]['grid_layout']),
+      );
+      TabGridModel grid = createGrid(gridJson);
+
+      expect(grid.background, isNull);
+      expect(grid.toJson().containsKey('background'), isFalse);
+      expect(
+        grid.toJson()['containers'].length,
+        gridJson['containers'].length,
+      );
+    });
+
+    test('Invalid background is ignored', () {
+      List<String> warnings = [];
+
+      TabGridModel grid = TabGridModel.fromJson(
+        ntConnection: createMockOfflineNT4(),
+        preferences: preferences,
+        jsonData: {
+          'layouts': [],
+          'containers': [],
+          'background': {'image': 'not base64!', 'x': 0.0, 'y': 0.0},
+        },
+        onAddWidgetPressed: () {},
+        onJsonLoadingWarning: warnings.add,
+      );
+
+      expect(grid.background, isNull);
+      expect(warnings, hasLength(1));
+      expect(grid.toJson().containsKey('background'), isFalse);
+    });
+
+    test('Optional size and opacity are clamped', () {
+      TabGridModel grid = createGrid({
+        'layouts': [],
+        'containers': [],
+        'background': {'image': pngData, 'opacity': 4},
+      });
+
+      expect(grid.background!.x, 0.0);
+      expect(grid.background!.y, 0.0);
+      expect(grid.background!.width, isNull);
+      expect(grid.background!.height, isNull);
+      expect(grid.background!.opacity, 1.0);
+      expect(grid.toJson()['background'], {
+        'image': pngData,
+        'x': 0.0,
+        'y': 0.0,
+        'opacity': 1.0,
+      });
+    });
+
+    test('Merging keeps the existing background', () {
+      TabGridModel grid = createGrid({'layouts': [], 'containers': []});
+
+      grid.mergeFromJson(
+        jsonData: {
+          'layouts': [],
+          'containers': [],
+          'background': backgroundJson,
+        },
+      );
+
+      expect(grid.background, isNotNull);
+      expect(grid.background!.x, 128.0);
+
+      grid.mergeFromJson(
+        jsonData: {
+          'layouts': [],
+          'containers': [],
+          'background': {...backgroundJson, 'x': 0.0},
+        },
+      );
+
+      expect(grid.background!.x, 128.0);
+    });
+
+    test('Setting background image from bytes', () async {
+      TabGridModel grid = createGrid({'layouts': [], 'containers': []});
+
+      expect(await grid.setBackgroundImage(base64Decode(pngData)), isNull);
+      expect(grid.background, isNotNull);
+      expect(grid.background!.width, 2.0);
+      expect(grid.background!.height, 3.0);
+      expect(grid.background!.imageData, pngData);
+
+      expect(
+        await grid.setBackgroundImage(Uint8List.fromList([1, 2, 3, 4])),
+        isNotNull,
+      );
+      expect(
+        await grid.setBackgroundImage(
+          Uint8List(TabBackground.maxImageBytes + 1),
+        ),
+        isNotNull,
+      );
+      // Failed attempts keep the previous image
+      expect(grid.background!.imageData, pngData);
+    });
+
+    testWidgets('Background renders behind widgets', (widgetTester) async {
+      FlutterError.onError = ignoreOverflowErrors;
+      widgetTester.view.physicalSize = const Size(1920, 1080);
+      widgetTester.view.devicePixelRatio = 1.0;
+
+      Map<String, dynamic> gridJson = {
+        ...jsonData['tabs'][0]['grid_layout'],
+        'background': backgroundJson,
+      };
+
+      await widgetTester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<TabGridModel>.value(
+              value: createGrid(gridJson),
+              child: const TabGrid(),
+            ),
+          ),
+        ),
+      );
+
+      await widgetTester.pumpAndSettle();
+
+      final backgroundImage = find.byWidgetPredicate(
+        (widget) => widget is Image && widget.image is MemoryImage,
+      );
+
+      expect(backgroundImage, findsOneWidget);
+      expect(
+        widgetTester.getRect(backgroundImage),
+        const Rect.fromLTWH(128.0, 64.0, 512.0, 384.0),
+      );
+      expect(
+        find.ancestor(
+          of: backgroundImage,
+          matching: find.byType(IgnorePointer),
+        ),
+        findsWidgets,
+      );
+
+      // Background is the first child of the stack, so it is drawn below widgets
+      Stack gridStack = widgetTester.widget(
+        find
+            .descendant(of: find.byType(TabGrid), matching: find.byType(Stack))
+            .first,
+      );
+      expect(
+        find.descendant(
+          of: find.byWidget(gridStack.children.first),
+          matching: backgroundImage,
+        ),
+        findsOneWidget,
+      );
+
+      expect(find.bySubtype<DraggableWidgetContainer>(), findsNWidgets(11));
+    });
+
+    testWidgets('No background is rendered by default', (widgetTester) async {
+      FlutterError.onError = ignoreOverflowErrors;
+      widgetTester.view.physicalSize = const Size(1920, 1080);
+      widgetTester.view.devicePixelRatio = 1.0;
+
+      await widgetTester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: ChangeNotifierProvider<TabGridModel>.value(
+              value: createGrid(jsonData['tabs'][0]['grid_layout']),
+              child: const TabGrid(),
+            ),
+          ),
+        ),
+      );
+
+      await widgetTester.pumpAndSettle();
+
+      expect(
+        find.byWidgetPredicate(
+          (widget) => widget is Image && widget.image is MemoryImage,
+        ),
+        findsNothing,
+      );
+    });
   });
 }

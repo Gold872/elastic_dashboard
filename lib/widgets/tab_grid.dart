@@ -1,6 +1,9 @@
 import 'dart:math';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:dot_cast/dot_cast.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:flutter_box_transform/flutter_box_transform.dart';
 import 'package:flutter_context_menu/flutter_context_menu.dart';
 import 'package:provider/provider.dart';
@@ -8,9 +11,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:material_ui/material_ui.dart';
 
+import 'package:elastic_dashboard/services/hotkey_manager.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
 import 'package:elastic_dashboard/services/settings.dart';
+import 'package:elastic_dashboard/services/text_formatter_builder.dart';
+import 'package:elastic_dashboard/util/tab_background.dart';
+import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_list_layout.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
@@ -33,6 +40,15 @@ class TabGridModel extends ChangeNotifier {
   BuildContext? tabGridContext;
 
   final VoidCallback onAddWidgetPressed;
+
+  TabBackground? _background;
+
+  TabBackground? get background => _background;
+
+  set background(TabBackground? value) {
+    _background = value;
+    notifyListeners();
+  }
 
   bool _disposed = false;
 
@@ -69,6 +85,11 @@ class TabGridModel extends ChangeNotifier {
     if (jsonData['layouts'] != null) {
       loadLayoutsFromJson(jsonData, onJsonLoadingWarning: onJsonLoadingWarning);
     }
+
+    loadBackgroundFromJson(
+      jsonData,
+      onJsonLoadingWarning: onJsonLoadingWarning,
+    );
   }
 
   void mergeFromJson({
@@ -174,6 +195,27 @@ class TabGridModel extends ChangeNotifier {
         }
       }
     }
+
+    if (background == null) {
+      loadBackgroundFromJson(
+        jsonData,
+        onJsonLoadingWarning: onJsonLoadingWarning,
+      );
+    }
+  }
+
+  void loadBackgroundFromJson(
+    Map<String, dynamic> jsonData, {
+    Function(String message)? onJsonLoadingWarning,
+  }) {
+    Map<String, dynamic>? backgroundData = tryCast(jsonData['background']);
+
+    background = (backgroundData != null)
+        ? TabBackground.fromJson(
+            backgroundData,
+            onJsonLoadingWarning: onJsonLoadingWarning,
+          )
+        : null;
   }
 
   void loadContainersFromJson(
@@ -248,7 +290,11 @@ class TabGridModel extends ChangeNotifier {
       }
     }
 
-    return {'layouts': layouts, 'containers': containers};
+    return {
+      'layouts': layouts,
+      'containers': containers,
+      'background': ?background?.toJson(),
+    };
   }
 
   Offset getLocalPosition(Offset globalPosition) {
@@ -775,6 +821,217 @@ class TabGridModel extends ChangeNotifier {
     copyJsonData = widget.toJson();
   }
 
+  /// Opens a file picker for the background image.
+  ///
+  /// Returns an error message, or null if the image was set or nothing was chosen.
+  Future<String?> pickBackgroundImage() async {
+    const XTypeGroup imageTypeGroup = XTypeGroup(
+      label: 'Images',
+      extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'],
+      mimeTypes: [
+        'image/png',
+        'image/jpeg',
+        'image/gif',
+        'image/webp',
+        'image/bmp',
+      ],
+      uniformTypeIdentifiers: ['public.image'],
+    );
+
+    final XFile? file = await openFile(acceptedTypeGroups: [imageTypeGroup]);
+
+    hotKeyManager.resetKeysPressed();
+
+    if (file == null) {
+      return null;
+    }
+
+    return setBackgroundImage(await file.readAsBytes());
+  }
+
+  /// Sets the background to [bytes], sized to the image's own resolution.
+  ///
+  /// Returns an error message if the image is too large or cannot be decoded.
+  Future<String?> setBackgroundImage(Uint8List bytes) async {
+    if (bytes.length > TabBackground.maxImageBytes) {
+      return 'Image is too large (${(bytes.length / 1024).ceil()} KB), the maximum is ${TabBackground.maxImageBytes ~/ 1024} KB.';
+    }
+
+    ui.Codec? codec;
+    try {
+      codec = await ui.instantiateImageCodec(bytes);
+      ui.FrameInfo frame = await codec.getNextFrame();
+
+      background = TabBackground.fromBytes(
+        bytes,
+        width: frame.image.width.toDouble(),
+        height: frame.image.height.toDouble(),
+      );
+
+      frame.image.dispose();
+    } catch (_) {
+      return 'Unable to read image.';
+    } finally {
+      codec?.dispose();
+    }
+
+    return null;
+  }
+
+  void showBackgroundSettings(BuildContext context) {
+    String? errorText;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Tab Background'),
+        content: SizedBox(
+          width: 353,
+          child: StatefulBuilder(
+            builder: (context, setState) {
+              TabBackground? background = this.background;
+              int gridSize =
+                  preferences.getInt(PrefKeys.gridSize) ?? Defaults.gridSize;
+
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      TextButton.icon(
+                        onPressed: () async {
+                          String? error = await pickBackgroundImage();
+                          setState(() => errorText = error);
+                        },
+                        icon: const Icon(Icons.image_outlined),
+                        label: const Text('Choose Image'),
+                      ),
+                      if (background != null)
+                        TextButton.icon(
+                          onPressed: () => setState(() {
+                            this.background = null;
+                            errorText = null;
+                          }),
+                          icon: const Icon(Icons.delete_outlined),
+                          label: const Text('Remove'),
+                        ),
+                    ],
+                  ),
+                  if (errorText != null)
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Text(
+                        errorText!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  if (background != null) ...[
+                    const SizedBox(height: 5),
+                    Text(
+                      'Position and size are in pixels (1 grid square = $gridSize px)',
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: DialogTextInput(
+                            label: 'X',
+                            initialText: background.x.toString(),
+                            formatter:
+                                TextFormatterBuilder.decimalTextFormatter(),
+                            onSubmit: (value) {
+                              double? x = double.tryParse(value);
+                              if (x == null) return;
+                              this.background = this.background?.copyWith(
+                                x: x,
+                              );
+                            },
+                          ),
+                        ),
+                        Flexible(
+                          child: DialogTextInput(
+                            label: 'Y',
+                            initialText: background.y.toString(),
+                            formatter:
+                                TextFormatterBuilder.decimalTextFormatter(),
+                            onSubmit: (value) {
+                              double? y = double.tryParse(value);
+                              if (y == null) return;
+                              this.background = this.background?.copyWith(
+                                y: y,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: DialogTextInput(
+                            label: 'Width',
+                            initialText: background.width?.toString() ?? '',
+                            formatter:
+                                TextFormatterBuilder.decimalTextFormatter(),
+                            onSubmit: (value) {
+                              double? width = double.tryParse(value);
+                              if (width == null || width <= 0) return;
+                              this.background = this.background?.copyWith(
+                                width: width,
+                              );
+                            },
+                          ),
+                        ),
+                        Flexible(
+                          child: DialogTextInput(
+                            label: 'Height',
+                            initialText: background.height?.toString() ?? '',
+                            formatter:
+                                TextFormatterBuilder.decimalTextFormatter(),
+                            onSubmit: (value) {
+                              double? height = double.tryParse(value);
+                              if (height == null || height <= 0) return;
+                              this.background = this.background?.copyWith(
+                                height: height,
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    DialogTextInput(
+                      label: 'Opacity (0 - 1)',
+                      initialText: background.opacity.toString(),
+                      formatter: TextFormatterBuilder.decimalTextFormatter(),
+                      onSubmit: (value) {
+                        double? opacity = double.tryParse(value);
+                        if (opacity == null) return;
+                        this.background = this.background?.copyWith(
+                          opacity: opacity,
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void lockLayout() {
     for (WidgetContainerModel container in _widgetModels) {
       container.draggable = false;
@@ -1105,6 +1362,27 @@ class TabGrid extends StatelessWidget {
         onTap: () {},
         child: Stack(
           children: [
+            if (model.background case TabBackground background)
+              Positioned(
+                left: background.x,
+                top: background.y,
+                width: background.width,
+                height: background.height,
+                child: IgnorePointer(
+                  child: RepaintBoundary(
+                    child: Image.memory(
+                      background.imageBytes,
+                      fit: BoxFit.fill,
+                      opacity: (background.opacity < 1.0)
+                          ? AlwaysStoppedAnimation(background.opacity)
+                          : null,
+                      gaplessPlayback: true,
+                      errorBuilder: (context, error, stackTrace) =>
+                          const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ),
             ...dashboardWidgets,
             ...previewOutlines,
             ...draggingWidgets,
