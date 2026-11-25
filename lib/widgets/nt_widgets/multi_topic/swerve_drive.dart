@@ -14,9 +14,9 @@ import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart'
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
-class SwerveDriveModel extends MultiTopicNTWidgetModel {
+class SwerveDriveWidgetModel extends MultiTopicNTWidgetModel {
   @override
-  String type = SwerveDrive.widgetType;
+  String type = SwerveDriveWidget.widgetType;
 
   String get measuredStatesTopic => '$topic/states/current';
   String get desiredStatesTopic => '$topic/states/desired';
@@ -61,7 +61,7 @@ class SwerveDriveModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
-  SwerveDriveModel({
+  SwerveDriveWidgetModel({
     required super.ntConnection,
     required super.preferences,
     required super.topic,
@@ -71,7 +71,7 @@ class SwerveDriveModel extends MultiTopicNTWidgetModel {
     super.period,
   }) : super();
 
-  SwerveDriveModel.fromJson({
+  SwerveDriveWidgetModel.fromJson({
     required super.ntConnection,
     required super.preferences,
     required Map<String, dynamic> jsonData,
@@ -172,24 +172,26 @@ class SwerveDriveModel extends MultiTopicNTWidgetModel {
   ];
 }
 
-class SwerveDrive extends NTWidget {
+class SwerveDriveWidget extends NTWidget {
   static const String widgetType = 'SwerveDrive';
 
-  const SwerveDrive({super.key});
+  const SwerveDriveWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    SwerveDriveModel model = cast(context.watch<NTWidgetModel>());
+    SwerveDriveWidgetModel model = cast(context.watch<NTWidgetModel>());
 
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
-        List<double> measuredStates = SwerveDriveModel.moduleStatesFromValue(
-          model.measuredStatesSubscription.value,
-        );
-        List<double> desiredStates = SwerveDriveModel.moduleStatesFromValue(
-          model.desiredStatesSubscription.value,
-        );
+        List<double> measuredStates =
+            SwerveDriveWidgetModel.moduleStatesFromValue(
+              model.measuredStatesSubscription.value,
+            );
+        List<double> desiredStates =
+            SwerveDriveWidgetModel.moduleStatesFromValue(
+              model.desiredStatesSubscription.value,
+            );
 
         double gyroDegrees = tryCast(model.gyroSubscription.value) ?? 0.0;
         double robotAngle = radians(gyroDegrees - model.angleOffset);

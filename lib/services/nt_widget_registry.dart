@@ -358,11 +358,11 @@ class NTWidgetRegistry {
     );
 
     registerMultiTopic(
-      name: SwerveDrive.widgetType,
+      name: SwerveDriveWidget.widgetType,
       aliases: {'YAGSL Swerve Drive'},
-      model: SwerveDriveModel.new,
-      widget: SwerveDrive.new,
-      fromJson: SwerveDriveModel.fromJson,
+      model: SwerveDriveWidgetModel.new,
+      widget: SwerveDriveWidget.new,
+      fromJson: SwerveDriveWidgetModel.fromJson,
       minWidth: _normalSize * 2,
       minHeight: _normalSize * 2,
       defaultWidth: 2,
