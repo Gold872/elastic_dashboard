@@ -12,6 +12,8 @@ import 'package:flex_seed_scheme/flex_seed_scheme.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:window_manager/window_manager.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 import 'package:material_ui/material_ui.dart';
 
@@ -31,16 +33,13 @@ import 'package:elastic_dashboard/services/log.dart';
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/services/update_checker.dart';
+import 'package:elastic_dashboard/util/stub/unload_handler_stub.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/unload_handler.dart';
 import 'package:elastic_dashboard/util/tab_data.dart';
 import 'package:elastic_dashboard/util/test_utils.dart';
 import 'package:elastic_dashboard/widgets/custom_appbar.dart';
 import 'package:elastic_dashboard/widgets/editable_tab_bar.dart';
 import 'package:elastic_dashboard/widgets/tab_grid.dart';
-
-import 'package:elastic_dashboard/util/stub/unload_handler_stub.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/unload_handler.dart';
-import 'package:window_manager/window_manager.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 enum LayoutDownloadMode {
   overwrite(

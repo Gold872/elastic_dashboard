@@ -3,10 +3,10 @@
 
 import 'dart:ui';
 
-import 'package:material_ui/material_ui.dart';
-
 import 'package:window_manager/window_manager.dart'
     show DockSide, WindowOptions;
+
+import 'package:material_ui/material_ui.dart';
 
 enum TitleBarStyle { normal, hidden }
 
