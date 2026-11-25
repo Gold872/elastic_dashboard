@@ -312,27 +312,27 @@ class _ElasticState extends State<Elastic> {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          enabledMouseCursor: SystemMouseCursors.click,
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          enabledMouseCursor: SystemMouseCursors.click,
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          enabledMouseCursor: SystemMouseCursors.click,
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          enabledMouseCursor: SystemMouseCursors.click,
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          enabledMouseCursor: SystemMouseCursors.click,
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
     );

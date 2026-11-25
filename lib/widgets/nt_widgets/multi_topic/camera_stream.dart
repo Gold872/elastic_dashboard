@@ -197,6 +197,7 @@ class CameraStreamModel extends MultiTopicNTWidgetModel {
             child: DropdownButton<CameraStreamType?>(
               isExpanded: true,
               value: selectedStreamType,
+              mouseCursor: WidgetStateMouseCursor.clickable,
               items: [
                 const DropdownMenuItem<CameraStreamType?>(
                   value: null,
