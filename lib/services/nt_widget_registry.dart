@@ -28,7 +28,7 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/relay_widget.da
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/robot_preferences.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/split_button_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/subsystem_widget.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/swerve_drive.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/swerve_drive_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/three_axis_accelerometer.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/ultrasonic.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
