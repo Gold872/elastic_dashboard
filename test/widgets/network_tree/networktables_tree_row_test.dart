@@ -3,7 +3,7 @@ import 'package:mockito/mockito.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:elastic_dashboard/widgets/network_tree/networktables_tree_row.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 import '../../test_util.dart';
@@ -62,7 +62,7 @@ void main() {
 
       NTWidgetModel? model = await swerve.getPrimaryWidget();
 
-      expect(model, isA<YAGSLSwerveDriveModel>());
+      expect(model, isA<SwerveDriveModel>());
       expect(model!.topic, '/Mechanisms/swerve');
     },
   );

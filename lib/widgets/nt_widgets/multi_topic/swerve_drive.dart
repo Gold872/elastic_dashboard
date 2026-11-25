@@ -22,9 +22,9 @@ import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 /// arrows by `maxModuleVelocity` (meters per second). YAMS publishes all of them
 /// at `TelemetryVerbosity.LOW`. The modules are drawn in the order they are
 /// listed in `swervedrive.json`: front left, front right, back left, back right.
-class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
+class SwerveDriveModel extends MultiTopicNTWidgetModel {
   @override
-  String type = YAGSLSwerveDrive.widgetType;
+  String type = SwerveDrive.widgetType;
 
   String get measuredStatesTopic => '$topic/states/current';
   String get desiredStatesTopic => '$topic/states/desired';
@@ -69,7 +69,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     refresh();
   }
 
-  YAGSLSwerveDriveModel({
+  SwerveDriveModel({
     required super.ntConnection,
     required super.preferences,
     required super.topic,
@@ -79,7 +79,7 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
     super.period,
   }) : super();
 
-  YAGSLSwerveDriveModel.fromJson({
+  SwerveDriveModel.fromJson({
     required super.ntConnection,
     required super.preferences,
     required Map<String, dynamic> jsonData,
@@ -180,24 +180,24 @@ class YAGSLSwerveDriveModel extends MultiTopicNTWidgetModel {
   ];
 }
 
-class YAGSLSwerveDrive extends NTWidget {
-  static const String widgetType = 'YAGSL Swerve Drive';
+class SwerveDrive extends NTWidget {
+  static const String widgetType = 'SwerveDrive';
 
-  const YAGSLSwerveDrive({super.key});
+  const SwerveDrive({super.key});
 
   @override
   Widget build(BuildContext context) {
-    YAGSLSwerveDriveModel model = cast(context.watch<NTWidgetModel>());
+    SwerveDriveModel model = cast(context.watch<NTWidgetModel>());
 
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
         List<double> measuredStates =
-            YAGSLSwerveDriveModel.moduleStatesFromValue(
+            SwerveDriveModel.moduleStatesFromValue(
               model.measuredStatesSubscription.value,
             );
         List<double> desiredStates =
-            YAGSLSwerveDriveModel.moduleStatesFromValue(
+            SwerveDriveModel.moduleStatesFromValue(
               model.desiredStatesSubscription.value,
             );
 
