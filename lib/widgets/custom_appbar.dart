@@ -1,13 +1,12 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:titlebar_buttons/titlebar_buttons.dart';
+import 'package:window_manager/window_manager.dart'
+    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
-
-import 'package:window_manager/window_manager.dart'
-    if (dart.library.js_interop) 'package:elastic_dashboard/util/stub/window_stub.dart';
 
 /// Essentially a copy of Flutter's [AppBar] but with a non-fixed leading
 /// width and all non-necessary features removed for copying simplicity
