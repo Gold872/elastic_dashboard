@@ -299,6 +299,7 @@ class _StringChooserDropdown extends StatelessWidget {
         builder: (context, constraints) => DropdownButton2<String>(
           isExpanded: true,
           valueListenable: ValueNotifier(selected),
+          mouseCursor: WidgetStateMouseCursor.adaptiveClickable,
           selectedItemBuilder: (context) => [
             ...options.map(
               (String option) => Container(
