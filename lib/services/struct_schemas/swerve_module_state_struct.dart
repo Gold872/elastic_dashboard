@@ -6,7 +6,7 @@ class SwerveModuleStateStruct {
   final double speed;
   final double angle;
 
-  const SwerveModuleStateStruct({required this.speed, required this.angle});
+  const SwerveModuleStateStruct({this.speed = 0, this.angle = 0});
 
   factory SwerveModuleStateStruct.valueFromBytes(
     Uint8List value, [

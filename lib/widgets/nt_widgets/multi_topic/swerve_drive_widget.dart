@@ -20,19 +20,19 @@ class SwerveDriveWidgetModel extends MultiTopicNTWidgetModel {
 
   String get measuredStatesTopic => '$topic/states/current';
   String get desiredStatesTopic => '$topic/states/desired';
-  String get gyroTopic => '$topic/gyro';
+  String get rotationTopic => '$topic/rotation';
   String get maxModuleVelocityTopic => '$topic/maxModuleVelocity';
 
   late NT4Subscription measuredStatesSubscription;
   late NT4Subscription desiredStatesSubscription;
-  late NT4Subscription gyroSubscription;
+  late NT4Subscription rotationSubscription;
   late NT4Subscription maxModuleVelocitySubscription;
 
   @override
   List<NT4Subscription> get subscriptions => [
     measuredStatesSubscription,
     desiredStatesSubscription,
-    gyroSubscription,
+    rotationSubscription,
     maxModuleVelocitySubscription,
   ];
 
@@ -91,7 +91,7 @@ class SwerveDriveWidgetModel extends MultiTopicNTWidgetModel {
       desiredStatesTopic,
       super.period,
     );
-    gyroSubscription = ntConnection.subscribe(gyroTopic, super.period);
+    rotationSubscription = ntConnection.subscribe(rotationTopic, super.period);
     maxModuleVelocitySubscription = ntConnection.subscribe(
       maxModuleVelocityTopic,
       super.period,
@@ -106,22 +106,24 @@ class SwerveDriveWidgetModel extends MultiTopicNTWidgetModel {
     'angle_offset': _angleOffset,
   };
 
-  /// Decodes a `struct:SwerveModuleVelocity[]` value into
-  /// `[angle, velocity, angle, velocity, ...]`, with angles in radians and
-  /// velocities in meters per second.
-  static List<double> moduleStatesFromValue(Object? value) {
+  static List<SwerveModuleStateStruct> moduleStatesFromValue(Object? value) {
     List<Object?> raw = tryCast(value) ?? [];
-    List<SwerveModuleStateStruct> states =
-        SwerveModuleStateStruct.listFromBytes(
-          Uint8List.fromList(raw.whereType<int>().toList()),
-        );
+    return SwerveModuleStateStruct.listFromBytes(
+      Uint8List.fromList(raw.whereType<int>().toList()),
+    );
+  }
 
-    return [
-      for (SwerveModuleStateStruct state in states) ...[
-        state.angle,
-        state.speed,
-      ],
-    ];
+  static double rotationFromValue(Object? value) {
+    List<Object?> raw = tryCast(value) ?? [];
+    Uint8List rawBytes = Uint8List.fromList(raw.whereType<int>().toList());
+
+    ByteData view = ByteData.view(rawBytes.buffer);
+
+    if (rawBytes.length < 8) {
+      return 0;
+    }
+
+    return view.getFloat64(0, Endian.little);
   }
 
   @override
@@ -184,17 +186,19 @@ class SwerveDriveWidget extends NTWidget {
     return ListenableBuilder(
       listenable: Listenable.merge(model.subscriptions),
       builder: (context, snapshot) {
-        List<double> measuredStates =
+        List<SwerveModuleStateStruct> measuredStates =
             SwerveDriveWidgetModel.moduleStatesFromValue(
               model.measuredStatesSubscription.value,
             );
-        List<double> desiredStates =
+        List<SwerveModuleStateStruct> desiredStates =
             SwerveDriveWidgetModel.moduleStatesFromValue(
               model.desiredStatesSubscription.value,
             );
 
-        double gyroDegrees = tryCast(model.gyroSubscription.value) ?? 0.0;
-        double robotAngle = radians(gyroDegrees - model.angleOffset);
+        double rotation = SwerveDriveWidgetModel.rotationFromValue(
+          model.rotationSubscription.value,
+        );
+        double robotAngle = rotation - radians(model.angleOffset);
 
         double maxSpeed =
             tryCast(model.maxModuleVelocitySubscription.value) ?? 4.5;
@@ -231,8 +235,8 @@ class SwerveDriveWidget extends NTWidget {
 }
 
 class SwerveDrivePainter extends CustomPainter {
-  final List<double> moduleStates;
-  final List<double> desiredStates;
+  final List<SwerveModuleStateStruct> moduleStates;
+  final List<SwerveModuleStateStruct> desiredStates;
   final double maxSpeed;
 
   const SwerveDrivePainter({
@@ -266,7 +270,7 @@ class SwerveDrivePainter extends CustomPainter {
           2,
     );
 
-    if (desiredStates.length >= 8) {
+    if (desiredStates.length >= 4) {
       drawMotionArrows(
         canvas,
         size * robotFrameScale,
@@ -276,21 +280,20 @@ class SwerveDrivePainter extends CustomPainter {
             ) /
             2,
         const Color.fromARGB(255, 0, 0, 255),
-        frontLeftAngle: desiredStates[0],
-        frontLeftVelocity: desiredStates[1],
-        frontRightAngle: desiredStates[2],
-        frontRightVelocity: desiredStates[3],
-        backLeftAngle: desiredStates[4],
-        backLeftVelocity: desiredStates[5],
-        backRightAngle: desiredStates[6],
-        backRightVelocity: desiredStates[7],
+        frontLeft: desiredStates[0],
+        frontRight: desiredStates[1],
+        backLeft: desiredStates[2],
+        backRight: desiredStates[3],
         drawXIfZero: false,
       );
     }
 
-    if (moduleStates.length < 8) {
+    if (moduleStates.length < 4) {
       moduleStates.addAll(
-        Iterable.generate(8 - moduleStates.length, (_) => 0.0),
+        Iterable.generate(
+          4 - moduleStates.length,
+          (_) => SwerveModuleStateStruct(),
+        ),
       );
     }
 
@@ -303,14 +306,10 @@ class SwerveDrivePainter extends CustomPainter {
           ) /
           2,
       Colors.red,
-      frontLeftAngle: moduleStates[0],
-      frontLeftVelocity: moduleStates[1],
-      frontRightAngle: moduleStates[2],
-      frontRightVelocity: moduleStates[3],
-      backLeftAngle: moduleStates[4],
-      backLeftVelocity: moduleStates[5],
-      backRightAngle: moduleStates[6],
-      backRightVelocity: moduleStates[7],
+      frontLeft: moduleStates[0],
+      frontRight: moduleStates[1],
+      backLeft: moduleStates[2],
+      backRight: moduleStates[3],
     );
   }
 
@@ -390,14 +389,10 @@ class SwerveDrivePainter extends CustomPainter {
     Size size,
     Offset offset,
     Color color, {
-    double frontLeftAngle = 0.0,
-    double frontLeftVelocity = 0.0,
-    double frontRightAngle = 0.0,
-    double frontRightVelocity = 0.0,
-    double backLeftAngle = 0.0,
-    double backLeftVelocity = 0.0,
-    double backRightAngle = 0.0,
-    double backRightVelocity = 0.0,
+    SwerveModuleStateStruct frontLeft = const SwerveModuleStateStruct(),
+    SwerveModuleStateStruct frontRight = const SwerveModuleStateStruct(),
+    SwerveModuleStateStruct backLeft = const SwerveModuleStateStruct(),
+    SwerveModuleStateStruct backRight = const SwerveModuleStateStruct(),
     bool drawXIfZero = true,
   }) {
     final double circleRadius = min(size.width, size.height) / 8;
@@ -430,22 +425,23 @@ class SwerveDrivePainter extends CustomPainter {
 
     canvas.drawArc(
       frontLeftWheel,
-      -(frontLeftAngle + radians(22.5)) - pi / 2,
+      -(frontLeft.angle + radians(22.5)) - pi / 2,
       radians(45),
       false,
       anglePaint,
     );
 
     // Front left vector arrow
-    if (frontLeftVelocity.abs() >= 0.05) {
+    double frontLeftAngle = frontLeft.angle;
+    if (frontLeft.speed.abs() >= 0.05) {
       frontLeftAngle += pi / 2;
       frontLeftAngle *= -1;
 
-      if (frontLeftVelocity < 0) {
+      if (frontLeft.speed < 0) {
         frontLeftAngle -= pi;
       }
 
-      double frontLeftArrowLength = frontLeftVelocity.abs() * pixelsPerMPS;
+      double frontLeftArrowLength = frontLeft.speed.abs() * pixelsPerMPS;
       double frontLeftArrowBase = (frontLeftArrowLength / 3.0).clamp(
         minArrowBase,
         maxArrowBase,
@@ -491,22 +487,23 @@ class SwerveDrivePainter extends CustomPainter {
 
     canvas.drawArc(
       frontRightWheel,
-      -(frontRightAngle + radians(22.5)) - pi / 2,
+      -(frontRight.angle + radians(22.5)) - pi / 2,
       radians(45),
       false,
       anglePaint,
     );
 
     // Front right vector arrow
-    if (frontRightVelocity.abs() >= 0.05) {
+    double frontRightAngle = frontRight.angle;
+    if (frontRight.speed.abs() >= 0.05) {
       frontRightAngle += pi / 2;
       frontRightAngle *= -1;
 
-      if (frontRightVelocity < 0) {
+      if (frontRight.speed < 0) {
         frontRightAngle -= pi;
       }
 
-      double frontRightArrowLength = frontRightVelocity.abs() * pixelsPerMPS;
+      double frontRightArrowLength = frontRight.speed.abs() * pixelsPerMPS;
       double frontRightArrowBase = (frontRightArrowLength / 3.0).clamp(
         minArrowBase,
         maxArrowBase,
@@ -528,7 +525,7 @@ class SwerveDrivePainter extends CustomPainter {
         Offset(size.width - circleRadius / 2, circleRadius / 2) + offset,
         frontRightArrowLength * cos(frontRightAngle) - circleRadius / 2,
         frontRightArrowLength * sin(frontRightAngle) + circleRadius / 2,
-        frontRightAngle,
+        frontRight.angle,
         arrowAngle,
         frontRightArrowBase,
         arrowPaint,
@@ -552,22 +549,23 @@ class SwerveDrivePainter extends CustomPainter {
 
     canvas.drawArc(
       backLeftWheel,
-      -(backLeftAngle + radians(22.5)) - pi / 2,
+      -(backLeft.angle + radians(22.5)) - pi / 2,
       radians(45),
       false,
       anglePaint,
     );
 
     // Back left vector arrow
-    if (backLeftVelocity.abs() >= 0.05) {
+    double backLeftAngle = backLeft.angle;
+    if (backLeft.speed.abs() >= 0.05) {
       backLeftAngle += pi / 2;
       backLeftAngle *= -1;
 
-      if (backLeftVelocity < 0) {
+      if (backLeft.speed < 0) {
         backLeftAngle -= pi;
       }
 
-      double backLeftArrowLength = backLeftVelocity.abs() * pixelsPerMPS;
+      double backLeftArrowLength = backLeft.speed.abs() * pixelsPerMPS;
       double backLeftArrowBase = (backLeftArrowLength / 3.0).clamp(
         minArrowBase,
         maxArrowBase,
@@ -615,22 +613,23 @@ class SwerveDrivePainter extends CustomPainter {
 
     canvas.drawArc(
       backRightWheel,
-      -(backRightAngle + radians(22.5)) - pi / 2,
+      -(backRight.angle + radians(22.5)) - pi / 2,
       radians(45),
       false,
       anglePaint,
     );
 
     // Back right vector arrow
-    if (backRightVelocity.abs() >= 0.05) {
+    double backRightAngle = backRight.angle;
+    if (backRight.speed.abs() >= 0.05) {
       backRightAngle += pi / 2;
       backRightAngle *= -1;
 
-      if (backRightVelocity < 0) {
+      if (backRight.speed < 0) {
         backRightAngle -= pi;
       }
 
-      double backRightArrowLength = backRightVelocity.abs() * pixelsPerMPS;
+      double backRightArrowLength = backRight.speed.abs() * pixelsPerMPS;
       double backRightArrowBase = (backRightArrowLength / 3.0).clamp(
         minArrowBase,
         maxArrowBase,
