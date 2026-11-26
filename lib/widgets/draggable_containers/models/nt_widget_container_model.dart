@@ -313,23 +313,27 @@ class NTWidgetContainerModel extends WidgetContainerModel {
   WidgetContainer getDraggingWidgetContainer(BuildContext context) =>
       WidgetContainer(
         title: title,
+        showTitle: showTitle,
         width: draggingRect.width,
         height: draggingRect.height,
         cornerRadius:
             preferences.getDouble(PrefKeys.cornerRadius) ??
             Defaults.cornerRadius,
         opacity: 0.80,
+        backgroundOpacity: backgroundOpacity,
         child: ChangeNotifierProvider.value(value: childModel, child: child),
       );
 
   @override
   WidgetContainer getWidgetContainer(BuildContext context) => WidgetContainer(
     title: title,
+    showTitle: showTitle,
     width: displayRect.width,
     height: displayRect.height,
     cornerRadius:
         preferences.getDouble(PrefKeys.cornerRadius) ?? Defaults.cornerRadius,
     opacity: (previewVisible) ? 0.25 : 1.00,
+    backgroundOpacity: backgroundOpacity,
     child: Opacity(
       opacity: (enabled) ? 1.00 : 0.50,
       child: AbsorbPointer(

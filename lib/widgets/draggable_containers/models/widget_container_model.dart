@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/settings.dart';
+import 'package:elastic_dashboard/services/text_formatter_builder.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 
@@ -150,6 +151,24 @@ abstract class WidgetContainerModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  double _backgroundOpacity = 1.0;
+
+  double get backgroundOpacity => _backgroundOpacity;
+
+  set backgroundOpacity(double value) {
+    _backgroundOpacity = value.clamp(0.0, 1.0);
+    notifyListeners();
+  }
+
+  bool _showTitle = true;
+
+  bool get showTitle => _showTitle;
+
+  set showTitle(bool value) {
+    _showTitle = value;
+    notifyListeners();
+  }
+
   WidgetContainerModel({
     required this.preferences,
     required Rect initialPosition,
@@ -179,6 +198,8 @@ abstract class WidgetContainerModel extends ChangeNotifier {
     dragStartLocation = displayRect;
   }
 
+  // Background opacity and title visibility are only saved when changed, so
+  // layouts that don't use them are saved exactly as before
   @mustCallSuper
   Map<String, dynamic> toJson() => {
     'title': title,
@@ -186,6 +207,8 @@ abstract class WidgetContainerModel extends ChangeNotifier {
     'y': displayRect.top,
     'width': displayRect.width,
     'height': displayRect.height,
+    if (backgroundOpacity != 1.0) 'background_opacity': backgroundOpacity,
+    if (!showTitle) 'show_title': showTitle,
   };
 
   @mustCallSuper
@@ -194,6 +217,11 @@ abstract class WidgetContainerModel extends ChangeNotifier {
     Function(String warningMessage)? onJsonLoadingWarning,
   }) {
     title = tryCast(jsonData['title']) ?? '';
+
+    backgroundOpacity =
+        tryCast<num>(jsonData['background_opacity'])?.toDouble() ?? 1.0;
+
+    showTitle = tryCast(jsonData['show_title']) ?? true;
 
     double x = tryCast(jsonData['x']) ?? 0.0;
 
@@ -273,33 +301,70 @@ abstract class WidgetContainerModel extends ChangeNotifier {
     // Settings for the widget container
     const Text('Container Settings'),
     const SizedBox(height: 5),
-    DialogTextInput(
-      onSubmit: (value) {
-        title = value;
-      },
-      label: 'Title',
-      initialText: title,
+    Row(
+      children: [
+        Flexible(
+          child: DialogTextInput(
+            onSubmit: (value) {
+              title = value;
+            },
+            label: 'Title',
+            initialText: title,
+          ),
+        ),
+        StatefulBuilder(
+          builder: (context, setState) => IconButton(
+            tooltip: (showTitle) ? 'Hide Title' : 'Show Title',
+            icon: Icon(
+              (showTitle)
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+            ),
+            onPressed: () => setState(() => showTitle = !showTitle),
+          ),
+        ),
+        Flexible(
+          child: DialogTextInput(
+            onSubmit: (value) {
+              double? newOpacity = double.tryParse(value);
+
+              if (newOpacity == null) {
+                return;
+              }
+
+              backgroundOpacity = newOpacity;
+            },
+            formatter: TextFormatterBuilder.decimalTextFormatter(),
+            label: 'Background Opacity',
+            initialText: backgroundOpacity.toString(),
+          ),
+        ),
+      ],
     ),
   ];
 
   WidgetContainer getDraggingWidgetContainer(BuildContext context) =>
       WidgetContainer(
         title: title,
+        showTitle: showTitle,
         width: draggingRect.width,
         height: draggingRect.height,
         cornerRadius:
             preferences.getDouble(PrefKeys.cornerRadius) ??
             Defaults.cornerRadius,
         opacity: 0.80,
+        backgroundOpacity: backgroundOpacity,
         child: Container(),
       );
 
   WidgetContainer getWidgetContainer(BuildContext context) => WidgetContainer(
     title: title,
+    showTitle: showTitle,
     width: displayRect.width,
     height: displayRect.height,
     cornerRadius:
         preferences.getDouble(PrefKeys.cornerRadius) ?? Defaults.cornerRadius,
+    backgroundOpacity: backgroundOpacity,
     child: Container(),
   );
 
