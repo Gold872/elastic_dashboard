@@ -157,6 +157,7 @@ class _DialogColorPickerState extends State<DialogColorPicker> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(7.5),
           ),
+          enabledMouseCursor: WidgetStateMouseCursor.clickable,
         ),
         child: Container(),
       ),
