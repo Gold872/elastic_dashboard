@@ -310,31 +310,6 @@ class _ElasticState extends State<Elastic> {
               : themeTones.surfaceTone,
         ),
       ),
-      textButtonTheme: TextButtonThemeData(
-        style: TextButton.styleFrom(
-          enabledMouseCursor: WidgetStateMouseCursor.clickable,
-        ),
-      ),
-      iconButtonTheme: IconButtonThemeData(
-        style: IconButton.styleFrom(
-          enabledMouseCursor: WidgetStateMouseCursor.clickable,
-        ),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          enabledMouseCursor: WidgetStateMouseCursor.clickable,
-        ),
-      ),
-      filledButtonTheme: FilledButtonThemeData(
-        style: FilledButton.styleFrom(
-          enabledMouseCursor: WidgetStateMouseCursor.clickable,
-        ),
-      ),
-      outlinedButtonTheme: OutlinedButtonThemeData(
-        style: OutlinedButton.styleFrom(
-          enabledMouseCursor: WidgetStateMouseCursor.clickable,
-        ),
-      ),
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
