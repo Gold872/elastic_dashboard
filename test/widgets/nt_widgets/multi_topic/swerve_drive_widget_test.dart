@@ -6,10 +6,11 @@ import 'package:material_ui/material_ui.dart';
 
 import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/nt_widget_registry.dart';
+import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_text_input.dart';
 import 'package:elastic_dashboard/widgets/dialog_widgets/dialog_toggle_switch.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_nt_widget_container.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/models/nt_widget_container_model.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/swerve_drive_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 
 import '../../../test_util.dart';
@@ -17,15 +18,16 @@ import '../../../test_util.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  final Map<String, dynamic> swerveJson = {
+    'topic': 'Test/Swerve Drive',
+    'period': 0.100,
+    'show_robot_rotation': true,
+    'show_desired_states': true,
+    'angle_offset': 90.0,
+  };
+
   late SharedPreferences preferences;
   late NTConnection ntConnection;
-
-  final Map<String, dynamic> swerveJson = {
-    'topic': 'Test/Basic Swerve Drive',
-    'period': 0.100,
-    'show_robot_rotation': false,
-    'rotation_unit': 'Radians',
-  };
 
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
@@ -34,7 +36,7 @@ void main() {
     ntConnection = createMockOnlineNT4();
   });
 
-  test('Basic swerve model from json', () {
+  test('Swerve drive from json', () {
     NTWidgetModel swerveModel = NTWidgetRegistry.buildNTModelFromJson(
       ntConnection,
       preferences,
@@ -43,66 +45,32 @@ void main() {
     );
 
     expect(swerveModel.type, 'SwerveDrive');
-    expect(swerveModel.runtimeType, BasicSwerveModel);
+    expect(swerveModel.runtimeType, SwerveDriveWidgetModel);
 
-    if (swerveModel is! BasicSwerveModel) {
+    if (swerveModel is! SwerveDriveWidgetModel) {
       return;
     }
 
-    expect(swerveModel.showRobotRotation, isFalse);
-    expect(swerveModel.rotationUnit, 'Radians');
-
-    expect(
-      swerveModel.frontLeftAngleTopic,
-      'Test/Basic Swerve Drive/Front Left Angle',
-    );
-    expect(
-      swerveModel.frontLeftVelocityTopic,
-      'Test/Basic Swerve Drive/Front Left Velocity',
-    );
-
-    expect(
-      swerveModel.frontRightAngleTopic,
-      'Test/Basic Swerve Drive/Front Right Angle',
-    );
-    expect(
-      swerveModel.frontRightVelocityTopic,
-      'Test/Basic Swerve Drive/Front Right Velocity',
-    );
-
-    expect(
-      swerveModel.backLeftAngleTopic,
-      'Test/Basic Swerve Drive/Back Left Angle',
-    );
-    expect(
-      swerveModel.backLeftVelocityTopic,
-      'Test/Basic Swerve Drive/Back Left Velocity',
-    );
-
-    expect(
-      swerveModel.backRightAngleTopic,
-      'Test/Basic Swerve Drive/Back Right Angle',
-    );
-    expect(
-      swerveModel.backRightVelocityTopic,
-      'Test/Basic Swerve Drive/Back Right Velocity',
-    );
+    expect(swerveModel.showRobotRotation, isTrue);
+    expect(swerveModel.showDesiredStates, isTrue);
+    expect(swerveModel.angleOffset, 90.0);
   });
 
-  test('Basic swerve model to json', () {
-    BasicSwerveModel swerveModel = BasicSwerveModel(
+  test('Swerve drive to json', () {
+    SwerveDriveWidgetModel swerveModel = SwerveDriveWidgetModel(
       ntConnection: ntConnection,
       preferences: preferences,
-      topic: 'Test/Basic Swerve Drive',
+      topic: 'Test/Swerve Drive',
       period: 0.100,
-      rotationUnit: 'Radians',
-      showRobotRotation: false,
+      showRobotRotation: true,
+      showDesiredStates: true,
+      angleOffset: 90.0,
     );
 
     expect(swerveModel.toJson(), swerveJson);
   });
 
-  testWidgets('Basic swerve widget test', (widgetTester) async {
+  testWidgets('Swerve drive widget test', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
     NTWidgetModel swerveModel = NTWidgetRegistry.buildNTModelFromJson(
@@ -128,23 +96,24 @@ void main() {
     expect(find.byType(CustomPaint), findsWidgets);
   });
 
-  testWidgets('Basic swerve edit properties', (widgetTester) async {
+  testWidgets('Swerve drive edit properties', (widgetTester) async {
     FlutterError.onError = ignoreOverflowErrors;
 
-    BasicSwerveModel swerveModel = BasicSwerveModel(
+    SwerveDriveWidgetModel swerveModel = SwerveDriveWidgetModel(
       ntConnection: ntConnection,
       preferences: preferences,
-      topic: 'Test/Basic Swerve Drive',
+      topic: 'Test/Swerve Drive',
       period: 0.100,
-      rotationUnit: 'Radians',
-      showRobotRotation: false,
+      showRobotRotation: true,
+      showDesiredStates: true,
+      angleOffset: 90.0,
     );
 
     NTWidgetContainerModel ntContainerModel = NTWidgetContainerModel(
       ntConnection: ntConnection,
       preferences: preferences,
       initialPosition: Rect.zero,
-      title: 'Basic Swerve',
+      title: 'Swerve Drive',
       childModel: swerveModel,
     );
 
@@ -172,40 +141,34 @@ void main() {
       DialogToggleSwitch,
       'Show Robot Rotation',
     );
-    final radiansUnit = find.widgetWithText(ListTile, 'Radians');
-    final degreesUnit = find.widgetWithText(ListTile, 'Degrees');
-    final rotationsUnit = find.widgetWithText(ListTile, 'Rotations');
+    final showDesiredStates = find.widgetWithText(
+      DialogToggleSwitch,
+      'Show Desired States',
+    );
+    final angleOffset = find.widgetWithText(
+      DialogTextInput,
+      'Angle Offset (Degrees)',
+    );
 
     expect(showRobotRotation, findsOneWidget);
-    expect(radiansUnit, findsOneWidget);
-    expect(degreesUnit, findsOneWidget);
-    expect(rotationsUnit, findsOneWidget);
+    expect(showDesiredStates, findsOneWidget);
+    expect(angleOffset, findsOneWidget);
 
     await widgetTester.tap(
       find.descendant(of: showRobotRotation, matching: find.byType(Switch)),
     );
     await widgetTester.pumpAndSettle();
-    expect(swerveModel.showRobotRotation, true);
+    expect(swerveModel.showRobotRotation, false);
 
-    await widgetTester.ensureVisible(radiansUnit);
     await widgetTester.tap(
-      find.descendant(of: radiansUnit, matching: find.byType(Radio<String>)),
+      find.descendant(of: showDesiredStates, matching: find.byType(Switch)),
     );
     await widgetTester.pumpAndSettle();
-    expect(swerveModel.rotationUnit, 'Radians');
+    expect(swerveModel.showDesiredStates, false);
 
-    await widgetTester.ensureVisible(degreesUnit);
-    await widgetTester.tap(
-      find.descendant(of: degreesUnit, matching: find.byType(Radio<String>)),
-    );
+    await widgetTester.enterText(angleOffset, '45.0');
+    await widgetTester.testTextInput.receiveAction(TextInputAction.done);
     await widgetTester.pumpAndSettle();
-    expect(swerveModel.rotationUnit, 'Degrees');
-
-    await widgetTester.ensureVisible(rotationsUnit);
-    await widgetTester.tap(
-      find.descendant(of: rotationsUnit, matching: find.byType(Radio<String>)),
-    );
-    await widgetTester.pumpAndSettle();
-    expect(swerveModel.rotationUnit, 'Rotations');
+    expect(swerveModel.angleOffset, 45.0);
   });
 }

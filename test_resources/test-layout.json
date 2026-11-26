@@ -187,7 +187,8 @@
               "topic": "/Telemetry/Swerve Drive",
               "period": 0.033,
               "show_robot_rotation": true,
-              "rotation_unit": "Degrees"
+              "show_desired_states": true,
+              "angle_offset": 0.0
             }
           }
         ]

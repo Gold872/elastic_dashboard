@@ -10,7 +10,6 @@ import 'package:elastic_dashboard/services/nt_connection.dart';
 import 'package:elastic_dashboard/services/settings.dart';
 import 'package:elastic_dashboard/widgets/draggable_containers/draggable_widget_container.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/accelerometer.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/basic_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/camera_stream.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_scheduler.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/command_widget.dart';
@@ -29,9 +28,9 @@ import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/relay_widget.da
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/robot_preferences.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/split_button_chooser.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/subsystem_widget.dart';
+import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/swerve_drive_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/three_axis_accelerometer.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/ultrasonic.dart';
-import 'package:elastic_dashboard/widgets/nt_widgets/multi_topic/yagsl_swerve_drive.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/nt_widget.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/boolean_box.dart';
 import 'package:elastic_dashboard/widgets/nt_widgets/single_topic/graph.dart';
@@ -167,17 +166,6 @@ class NTWidgetRegistry {
       model: AccelerometerModel.new,
       widget: AccelerometerWidget.new,
       fromJson: AccelerometerModel.fromJson,
-    );
-
-    registerMultiTopic(
-      name: SwerveDriveWidget.widgetType,
-      model: BasicSwerveModel.new,
-      widget: SwerveDriveWidget.new,
-      fromJson: BasicSwerveModel.fromJson,
-      minWidth: _normalSize * 2,
-      minHeight: _normalSize * 2,
-      defaultWidth: 2,
-      defaultHeight: 2,
     );
 
     registerMultiTopic(
@@ -370,6 +358,18 @@ class NTWidgetRegistry {
     );
 
     registerMultiTopic(
+      name: SwerveDriveWidget.widgetType,
+      aliases: {'YAGSL Swerve Drive'},
+      model: SwerveDriveWidgetModel.new,
+      widget: SwerveDriveWidget.new,
+      fromJson: SwerveDriveWidgetModel.fromJson,
+      minWidth: _normalSize * 2,
+      minHeight: _normalSize * 2,
+      defaultWidth: 2,
+      defaultHeight: 2,
+    );
+
+    registerMultiTopic(
       name: ThreeAxisAccelerometer.widgetType,
       aliases: {'3AxisAccelerometer'},
       model: ThreeAxisAccelerometerModel.new,
@@ -384,17 +384,6 @@ class NTWidgetRegistry {
       fromJson: UltrasonicModel.fromJson,
       minWidth: _normalSize * 2,
       defaultWidth: 2,
-    );
-
-    registerMultiTopic(
-      name: YAGSLSwerveDrive.widgetType,
-      model: YAGSLSwerveDriveModel.new,
-      widget: YAGSLSwerveDrive.new,
-      fromJson: YAGSLSwerveDriveModel.fromJson,
-      minWidth: _normalSize * 2,
-      minHeight: _normalSize * 2,
-      defaultWidth: 2,
-      defaultHeight: 2,
     );
 
     registerWithoutModel(
