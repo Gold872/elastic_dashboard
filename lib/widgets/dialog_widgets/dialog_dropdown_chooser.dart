@@ -47,7 +47,6 @@ class _DialogDropdownChooserState<T> extends State<DialogDropdownChooser<T>> {
               isExpanded: true,
               borderRadius: BorderRadius.circular(8.0),
               style: Theme.of(context).textTheme.bodyMedium,
-              mouseCursor: WidgetStateMouseCursor.clickable,
               items: widget.choices
                   ?.map(
                     (T item) => DropdownMenuItem<T>(

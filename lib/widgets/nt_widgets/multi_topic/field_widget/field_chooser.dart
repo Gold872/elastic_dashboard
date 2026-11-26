@@ -56,6 +56,7 @@ class _FieldChooserState extends State<FieldChooser> {
             child: DropdownButton2<String>(
               isExpanded: true,
               style: theme.textTheme.bodyMedium,
+              mouseCursor: WidgetStateMouseCursor.adaptiveClickable,
               dropdownStyleData: DropdownStyleData(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15.0),
